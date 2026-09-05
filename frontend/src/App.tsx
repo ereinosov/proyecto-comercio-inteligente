@@ -4,10 +4,11 @@ import { Venta } from "./pantallas/Venta";
 import { Clientes } from "./pantallas/Clientes";
 import { Precios } from "./pantallas/Precios";
 import { Pronostico } from "./pantallas/Pronostico";
+import { Promociones } from "./pantallas/Promociones";
 import { cerrarTurno, type Turno } from "./servicios/turnos";
 import estilos from "./App.module.css";
 
-type Pantalla = "venta" | "clientes" | "precios" | "pronostico";
+type Pantalla = "venta" | "clientes" | "precios" | "pronostico" | "promociones";
 
 export function App() {
   const [turno, setTurno] = useState<Turno | null>(null);
@@ -53,12 +54,19 @@ export function App() {
         >
           Pronóstico
         </button>
+        <button
+          className={pantalla === "promociones" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          onClick={() => setPantalla("promociones")}
+        >
+          Promociones
+        </button>
       </nav>
       <div className={estilos.contenido}>
         {pantalla === "venta" && <Venta turno={turno} onCerrarTurno={manejarCierre} />}
         {pantalla === "clientes" && <Clientes />}
         {pantalla === "precios" && <Precios idSucursal={turno.id_sucursal} />}
         {pantalla === "pronostico" && <Pronostico idSucursal={turno.id_sucursal} />}
+        {pantalla === "promociones" && <Promociones idSucursal={turno.id_sucursal} />}
       </div>
     </div>
   );

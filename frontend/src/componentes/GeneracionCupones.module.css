@@ -1,0 +1,108 @@
+/* Generación de cupones por fecha fija (US1). Registro de Análisis: radio 6px, Source Serif 4,
+   aire visual. Sin Verde Rasero: esta pantalla no compromete dinero (Regla del Registro Sin
+   Dinero). Todo color/radio/tipografía viene de tokens.css. */
+
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.instruccion {
+  color: var(--color-tinta-suave);
+  font-size: 15px;
+  max-width: 70ch;
+  margin: 0;
+}
+
+.formulario {
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--tipografia-analisis);
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+}
+
+.campo input {
+  font-family: var(--tipografia-operacion);
+  font-size: 14px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 8px 10px;
+}
+
+.boton {
+  font-family: var(--tipografia-analisis);
+  font-size: 14px;
+  color: var(--color-superficie-alta);
+  background: var(--color-tinta);
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-analisis);
+  padding: 9px 18px;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resumen {
+  font-size: 14px;
+  color: var(--color-tinta);
+  margin: 0;
+}
+
+.error {
+  color: var(--color-critico);
+  font-size: 14px;
+  margin: 0;
+}
+
+.subtitulo {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 8px 0 0;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.tabla th,
+.tabla td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.tabla th {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+  font-weight: 600;
+}
+
+.estado_generado {
+  color: var(--color-tinta);
+}
+
+.estado_redimido {
+  color: var(--color-marca);
+}
+
+.estado_vencido {
+  color: var(--color-tinta-suave);
+}

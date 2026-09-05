@@ -741,3 +741,290 @@ class SustitucionProducto(Base):
             "id_producto", "id_producto_sustituto", name="uq_sustitucion_producto_dirigida"
         ),
     )
+
+
+# Promociones inteligentes (005-promociones-inteligentes, data-model.md, constitución v2.2.5)
+# --------------------------------------------------------------------------
+
+
+class Campania(Base):
+    """Paraguas de una corrida de promoción de UN SOLO mecanismo (Lectura Crítica n.º 6). Agrupa
+    los cupones de un rango, o las ofertas de recompra de una detección, o el experimento de una
+    reactivación. `id_sucursal = NULL` = toda la cadena. Sin recompute: registro de una decisión.
+    Sin ruta de lectura propia en el contrato (Assumption de spec.md): se alcanza por el
+    `id_campania` de sus mecanismos hijos.
+    """
+
+    __tablename__ = "campania"
+
+    id_campania: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tipo: Mapped[str] = mapped_column(String, nullable=False)
+    id_sucursal: Mapped[int | None] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=True
+    )
+    nombre: Mapped[str] = mapped_column(String, nullable=False)
+    ventana_desde: Mapped[date] = mapped_column(Date, nullable=False)
+    ventana_hasta: Mapped[date] = mapped_column(Date, nullable=False)
+    instante_creacion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "tipo IN ('fecha_fija','recompra','reactivacion')", name="ck_campania_tipo"
+        ),
+        CheckConstraint("ventana_hasta >= ventana_desde", name="ck_campania_ventana"),
+    )
+
+
+class Cupon(Base):
+    """Mecanismo 1: cupón por fecha fija (cumpleaños). Regla directa —fecha objetivo dentro de la
+    ventana -> cupón—, sin inferencia, sin grupo de control, sin medición (FR-001, FR-006).
+    `fecha_objetivo` lo trae la consulta de cumpleañeros de 002; `005` nunca lee
+    `cliente.fecha_nacimiento` (FR-002). Idempotencia por `UNIQUE (id_cliente, fecha_objetivo)`
+    (FR-007). El estado pasa a 'redimido' al registrarse su redención (US1), a 'vencido' al
+    superar la fecha actual `valido_hasta` sin redención.
+    """
+
+    __tablename__ = "cupon"
+
+    id_cupon: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_campania: Mapped[int] = mapped_column(
+        ForeignKey("campania.id_campania"), nullable=False
+    )
+    id_cliente: Mapped[int] = mapped_column(
+        ForeignKey("cliente.id_cliente"), nullable=False
+    )
+    motivo: Mapped[str] = mapped_column(
+        String, nullable=False, default="fecha_fija_cumpleanos"
+    )
+    fecha_objetivo: Mapped[date] = mapped_column(Date, nullable=False)
+    valido_desde: Mapped[date] = mapped_column(Date, nullable=False)
+    valido_hasta: Mapped[date] = mapped_column(Date, nullable=False)
+    porcentaje_descuento: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
+    estado: Mapped[str] = mapped_column(String, nullable=False, default="generado")
+    instante_generacion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint("motivo IN ('fecha_fija_cumpleanos')", name="ck_cupon_motivo"),
+        CheckConstraint(
+            "estado IN ('generado','redimido','vencido')", name="ck_cupon_estado"
+        ),
+        UniqueConstraint(
+            "id_cliente", "fecha_objetivo", name="uq_cupon_cliente_fecha_objetivo"
+        ),
+    )
+
+
+class OfertaRecompra(Base):
+    """Mecanismo 2: empuje por patrón de recompra con RESERVA DE PRECIO (FR-010).
+    `precio_garantizado` es lo único que la reserva garantiza; NO aparta stock ni escribe contra
+    `existencia` / `movimiento_inventario` de 001 (FR-011). `justificacion` (JSONB) guarda qué
+    compras del propio cliente sustentan la elección del producto (FR-009, explicable). A lo sumo
+    una oferta con `desenlace = 'pendiente'` por (id_cliente, id_producto) — índice único parcial
+    (FR-014).
+    """
+
+    __tablename__ = "oferta_recompra"
+
+    id_oferta_recompra: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_campania: Mapped[int] = mapped_column(
+        ForeignKey("campania.id_campania"), nullable=False
+    )
+    id_cliente: Mapped[int] = mapped_column(
+        ForeignKey("cliente.id_cliente"), nullable=False
+    )
+    id_producto: Mapped[int] = mapped_column(
+        ForeignKey("producto.id_producto"), nullable=False
+    )
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    intervalo_esperado_dias_disparo: Mapped[Decimal] = mapped_column(
+        Numeric(8, 2), nullable=False
+    )
+    justificacion: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    precio_garantizado: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
+    reserva_desde: Mapped[date] = mapped_column(Date, nullable=False)
+    reserva_hasta: Mapped[date] = mapped_column(Date, nullable=False)
+    estado_reserva: Mapped[str] = mapped_column(
+        String, nullable=False, default="vigente"
+    )
+    desenlace: Mapped[str] = mapped_column(String, nullable=False, default="pendiente")
+    instante_generacion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "estado_reserva IN ('vigente','vencida')",
+            name="ck_oferta_recompra_estado_reserva",
+        ),
+        CheckConstraint(
+            "desenlace IN ('pendiente','comprado','no_comprado','reserva_vencida')",
+            name="ck_oferta_recompra_desenlace",
+        ),
+    )
+
+
+class ExperimentoReactivacion(Base):
+    """Mecanismo 3: la corrida experimental de reactivación (FR-015 a FR-025). Guarda toda su
+    parametrización (semilla, ventana, tamaño mínimo de muestra) y su resultado (tasas por grupo,
+    estadístico z, valor p, veredicto). Append + estado (`veredicto`), nunca se recomputa.
+    `veredicto = 'muestra_insuficiente'` al crear si `n_elegibles < 2 * tamano_minimo_muestra`;
+    `efectivo` al cerrar si `incrementalidad > 0 AND valor_p < alfa`; `no_efectivo` en cualquier
+    otro cierre (FR-021, Edge Case de incrementalidad negativa).
+    `motivo_muestra_insuficiente` NO es columna: se calcula al serializar la respuesta.
+    """
+
+    __tablename__ = "experimento_reactivacion"
+
+    id_experimento_reactivacion: Mapped[int] = mapped_column(
+        BigInteger, primary_key=True
+    )
+    id_campania: Mapped[int] = mapped_column(
+        ForeignKey("campania.id_campania"), nullable=False
+    )
+    id_sucursal: Mapped[int | None] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=True
+    )
+    semilla: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    algoritmo: Mapped[str] = mapped_column(String, nullable=False)
+    proporcion_tratamiento: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), nullable=False
+    )
+    ventana_medicion_dias: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    porcentaje_descuento: Mapped[Decimal] = mapped_column(Numeric(5, 2), nullable=False)
+    tasa_retorno_base_esperada: Mapped[Decimal] = mapped_column(
+        Numeric(5, 4), nullable=False
+    )
+    mde_puntos_porcentuales: Mapped[Decimal] = mapped_column(
+        Numeric(5, 2), nullable=False
+    )
+    alfa: Mapped[Decimal] = mapped_column(Numeric(4, 3), nullable=False)
+    poder: Mapped[Decimal] = mapped_column(Numeric(4, 3), nullable=False)
+    tamano_minimo_muestra: Mapped[int] = mapped_column(Integer, nullable=False)
+    n_elegibles: Mapped[int] = mapped_column(Integer, nullable=False)
+    n_tratamiento: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    n_control: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    retorno_tratamiento: Mapped[Decimal | None] = mapped_column(
+        Numeric(6, 4), nullable=True
+    )
+    retorno_control: Mapped[Decimal | None] = mapped_column(
+        Numeric(6, 4), nullable=True
+    )
+    incrementalidad: Mapped[Decimal | None] = mapped_column(
+        Numeric(6, 4), nullable=True
+    )
+    estadistico_z: Mapped[Decimal | None] = mapped_column(Numeric(8, 5), nullable=True)
+    valor_p: Mapped[Decimal | None] = mapped_column(Numeric(7, 6), nullable=True)
+    veredicto: Mapped[str] = mapped_column(String, nullable=False, default="en_curso")
+    instante_asignacion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    instante_cierre: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "veredicto IN ('en_curso','efectivo','no_efectivo','muestra_insuficiente')",
+            name="ck_experimento_reactivacion_veredicto",
+        ),
+    )
+
+
+class AsignacionExperimento(Base):
+    """Una fila por cliente inactivo elegible, con su grupo y su desenlace de retorno. Es la
+    materialización del GRUPO DE CONTROL OBLIGATORIO (Lectura Crítica n.º 6, FR-023): `grupo` no
+    admite un tercer valor "sin grupo". `id_senal_fuga` es la `senal_fuga` de 002 que hizo
+    elegible al cliente — referencia de auditoría; `005` nunca modifica `senal_fuga` (FR-028).
+    `retorno` se fija al cerrar el experimento mirando `visita` de 002 (research.md #11), no por
+    la redención.
+    """
+
+    __tablename__ = "asignacion_experimento"
+
+    id_asignacion_experimento: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_experimento_reactivacion: Mapped[int] = mapped_column(
+        ForeignKey("experimento_reactivacion.id_experimento_reactivacion"),
+        nullable=False,
+    )
+    id_cliente: Mapped[int] = mapped_column(
+        ForeignKey("cliente.id_cliente"), nullable=False
+    )
+    id_senal_fuga: Mapped[int] = mapped_column(BigInteger, nullable=False)
+    grupo: Mapped[str] = mapped_column(String, nullable=False)
+    retorno: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    id_venta_retorno: Mapped[int | None] = mapped_column(BigInteger, nullable=True)
+    instante_retorno: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "grupo IN ('tratamiento','control')", name="ck_asignacion_experimento_grupo"
+        ),
+        UniqueConstraint(
+            "id_experimento_reactivacion",
+            "id_cliente",
+            name="uq_asignacion_experimento_cliente",
+        ),
+    )
+
+
+class RedencionPromocion(Base):
+    """El hecho de que un `cupon`, una `oferta_recompra` o una `asignacion_experimento`
+    (tratamiento) se usó en una VENTA de 001. Registro inmutable. Referencia la venta por FK de
+    sólo lectura (mismo patrón que `visita.id_venta` de 002), sin copiar sus datos.
+    `id_sucursal`/`periodo` se denormalizan de `venta -> turno -> sucursal` —valores inmutables—
+    para la consulta de "marca de promoción activa" que 004 consume (research.md #4).
+    Idempotencia y "una redención por origen": índices únicos parciales sobre cada `id_*`.
+    Un solo endpoint y un solo servicio (`registrar_redencion`), construidos en US1 y reutilizados
+    por US2/US3/US4 — no hay una tabla ni una ruta de redención por mecanismo.
+    """
+
+    __tablename__ = "redencion_promocion"
+
+    id_redencion_promocion: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    tipo_origen: Mapped[str] = mapped_column(String, nullable=False)
+    id_cupon: Mapped[int | None] = mapped_column(
+        ForeignKey("cupon.id_cupon"), nullable=True
+    )
+    id_oferta_recompra: Mapped[int | None] = mapped_column(
+        ForeignKey("oferta_recompra.id_oferta_recompra"), nullable=True
+    )
+    id_asignacion_experimento: Mapped[int | None] = mapped_column(
+        ForeignKey("asignacion_experimento.id_asignacion_experimento"), nullable=True
+    )
+    id_venta: Mapped[int] = mapped_column(ForeignKey("venta.id_venta"), nullable=False)
+    id_producto: Mapped[int | None] = mapped_column(
+        ForeignKey("producto.id_producto"), nullable=True
+    )
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    periodo: Mapped[date] = mapped_column(Date, nullable=False)
+    descuento_aplicado: Mapped[Decimal | None] = mapped_column(
+        Numeric(12, 4), nullable=True
+    )
+    instante_redencion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "tipo_origen IN ('cupon','oferta_recompra','reactivacion')",
+            name="ck_redencion_promocion_tipo_origen",
+        ),
+        CheckConstraint(
+            "( (id_cupon IS NOT NULL)::int + (id_oferta_recompra IS NOT NULL)::int"
+            " + (id_asignacion_experimento IS NOT NULL)::int ) = 1"
+            " AND (tipo_origen = 'cupon') = (id_cupon IS NOT NULL)"
+            " AND (tipo_origen = 'oferta_recompra') = (id_oferta_recompra IS NOT NULL)"
+            " AND (tipo_origen = 'reactivacion') = (id_asignacion_experimento IS NOT NULL)",
+            name="ck_redencion_promocion_origen_unico",
+        ),
+    )

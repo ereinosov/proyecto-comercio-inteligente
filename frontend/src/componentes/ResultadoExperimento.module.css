@@ -1,0 +1,162 @@
+/* Resultado del experimento de reactivación (US3). Registro de Análisis: radio 6px, Source
+   Serif 4. La INFERENCIA (incrementalidad, z, p, veredicto) usa --color-estimado (#1F5673) +
+   forma + texto; el DATO (retorno observado) va en tinta normal. Sin Verde Rasero (Regla del
+   Registro Sin Dinero). Todo token viene de tokens.css. */
+
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.instruccion {
+  color: var(--color-tinta-suave);
+  font-size: 15px;
+  max-width: 70ch;
+  margin: 0;
+}
+
+.acciones {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.boton {
+  font-family: var(--tipografia-analisis);
+  font-size: 14px;
+  color: var(--color-superficie-alta);
+  background: var(--color-tinta);
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-analisis);
+  padding: 9px 18px;
+  cursor: pointer;
+}
+
+.botonSecundario {
+  font-family: var(--tipografia-analisis);
+  font-size: 14px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 9px 18px;
+  cursor: pointer;
+}
+
+.boton:disabled,
+.botonSecundario:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error {
+  color: var(--color-critico);
+  font-size: 14px;
+  margin: 0;
+}
+
+/* Único momento de animación de la pantalla: al revelar un experimento (remount por `key`). */
+.detalle {
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  background: var(--color-superficie-alta);
+  padding: 20px 24px;
+  animation: revelar 320ms ease-out;
+}
+
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.subtitulo {
+  font-size: 17px;
+  font-weight: 600;
+  margin: 0 0 14px;
+}
+
+.parametros {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px 20px;
+  margin: 0 0 18px;
+}
+
+.parametros div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.parametros dt {
+  font-family: var(--tipografia-operacion);
+  font-size: 11px;
+  color: var(--color-tinta-suave);
+}
+
+.parametros dd {
+  margin: 0;
+  font-size: 15px;
+  color: var(--color-tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+.tasas {
+  display: flex;
+  gap: 28px;
+  flex-wrap: wrap;
+  padding: 14px 0;
+  border-top: 1px solid var(--color-borde);
+}
+
+.tasa {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tasaEtiqueta {
+  font-family: var(--tipografia-operacion);
+  font-size: 11px;
+  color: var(--color-tinta-suave);
+}
+
+/* DATO observado: tinta normal, nunca --color-estimado. */
+.tasaValor {
+  font-size: 22px;
+  color: var(--color-tinta);
+  font-variant-numeric: tabular-nums;
+}
+
+/* INFERENCIA: color + forma + texto, los tres a la vez. */
+.inferencia {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin: 12px 0 4px;
+  color: var(--color-estimado);
+}
+
+.forma {
+  font-size: 13px;
+  line-height: 1;
+}
+
+.inferenciaTexto {
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+}
+
+.veredicto {
+  font-size: 15px;
+  color: var(--color-estimado);
+  margin: 0;
+  text-transform: capitalize;
+}

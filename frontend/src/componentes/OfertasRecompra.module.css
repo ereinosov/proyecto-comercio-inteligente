@@ -1,0 +1,104 @@
+/* Ofertas de recompra (US2). Registro de Análisis: radio 6px, Source Serif 4. Sin Verde Rasero
+   (Regla del Registro Sin Dinero). Todo color/radio/tipografía viene de tokens.css. */
+
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.instruccion {
+  color: var(--color-tinta-suave);
+  font-size: 15px;
+  max-width: 70ch;
+  margin: 0;
+}
+
+.boton {
+  align-self: flex-start;
+  font-family: var(--tipografia-analisis);
+  font-size: 14px;
+  color: var(--color-superficie-alta);
+  background: var(--color-tinta);
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-analisis);
+  padding: 9px 18px;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.resumen {
+  font-size: 14px;
+  color: var(--color-tinta);
+  margin: 0;
+}
+
+.error {
+  color: var(--color-critico);
+  font-size: 14px;
+  margin: 0;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.tarjeta {
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  background: var(--color-superficie-alta);
+  padding: 16px 18px;
+}
+
+.encabezadoTarjeta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 6px;
+}
+
+.cliente {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-tinta);
+}
+
+.detalle {
+  font-size: 14px;
+  color: var(--color-tinta);
+  margin: 0 0 4px;
+}
+
+.justificacion {
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  margin: 0;
+}
+
+.desenlace_pendiente {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-tinta);
+}
+
+.desenlace_comprado {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-marca);
+}
+
+.desenlace_no_comprado,
+.desenlace_reserva_vencida {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+}

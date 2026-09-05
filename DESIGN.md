@@ -269,6 +269,34 @@ sugerir suavidad. Los degradados y los fondos oscuros están prohibidos en todo 
 - **Sin Verde Rasero:** esta pantalla no tiene ninguna acción que comprometa dinero (Regla del
   Registro Sin Dinero); el pronóstico es consultivo y no dispara ninguna compra.
 
+### Promociones inteligentes (Análisis, con una superficie en Operación)
+
+- **Carácter:** tres mecanismos de promoción distintos —no uno genérico— cada uno en su vista de
+  un segmentado de texto sin fondo de color: **Cupones por fecha fija**, **Ofertas de recompra**,
+  **Experimento de reactivación**. Una decisión por vista, mismo patrón que las cuatro vistas de
+  Pronóstico.
+- **El experimento es el segundo caso más exigente de la Regla de los Tres Portadores:** el % de
+  retorno **observado** de cada grupo va en tinta normal (dato); la incrementalidad, el
+  estadístico z, el valor p y el veredicto van en color **estimado #1F5673**, con un indicador de
+  forma (▲ significativa / ▬ no significativa / ◇ muestra insuficiente) y el texto explícito de la
+  prueba ("incrementalidad +14,3 pp · z = 3,12 · p = 0,001 · significativa"). Nunca sólo color,
+  nunca un número sin su prueba. Una muestra insuficiente dice el número exacto ("84 elegibles,
+  mínimo 242"), nunca una conclusión.
+- **La oferta de recompra nunca aparece sin su justificación:** junto al `precio_garantizado` va
+  el texto de qué compras del propio cliente la sustentan (Principio V, explicable). El precio es
+  una **reserva de precio, no de inventario** — el texto lo dice, no se garantiza disponibilidad.
+- **Momento de revelación:** al cambiar de vista, y al revelar un experimento cerrado, entra con
+  una única transición de opacidad y desplazamiento vertical corto (320ms) — el mismo patrón que
+  el detalle de cliente y el pronóstico. Sin hover por fila, sin fade-in por tarjeta.
+- **Sin Verde Rasero en Análisis:** ninguna acción de la pantalla de Promociones compromete
+  dinero (Regla del Registro Sin Dinero); generar cupones, detectar recompras y crear un
+  experimento son operaciones consultivas.
+- **La única superficie en Operación** es `AplicarPromocionVenta` en el encabezado de Venta.tsx,
+  junto a `IdentificarCliente`: radio 2px, IBM Plex Sans con cifras tabulares, sin Verde Rasero,
+  reversible en un toque. El cajero marca qué cupón u oferta vigente del cliente se aplica; la
+  redención se registra **después** de que la venta se confirmó y **nunca** la bloquea (Principio
+  II) — mismo patrón exacto que la visita de cliente de 002.
+
 ### Named Rules
 
 **La Regla de los Tres Portadores.** Ningún dato con antigüedad o incertidumbre se comunica solo

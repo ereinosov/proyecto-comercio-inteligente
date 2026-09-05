@@ -19,8 +19,13 @@ import {
   registrarVenta,
 } from "../servicios/ventas";
 import { registrarVisita } from "../servicios/clientes";
+import { registrarRedencion } from "../servicios/promociones";
 import { gramosDesdeKg, RenglonGranel } from "../componentes/RenglonGranel";
 import { IdentificarCliente, type ClienteSeleccionado } from "../componentes/IdentificarCliente";
+import {
+  AplicarPromocionVenta,
+  type PromocionSeleccionada,
+} from "../componentes/AplicarPromocionVenta";
 import { ValorClienteResumen } from "../componentes/ValorClienteResumen";
 import estilos from "./Venta.module.css";
 
@@ -56,6 +61,7 @@ export function Venta({ turno, onCerrarTurno }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [anulando, setAnulando] = useState(false);
   const [clienteIdentificado, setClienteIdentificado] = useState<ClienteSeleccionado | null>(null);
+  const [promocionAplicada, setPromocionAplicada] = useState<PromocionSeleccionada | null>(null);
 
   useEffect(() => {
     listarProductos(turno.id_sucursal).then(setProductos);
@@ -133,6 +139,19 @@ export function Venta({ turno, onCerrarTurno }: Props) {
           console.warn("No se pudo registrar la visita del cliente; la venta sí quedó registrada.");
         });
       }
+      if (promocionAplicada) {
+        // Igual que la visita: la redención de la promoción se registra DESPUÉS de la venta y
+        // NUNCA la bloquea (Principio II, 005 FR-005). Si 005 no responde, el cobro ya está hecho.
+        registrarRedencion({
+          id_venta: venta.id_venta,
+          tipo_origen: promocionAplicada.tipo_origen,
+          id_cupon: promocionAplicada.id_cupon,
+          id_oferta_recompra: promocionAplicada.id_oferta_recompra,
+          id_producto: promocionAplicada.id_producto,
+        }).catch(() => {
+          console.warn("No se pudo registrar la redención; la venta sí quedó registrada.");
+        });
+      }
       // La confirmación se muestra EN el botón antes de cambiar de pantalla — si
       // ventaConfirmada se fija ya, la pantalla cambia en el mismo render y la animación
       // nunca llega a verse (defecto detectado al verificar visualmente).
@@ -153,6 +172,7 @@ export function Venta({ turno, onCerrarTurno }: Props) {
     setRenglones([]);
     setClaveIdempotencia(generarClaveIdempotencia());
     setClienteIdentificado(null);
+    setPromocionAplicada(null);
   }
 
   async function anular() {
@@ -204,9 +224,19 @@ export function Venta({ turno, onCerrarTurno }: Props) {
         <div className={estilos.accionesEncabezado}>
           <IdentificarCliente
             seleccionado={clienteIdentificado}
-            onSeleccionar={setClienteIdentificado}
+            onSeleccionar={(cliente) => {
+              setClienteIdentificado(cliente);
+              if (!cliente) setPromocionAplicada(null);
+            }}
           />
           {clienteIdentificado && <ValorClienteResumen valor={clienteIdentificado.valor} />}
+          {clienteIdentificado && (
+            <AplicarPromocionVenta
+              idCliente={clienteIdentificado.id_cliente}
+              seleccion={promocionAplicada}
+              onSeleccionar={setPromocionAplicada}
+            />
+          )}
           <button className={estilos.botonTexto} onClick={onCerrarTurno}>
             Cerrar turno
           </button>

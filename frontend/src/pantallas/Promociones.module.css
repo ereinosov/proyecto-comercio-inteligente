@@ -1,0 +1,85 @@
+/* Pantalla de Promociones Inteligentes (005) — registro de Análisis: aire visual, radio 6px,
+   Source Serif 4 (DESIGN.md). Sin Verde Rasero: ninguna acción de esta pantalla compromete
+   dinero (Regla del Registro Sin Dinero). Mismo patrón de selector de vista que Pronostico.tsx.
+   Todo color/radio/tipografía viene de tokens.css. */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.encabezado {
+  flex-shrink: 0;
+  padding: 24px 32px 16px;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 0 32px 32px;
+  overflow: hidden;
+}
+
+.selectorVista {
+  display: flex;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-borde);
+  flex-shrink: 0;
+}
+
+.vistaActiva,
+.vistaInactiva {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 4px;
+  cursor: pointer;
+}
+
+.vistaActiva {
+  color: var(--color-tinta);
+  border-bottom-color: var(--color-tinta);
+  font-weight: 600;
+}
+
+.vistaInactiva {
+  color: var(--color-tinta-suave);
+}
+
+/* Único momento de animación de la pantalla: al cambiar de vista (remount por `key`). */
+.panel {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 28px 32px;
+  animation: revelar 320ms ease-out;
+}
+
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

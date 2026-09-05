@@ -96,3 +96,62 @@ class RelacionSustitucionDuplicada(ErrorDominio):
 
     def __init__(self):
         super().__init__("Esa relación de sustitución (en esa dirección) ya estaba declarada.")
+
+
+# --------------------------------------------------------------------------
+# 005-promociones-inteligentes
+# --------------------------------------------------------------------------
+
+
+class RangoFechasInvalido(ErrorDominio):
+    codigo = "rango_fechas_invalido"
+    status_code = 400
+
+    _POR_DEFECTO = "El rango de fechas no es válido: revisa que 'hasta' no sea anterior a 'desde'."
+
+    def __init__(self, mensaje: str = _POR_DEFECTO):
+        super().__init__(mensaje)
+
+
+class RedencionInvalida(ErrorDominio):
+    codigo = "redencion_invalida"
+    status_code = 400
+
+
+class RedencionDeGrupoControl(ErrorDominio):
+    codigo = "redencion_de_grupo_control"
+    status_code = 400
+
+    def __init__(self):
+        super().__init__(
+            "Este cliente está en el grupo de control del experimento y no tiene derecho al "
+            "descuento de reactivación."
+        )
+
+
+class CuponFueraDeVentana(ErrorDominio):
+    codigo = "cupon_fuera_de_ventana"
+    status_code = 400
+
+    def __init__(self):
+        super().__init__("El cupón no está vigente en la fecha de esta venta.")
+
+
+class ParametrosExperimentoInvalidos(ErrorDominio):
+    codigo = "parametros_experimento_invalidos"
+    status_code = 400
+
+
+class ExperimentoEnCurso(ErrorDominio):
+    codigo = "experimento_en_curso"
+    status_code = 409
+
+    def __init__(self):
+        super().__init__(
+            "Ya hay un experimento de reactivación en curso. Ciérralo antes de crear otro."
+        )
+
+
+class CierreExperimentoNoAplicable(ErrorDominio):
+    codigo = "cierre_experimento_no_aplicable"
+    status_code = 409
