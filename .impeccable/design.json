@@ -1,0 +1,160 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-09-04T22:45:00Z",
+  "title": "Design System: Rasero",
+  "extensions": {
+    "colorMeta": {
+      "marca": {
+        "role": "primary",
+        "displayName": "Verde Rasero",
+        "canonical": "#0F5132",
+        "tonalRamp": ["#041a10", "#07291a", "#0a3a24", "#0f5132", "#166b45", "#2a8b5f", "#68b892", "#c3e3d3"]
+      },
+      "superficie-base": {
+        "role": "neutral",
+        "displayName": "Superficie Base",
+        "canonical": "#F1F4F1",
+        "tonalRamp": ["#20241f", "#333a32", "#4a544a", "#6b776a", "#95a094", "#c0c9bf", "#e2e8e1", "#f1f4f1"]
+      },
+      "superficie-alta": {
+        "role": "neutral",
+        "displayName": "Superficie Alta",
+        "canonical": "#FFFFFF",
+        "tonalRamp": ["#1f1f1f", "#333333", "#4d4d4d", "#707070", "#999999", "#c4c4c4", "#e6e6e6", "#ffffff"]
+      },
+      "tinta": {
+        "role": "neutral",
+        "displayName": "Tinta",
+        "canonical": "#1B2621",
+        "tonalRamp": ["#0a0f0c", "#121a16", "#1b2621", "#2b3b33", "#405447", "#61796a", "#93a89b", "#ccd8d0"]
+      },
+      "tinta-suave": {
+        "role": "neutral",
+        "displayName": "Tinta Suave",
+        "canonical": "#5A6862",
+        "tonalRamp": ["#171b19", "#252c28", "#374039", "#495650", "#5a6862", "#7d8b84", "#a8b3ad", "#d6ddd9"]
+      },
+      "borde": {
+        "role": "neutral",
+        "displayName": "Borde",
+        "canonical": "#D5DCD6",
+        "tonalRamp": ["#2a2e2b", "#414743", "#5c635e", "#7b837d", "#9ea59f", "#bfc7c1", "#d5dcd6", "#eef1ef"]
+      },
+      "atencion": {
+        "role": "tertiary",
+        "displayName": "Atención",
+        "canonical": "#9A5B08",
+        "tonalRamp": ["#2b1902", "#3f2504", "#5c3605", "#7c4907", "#9a5b08", "#c07715", "#dda860", "#f2dcb4"]
+      },
+      "critico": {
+        "role": "tertiary",
+        "displayName": "Crítico",
+        "canonical": "#8E2A2A",
+        "tonalRamp": ["#2a0c0c", "#3e1212", "#5a1b1b", "#742222", "#8e2a2a", "#b34141", "#d38080", "#f0cfcf"]
+      },
+      "estimado": {
+        "role": "tertiary",
+        "displayName": "Estimado",
+        "canonical": "#1F5673",
+        "tonalRamp": ["#081a24", "#0d2836", "#143c50", "#1a4a63", "#1f5673", "#2f7ba3", "#6faac9", "#c6dfec"]
+      }
+    },
+    "typographyMeta": {
+      "operacion": {
+        "displayName": "Operación",
+        "purpose": "Punto de venta, inventario, arqueo. IBM Plex Sans con cifras tabulares reales para que las columnas de dinero y peso alineen por dígito."
+      },
+      "analisis": {
+        "displayName": "Análisis",
+        "purpose": "Márgenes, pronóstico, clientes, promociones. Source Serif 4 baja el ritmo de lectura donde el usuario decide en vez de capturar."
+      }
+    },
+    "shadows": [],
+    "motion": [],
+    "breakpoints": []
+  },
+  "components": [
+    {
+      "name": "Botón de cobro",
+      "kind": "button",
+      "refersTo": "boton-cobro",
+      "description": "El único bloque de color de marca de la pantalla; la acción que compromete dinero.",
+      "html": "<button class=\"ds-boton-cobro\">Cobrar $6.33</button>",
+      "css": ".ds-boton-cobro { background: var(--color-marca, #0F5132); color: var(--color-superficie-alta, #FFFFFF); font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-weight: 600; font-size: 16px; padding: 12px 24px; border: 1px solid var(--color-marca, #0F5132); border-radius: var(--radio-operacion, 2px); cursor: pointer; } .ds-boton-cobro:hover { background: #0a3a24; border-color: #0a3a24; } .ds-boton-cobro:focus-visible { outline: 2px solid var(--color-tinta, #1B2621); outline-offset: 2px; }"
+    },
+    {
+      "name": "Tabla de Operación",
+      "kind": "custom",
+      "refersTo": "tabla-operacion",
+      "description": "Es la pantalla, no un componente dentro de ella. Alta densidad, sin tarjetas, cifras alineadas por dígito.",
+      "html": "<table class=\"ds-tabla-operacion\"><thead><tr><th>Producto</th><th class=\"num\">Cantidad</th><th class=\"num\">Precio</th><th class=\"num\">Importe</th></tr></thead><tbody><tr><td>Atún en lata</td><td class=\"num\">2 u</td><td class=\"num\">1.5000</td><td class=\"num\">3.00</td></tr><tr><td>Queso fresco</td><td class=\"num\">0,700 kg</td><td class=\"num\">4.7500</td><td class=\"num\">3.33</td></tr></tbody></table>",
+      "css": ".ds-tabla-operacion { width: 100%; border-collapse: collapse; background: var(--color-superficie-alta, #FFFFFF); color: var(--color-tinta, #1B2621); font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 14px; border: 1px solid var(--color-borde, #D5DCD6); border-radius: var(--radio-operacion, 2px); } .ds-tabla-operacion th { text-align: left; font-weight: 500; font-size: 12px; color: var(--color-tinta-suave, #5A6862); padding: 8px 12px; border-bottom: 1px solid var(--color-borde, #D5DCD6); } .ds-tabla-operacion td { padding: 8px 12px; border-bottom: 1px solid var(--color-borde, #D5DCD6); } .ds-tabla-operacion .num { text-align: right; }"
+    },
+    {
+      "name": "Indicador de antigüedad",
+      "kind": "chip",
+      "refersTo": null,
+      "description": "Hace visible lo que el sistema no sabe con certeza. Tres portadores simultáneos: color, forma y texto.",
+      "html": "<span class=\"ds-antiguedad ds-antiguedad--atencion\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 10 10\" aria-hidden=\"true\"><circle cx=\"5\" cy=\"5\" r=\"4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"></circle><path d=\"M5 1 A4 4 0 0 1 5 9 Z\" fill=\"currentColor\"></path></svg>hace 3 d</span>",
+      "css": ".ds-antiguedad { display: inline-flex; align-items: center; gap: 6px; font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 12px; font-variant-numeric: tabular-nums; } .ds-antiguedad--atencion { color: var(--color-atencion, #9A5B08); } .ds-antiguedad--critico { color: var(--color-critico, #8E2A2A); } .ds-antiguedad--estimado { color: var(--color-estimado, #1F5673); }"
+    }
+  ],
+  "narrative": {
+    "northStar": "El Rasero",
+    "overview": "Un rasero es la tabla que se pasa sobre una medida de grano para nivelarla al ras. Es el nombre del sistema y también su forma: superficie plana, filo recto, todo medido contra la misma referencia. El sistema no adorna el dato; lo nivela para que se pueda comparar. Donde otros sistemas de interfaz añaden profundidad, brillo o movimiento para dar importancia, este resta, porque cualquier capa extra es una oportunidad de falsear la medida. El sistema tiene dos registros, nunca uno uniforme: Operación es alta densidad con la tabla como elemento principal y filo de 2px; Análisis es una decisión por bloque, con aire y filo de 6px. La paleta está anclada en objetos del comercio físico y rechaza los fondos oscuros y los degradados. El color de marca aparece una sola vez por pantalla, en la acción que compromete dinero.",
+    "keyCharacteristics": [
+      "Dos registros formales (Operación 2px / Análisis 6px) que se eligen por contexto de uso, no por gusto",
+      "Cifras tabulares reales: las columnas de dinero y peso alinean por dígito",
+      "Cero sombras: la profundidad se transmite con tono y borde",
+      "Color semántico reservado a su significado, nunca decorativo",
+      "Toda incertidumbre se comunica con tres portadores simultáneos, nunca solo con color"
+    ],
+    "rules": [
+      {
+        "name": "La Regla del Significado",
+        "body": "Los tres colores semánticos —atención #9A5B08 (dato envejecido, stock bajo), crítico #8E2A2A (caducado, anomalía) y estimado #1F5673 (valor calculado, no observado)— están reservados a su significado. Usar cualquiera de ellos por énfasis, por ritmo visual o por rellenar una zona apagada está prohibido: si aparece el crítico, algo caducó.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla de la Sola Voz",
+        "body": "El Verde Rasero aparece una vez por pantalla, en la acción que compromete dinero. Una segunda aparición lo convierte en decoración y anula la primera.",
+        "section": "colors"
+      },
+      {
+        "name": "La Regla de la Columna Alineada",
+        "body": "Toda cifra de dinero o de peso se compone con cifras tabulares (font-variant-numeric: tabular-nums). Un total que baila un píxel entre filas obliga al cajero a leer dígito por dígito en vez de de un vistazo.",
+        "section": "typography"
+      },
+      {
+        "name": "La Regla de Inter",
+        "body": "Inter está prohibida como tipografía por defecto. No es un juicio sobre la familia: es el valor por defecto al que deriva cualquier herramienta que no recibió instrucciones, y su presencia significa que alguien se saltó este documento.",
+        "section": "typography"
+      },
+      {
+        "name": "La Regla del Filo, No la Sombra",
+        "body": "Cuando una región necesite separarse de su entorno, se separa con borde y tono. Añadir box-shadow es importar el vocabulario de otro sistema, y en un registro de alta densidad las sombras se acumulan hasta emborronar la retícula.",
+        "section": "elevation"
+      },
+      {
+        "name": "La Regla de los Tres Portadores",
+        "body": "Ningún dato con antigüedad o incertidumbre se comunica solo con color. Un portador único falla ante daltonismo, impresión en blanco y negro y reflejo de pantalla — las tres condiciones normales de un local comercial.",
+        "section": "components"
+      }
+    ],
+    "dos": [
+      "Do elegir el registro por contexto de uso: Operación (2px, alta densidad, tabla) para caja e inventario; Análisis (6px, aire) para pantallas donde se decide.",
+      "Do componer toda cifra de dinero y peso con cifras tabulares reales.",
+      "Do transmitir profundidad con el salto de tono #F1F4F1 → #FFFFFF y el borde #D5DCD6.",
+      "Do acompañar todo dato incierto o envejecido con sus tres portadores.",
+      "Do reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla."
+    ],
+    "donts": [
+      "Don't usar box-shadow en ninguna parte del sistema.",
+      "Don't usar degradados ni fondos oscuros.",
+      "Don't usar los semánticos (#9A5B08, #8E2A2A, #1F5673) por énfasis o decoración.",
+      "Don't envolver grupos de datos en tarjetas dentro del registro de Operación.",
+      "Don't usar Inter como tipografía por defecto.",
+      "Don't comunicar antigüedad o incertidumbre solo con color."
+    ]
+  }
+}

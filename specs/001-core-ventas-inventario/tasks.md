@@ -1,0 +1,326 @@
+---
+
+description: "Task list template for feature implementation"
+---
+
+# Tasks: Core de Ventas e Inventario
+
+**Input**: Documentos de diseño desde `/specs/001-core-ventas-inventario/`
+
+**Prerequisitos**: plan.md, spec.md, research.md, data-model.md, contracts/openapi.yaml, quickstart.md — todos aprobados.
+
+**Pruebas**: se incluyen únicamente las 6 suites obligatorias del Principio III (proporcional al riesgo), intercaladas junto a la funcionalidad que verifican. No se generan pruebas de interfaz, maquetación ni componentes visuales.
+
+**Organización**: por historia de usuario (P1 → P8 de spec.md), backend antes que frontend dentro de cada historia. Fundamento completo (esquema, conexión, tokens) antes de cualquier historia.
+
+## Formato: `[ID] [P?] [Story] Descripción`
+
+- **[P]**: puede ejecutarse en paralelo (archivo distinto, sin dependencia de una tarea incompleta)
+- **[Story]**: historia de usuario a la que pertenece (US1 … US8)
+- Cada tarea va en una sola línea, con la ruta de archivo exacta y, entre paréntesis, de qué tarea depende
+
+## Convención de rutas (fijada en plan.md, no negociable)
+
+- Backend: `backend/rasero/` (dominio/, persistencia/, servicios/, api/) y `backend/migraciones/`
+- Frontend: `frontend/src/` (estilos/, componentes/, pantallas/, servicios/)
+- Pruebas: `tests/` en la raíz (unidad/, integracion/, contrato/) — nunca dentro de `backend/` ni `frontend/`
+
+---
+
+## Phase 1: Setup
+
+**Propósito**: inicialización del repositorio y de los dos proyectos.
+
+- [X] T001 Crear `backend/rasero/{dominio,persistencia,servicios,api}/`, `backend/migraciones/`, `frontend/src/{estilos,componentes,pantallas,servicios}/` y `tests/{unidad,integracion,contrato}/` en la raíz del repositorio
+- [X] T002 [P] Inicializar `backend/pyproject.toml` con Python 3.12, FastAPI, Uvicorn, SQLAlchemy 2.x, Alembic y Pydantic v2 (depende de T001)
+- [X] T003 [P] Inicializar `frontend/package.json` con React 18, TypeScript 5.x y Vite, sin librería de componentes de terceros (depende de T001)
+- [X] T004 [P] Configurar ruff y black en `backend/pyproject.toml` (depende de T002)
+- [X] T005 [P] Configurar eslint y prettier en `frontend/eslint.config.js` (ESLint 9 usa config plana, no `.eslintrc.cjs`) y `frontend/.prettierrc` (depende de T003)
+
+---
+
+## Phase 2: Foundational (bloqueante para todas las historias)
+
+**Propósito**: esquema completo de base de datos, conexión a PostgreSQL nativo en el puerto 5442, y tokens de diseño.
+
+**⚠️ CRÍTICO**: no iniciar ninguna historia de usuario hasta terminar esta fase.
+
+- [X] T006 Configurar `DATABASE_URL` hacia PostgreSQL nativo puerto 5442 en `backend/rasero/configuracion.py`, sin ninguna rama de SQLite (depende de T002)
+- [X] T007 Inicializar Alembic en `backend/migraciones/alembic.ini` apuntando a T006 (depende de T006)
+- [X] T008 Crear `backend/migraciones/versions/0001_esquema_inicial.py` con las 20 tablas de data-model.md, tipos `NUMERIC`/`INTEGER`/`TIMESTAMPTZ` exactos, `moneda CHAR(3) NOT NULL DEFAULT 'USD'` en `venta`, `renglon_venta`, `lote`, `producto`, `producto_precio_sucursal` y `observacion_precio`, los `CHECK` de origen único y cantidad positiva, y `downgrade` implementado (depende de T007)
+- [X] T009 [P] Crear los modelos SQLAlchemy 2.x de las 20 tablas en `backend/rasero/persistencia/modelos.py` (depende de T008)
+- [X] T010 [P] Configurar engine y sesión en `backend/rasero/persistencia/sesion.py` (depende de T006)
+- [X] T011 Crear el esqueleto FastAPI con enrutador base y manejo de errores sin trazas técnicas en `backend/rasero/api/aplicacion.py` (depende de T002)
+- [X] T012 [P] Crear datos semilla de "Despensa Los Ríos" (sucursales "Quevedo Centro" y "Buena Fe") en `backend/rasero/semilla.py`, el nombre solo como valor de fila (depende de T009)
+- [X] T013 [P] Crear `frontend/src/estilos/tokens.css` con la paleta (#F1F4F1, #FFFFFF, #1B2621, #5A6862, #0F5132, #D5DCD6, #9A5B08, #8E2A2A, #1F5673) y radios 2px/6px como variables CSS (depende de T003)
+- [X] T014 [P] Cargar IBM Plex Sans (cifras tabulares) y Source Serif 4 en `frontend/index.html` y declararlas en `frontend/src/estilos/tokens.css`; sin Inter (depende de T013)
+- [X] T015 Ejecutar el paso `teach` de Impeccable con el contenido íntegro de la sección "Sistema de Diseño" de la constitución (paleta, tipografía por registro, radios, regla de tres portadores, los dos registros visuales), generando `PRODUCT.md` y `DESIGN.md` en la raíz de `frontend/`. Precede a toda tarea de frontend; omitirlo hace que la herramienta derive a sus valores por defecto genéricos (depende de T013, T014)
+- [X] T016 Crear el cliente HTTP base en `frontend/src/servicios/clienteHttp.ts` (depende de T015, T011)
+
+**Checkpoint**: fundamento listo. Las historias de usuario pueden empezar.
+
+---
+
+## Phase 3: User Story 1 - Registrar una venta en caja (Priority: P1) 🎯 MVP
+
+**Goal**: cobrar una venta mixta (unidad y peso), atribuida a operador y terminal, idempotente ante reintentos, sin bloquearse aunque exceda el saldo.
+
+**Independent Test**: con catálogo y existencias precargadas, abrir turno, cobrar una venta mixta y verificar el descuento de existencias, la atribución a operador y terminal, y que un reintento con la misma clave no genera una segunda venta.
+
+### Pruebas obligatorias para User Story 1
+
+- [X] T017 [P] [US1] Prueba unitaria de totales de venta con producto a peso y redondeo a 2 decimales (suma de importes ya redondeados, no redondeo de la suma) en `tests/unidad/test_totales_venta.py`
+- [X] T018 [P] [US1] Prueba unitaria de selección FEFO, incluido lote posterior que caduca antes que uno más antiguo, en `tests/unidad/test_seleccion_fefo.py`
+- [X] T019 [P] [US1] Prueba de integración de idempotencia: diez reintentos con la misma `clave_idempotencia` producen una sola venta, en `tests/integracion/test_idempotencia_venta.py`
+- [X] T020 [P] [US1] Prueba de integración de saldo: `existencia` coincide con la suma de `movimiento_inventario`, incluido saldo negativo, en `tests/integracion/test_saldo_existencia.py`
+
+### Implementación backend para User Story 1
+
+- [X] T021 [P] [US1] Prueba unitaria de resolución de precio efectivo por sucursal: override de `producto_precio_sucursal` si existe, si no el precio base del producto, en `tests/unidad/test_resolucion_precio.py`
+- [X] T022 [P] [US1] Regla de dominio de resolución de precio efectivo por sucursal (`COALESCE` override/base) en `backend/rasero/dominio/resolucion_precio.py` (implementa T021)
+- [X] T023 [P] [US1] Regla de dominio de totales con `Decimal` y `ROUND_HALF_UP` en `backend/rasero/dominio/totales.py` (implementa T017)
+- [X] T024 [P] [US1] Regla de dominio de selección de lote por `fecha_caducidad NULLS LAST, instante_entrada` en `backend/rasero/dominio/seleccion_lote.py` (implementa T018)
+- [X] T025 [US1] Servicio de apertura y cierre de turno con verificación de PIN contra `operador.pin_hash` en `backend/rasero/servicios/turnos.py` (depende de T009)
+- [X] T026 [US1] Servicio de registro de venta: transacción atómica, resolución de precio efectivo por sucursal, consumo FEFO con `SELECT FOR UPDATE`, actualización de `existencia` por delta, saldo negativo admitido, en `backend/rasero/servicios/ventas.py` (depende de T022, T023, T024, T025)
+- [X] T027 [US1] Servicio de anulación de venta: turno propio o `operador.es_encargado`, repone existencia en el lote de origen, en `backend/rasero/servicios/ventas.py` (depende de T026)
+- [X] T028 [US1] Endpoint `POST /turnos` en `backend/rasero/api/turnos.py` (depende de T025)
+- [X] T029 [US1] Endpoint `POST /turnos/{id_turno}/cierre` en `backend/rasero/api/turnos.py` (depende de T028)
+- [X] T030 [US1] Endpoint `POST /ventas` con validación de `clave_idempotencia` (200 en reintento, 201 en la primera) en `backend/rasero/api/ventas.py` (depende de T026)
+- [X] T031 [US1] Endpoint `GET /ventas/{id_venta}` en `backend/rasero/api/ventas.py` (depende de T030)
+- [X] T032 [US1] Endpoint `POST /ventas/{id_venta}/anulacion` en `backend/rasero/api/ventas.py` (depende de T027, T030)
+- [X] T033 [P] [US1] Prueba de contrato de `POST /ventas` contra el esquema `Venta` de contracts/openapi.yaml en `tests/contrato/test_contrato_ventas.py` (depende de T030)
+
+- [X] T034 [P] [US1] Servicio de catálogo: lista de productos activos con precio efectivo resuelto por sucursal, reutilizando la regla de T022 (`COALESCE` override/base), en `backend/rasero/servicios/catalogo.py` (depende de T009, T022)
+- [X] T035 [US1] Endpoint `GET /productos` con `id_sucursal` opcional, añadido a contracts/openapi.yaml porque US1 necesita listar el catálogo para construir una venta y el contrato no exponía ninguna lectura de `producto`, en `backend/rasero/api/productos.py` (depende de T034)
+
+- [X] T036 [P] [US1] Servicio de listado de operadores activos (sin `pin_hash`) en `backend/rasero/servicios/operadores.py` (depende de T009)
+- [X] T037 [US1] Endpoint `GET /operadores` añadido a contracts/openapi.yaml porque FR-005 exige elegir operador "de una lista" y el contrato no lo exponía, en `backend/rasero/api/operadores.py` (depende de T036)
+
+### Implementación frontend para User Story 1
+
+- [X] T038 [P] [US1] Componente de apertura de turno (selector de operador + PIN de 4 dígitos) en `frontend/src/componentes/AperturaTurno.tsx` (depende de T015, T013)
+- [X] T039 [P] [US1] Pantalla de venta: tabla como elemento principal, sin tarjetas, radio 2px, cifras tabulares, en `frontend/src/pantallas/Venta.tsx` (depende de T015, T013)
+- [X] T040 [US1] Componente de renglón a granel: captura en kg, conversión a gramos enteros, en `frontend/src/componentes/RenglonGranel.tsx` (depende de T015, T039)
+- [X] T041 [US1] Servicio de cliente para `POST /ventas`, generando `clave_idempotencia` antes del primer intento, en `frontend/src/servicios/ventas.ts` (depende de T015, T016, T030)
+- [X] T042 [US1] Animación de confirmación al cerrar el cobro, única animación del registro de Operación, en `frontend/src/pantallas/Venta.tsx` (depende de T015, T039)
+- [X] T043 [US1] Acción de anulación de venta desde la pantalla de venta, con mensaje de acción correctiva si el turno está cerrado y el operador no es encargado, en `frontend/src/pantallas/Venta.tsx` (depende de T015, T032, T041)
+
+**Checkpoint**: User Story 1 funcional y demostrable de forma independiente. MVP.
+
+---
+
+## Phase 4: User Story 2 - Recibir mercancía del proveedor en lotes (Priority: P2)
+
+**Goal**: registrar una entrada de compra que crea o alimenta un lote con su costo y, si aplica, su fecha de caducidad.
+
+**Independent Test**: registrar una compra de tres productos, uno perecedero, y verificar que se crean los lotes con costo y caducidad, y que las existencias suben.
+
+- [ ] T044 [P] [US2] Prueba de integración: una entrada crea el lote con costo y caducidad y sube la existencia, en `tests/integracion/test_entrada_inventario.py`
+- [ ] T045 [US2] Servicio de registro de entrada de inventario, crea o alimenta lote, solo costo, nunca margen, en `backend/rasero/servicios/inventario.py` (depende de T009)
+- [ ] T046 [US2] Endpoint `POST /entradas-inventario` en `backend/rasero/api/inventario.py` (depende de T045)
+- [ ] T047 [P] [US2] Endpoint `GET /existencias`, exponiendo el saldo incluido negativo, en `backend/rasero/api/inventario.py` (depende de T009)
+- [ ] T048 [P] [US2] Pantalla de registro de entrada (producto, cantidad, costo, caducidad opcional) en `frontend/src/pantallas/EntradaInventario.tsx` (depende de T015, T013)
+- [ ] T049 [US2] Servicio de cliente para `POST /entradas-inventario` en `frontend/src/servicios/inventario.ts` (depende de T015, T016, T046)
+
+**Checkpoint**: User Story 2 funcional junto con User Story 1.
+
+---
+
+## Phase 5: User Story 3 - Registrar una consulta no atendida (Priority: P3)
+
+**Goal**: registrar en dos toques, sin datos del cliente, que un producto se consultó y no se vendió.
+
+**Independent Test**: desde la pantalla de venta, marcar un producto agotado como consultado y no atendido, y verificar producto, sucursal, instante y saldo del momento.
+
+- [ ] T050 [P] [US3] Prueba de integración: la consulta registra el saldo del instante y no acepta ningún campo de cliente, en `tests/integracion/test_consulta_no_atendida.py`
+- [ ] T051 [US3] Servicio de registro de consulta no atendida, congelando `saldo_en_el_instante`, en `backend/rasero/servicios/senales.py` (depende de T009)
+- [ ] T052 [US3] Endpoint `POST /consultas-no-atendidas` en `backend/rasero/api/senales.py` (depende de T051)
+- [ ] T053 [US3] Acción de dos toques "consulta no atendida" en la pantalla de venta, sin pedir datos del cliente, en `frontend/src/pantallas/Venta.tsx` (depende de T015, T039, T052)
+
+**Checkpoint**: User Story 3 funcional junto con las anteriores.
+
+---
+
+## Phase 6: User Story 4 - Comparar el precio propio contra la competencia (Priority: P4)
+
+**Goal**: capturar observaciones de precio de competencia y compararlas contra el precio propio, con su antigüedad siempre visible.
+
+**Independent Test**: capturar tres observaciones de canales distintos, una en otra presentación, y verificar la comparación normalizada con antigüedad por observación.
+
+- [ ] T054 [P] [US4] Prueba unitaria de normalización a precio por unidad de medida y de `comparable = false` cuando no aplica, en `tests/unidad/test_normalizacion_precio.py`
+- [ ] T055 [P] [US4] Prueba de integración: el catálogo de canales evita duplicados por nombre normalizado, en `tests/integracion/test_canal_competencia.py`
+- [ ] T056 [P] [US4] Servicio de catálogo de canales de competencia (crear o devolver existente) en `backend/rasero/servicios/competencia.py` (depende de T009)
+- [ ] T057 [US4] Servicio de captura de observación de precio, `origen_captura` limitado a manual/archivo, en `backend/rasero/servicios/competencia.py` (depende de T056)
+- [ ] T058 [P] [US4] Regla de dominio de normalización y antigüedad calculada al leer en `backend/rasero/dominio/comparacion_precios.py` (implementa T054)
+- [ ] T059 [US4] Endpoint `GET/POST /canales-competencia` en `backend/rasero/api/competencia.py` (depende de T056)
+- [ ] T060 [US4] Endpoint `POST /observaciones-precio` en `backend/rasero/api/competencia.py` (depende de T057)
+- [ ] T061 [US4] Endpoint `GET /productos/{id_producto}/comparacion-precios` con `id_sucursal` obligatorio, resolviendo el precio propio con la regla de T022, en `backend/rasero/api/competencia.py` (depende de T022, T058)
+- [ ] T062 [P] [US4] Pantalla de captura de observación de precio en `frontend/src/pantallas/ObservacionPrecio.tsx` (depende de T015, T013)
+- [ ] T063 [US4] Componente de antigüedad con tres portadores (color, forma, texto), nunca solo color, en `frontend/src/componentes/AntiguedadDato.tsx` (depende de T015, T013)
+- [ ] T064 [US4] Pantalla de comparación de precios, registro de Análisis, radio 6px, Source Serif 4, sin ajustar precios, en `frontend/src/pantallas/ComparacionPrecios.tsx` (depende de T015, T061, T063)
+
+**Checkpoint**: User Story 4 funcional junto con las anteriores.
+
+---
+
+## Phase 7: User Story 5 - Cuadrar el inventario con un conteo físico (Priority: P5)
+
+**Goal**: iniciar un conteo, capturar cantidades contadas y ver la diferencia bruta por producto y lote, sin clasificar su causa.
+
+**Independent Test**: iniciar un conteo sobre un subconjunto de productos, capturar diferencias y verificar el ajuste trazable al conteo.
+
+- [ ] T065 [P] [US5] Prueba de integración: al resolver un conteo, cada diferencia genera un `ajuste_conteo` trazable y el saldo anterior sigue siendo reconstruible, en `tests/integracion/test_conteo_fisico.py`
+- [ ] T066 [US5] Servicio de inicio de conteo físico con alcance opcional en `backend/rasero/servicios/conteos.py` (depende de T009)
+- [ ] T067 [US5] Servicio de resolución de conteo: diferencia por producto y lote sin clasificar, genera el ajuste, en `backend/rasero/servicios/conteos.py` (depende de T066)
+- [ ] T068 [US5] Endpoint `POST /conteos-fisicos` en `backend/rasero/api/conteos.py` (depende de T066)
+- [ ] T069 [US5] Endpoint `POST /conteos-fisicos/{id_conteo_fisico}/resolucion` en `backend/rasero/api/conteos.py` (depende de T067)
+- [ ] T070 [P] [US5] Pantalla de inicio de conteo con selección de alcance en `frontend/src/pantallas/ConteoFisico.tsx` (depende de T015, T013)
+- [ ] T071 [US5] Pantalla de captura y resolución de conteo, mostrando la diferencia por producto y lote, en `frontend/src/pantallas/ResolucionConteo.tsx` (depende de T015, T069)
+
+**Checkpoint**: User Story 5 funcional junto con las anteriores.
+
+---
+
+## Phase 8: User Story 6 - Traspasar mercancía entre las dos sucursales (Priority: P6)
+
+**Goal**: despachar un traspaso, mantener la mercancía en tránsito sin que desaparezca del total, y confirmar la recepción exponiendo cualquier discrepancia.
+
+**Independent Test**: despachar un traspaso, verificar que el inventario total no cambia mientras está en tránsito, y confirmar la recepción.
+
+- [ ] T072 [P] [US6] Prueba de integración: la existencia total del sistema es idéntica antes y después de despachar un traspaso, en `tests/integracion/test_traspaso_invariante.py`
+- [ ] T073 [P] [US6] Prueba de integración: una recepción distinta de lo despachado expone la discrepancia por producto sin clasificarla, en `tests/integracion/test_traspaso_discrepancia.py`
+- [ ] T074 [US6] Servicio de despacho: crea `traspaso` y sus movimientos `salida_traspaso` en `backend/rasero/servicios/traspasos.py` (depende de T009)
+- [ ] T075 [US6] Servicio de recepción: crea movimientos `entrada_traspaso` conservando costo y caducidad del lote de origen, calcula discrepancia, en `backend/rasero/servicios/traspasos.py` (depende de T074)
+- [ ] T076 [US6] Endpoint `POST /traspasos` en `backend/rasero/api/traspasos.py` (depende de T074)
+- [ ] T077 [US6] Endpoint `POST /traspasos/{id_traspaso}/recepcion` en `backend/rasero/api/traspasos.py` (depende de T075)
+- [ ] T078 [P] [US6] Pantalla de despacho de traspaso en `frontend/src/pantallas/DespachoTraspaso.tsx` (depende de T015, T013)
+- [ ] T079 [US6] Pantalla de recepción de traspaso, mostrando la discrepancia cuando exista, en `frontend/src/pantallas/RecepcionTraspaso.tsx` (depende de T015, T077)
+
+**Checkpoint**: User Story 6 funcional junto con las anteriores.
+
+---
+
+## Phase 9: User Story 7 - Ver el capital inmovilizado (Priority: P7)
+
+**Goal**: listar los lotes cuya última salida excede el umbral de su categoría, con su valor, sin proponer ninguna acción.
+
+**Independent Test**: con lotes de categorías y antigüedades distintas, verificar que el listado señala exactamente los que superan el umbral de su categoría.
+
+- [ ] T080 [P] [US7] Prueba de integración: umbral corto señala, umbral largo no señala, categoría sin umbral hereda el global, lote sin costo aparece no calculable, en `tests/integracion/test_capital_inmovilizado.py`
+- [ ] T081 [US7] Consulta de capital inmovilizado con `COALESCE(categoria.dias_umbral_inmovilizado, umbral_global)` y `cantidad_restante × costo_unitario` en `backend/rasero/servicios/inventario.py` (depende de T009)
+- [ ] T082 [US7] Endpoint `GET /capital-inmovilizado` en `backend/rasero/api/inventario.py` (depende de T081)
+- [ ] T083 [US7] Pantalla de listado de capital inmovilizado, de solo lectura, sin ninguna acción, en `frontend/src/pantallas/CapitalInmovilizado.tsx` (depende de T015, T082)
+
+**Checkpoint**: User Story 7 funcional junto con las anteriores.
+
+---
+
+## Phase 10: User Story 8 - Sincronizar lo trabajado sin conexión (Priority: P8)
+
+**Goal**: aplicar en el servidor, en orden de marca de tiempo de origen, las operaciones registradas sin conectividad, resolviendo conflictos sin ocultar la operación desplazada.
+
+**Independent Test**: desconectar la red, registrar operaciones, reconectar y verificar que suben en orden y que ninguna se pierde.
+
+> Nota constitucional (v2.0.2, Principio II): esta historia no es opcional pese a ir última en secuencia. Mientras no esté entregada, cualquier demostración depende de conectividad continua y debe declararlo.
+
+- [ ] T084 [P] [US8] Prueba de integración: dos operaciones en conflicto resuelven por la marca de tiempo más antigua en ambas direcciones, y la desplazada queda visible en `conflicto_resuelto`, en `tests/integracion/test_reconciliacion_offline.py`
+- [ ] T085 [US8] Servicio de sincronización: ordena por `marca_tiempo_origen` ascendente y resuelve conflictos por `recurso_afectado` en ambas direcciones, en `backend/rasero/servicios/sincronizacion.py` (depende de T009)
+- [ ] T086 [US8] Endpoint `POST /operaciones-pendientes/sincronizacion` en `backend/rasero/api/sincronizacion.py` (depende de T085)
+- [ ] T087 [P] [US8] Cola local de operaciones pendientes (IndexedDB) con `marca_tiempo_origen` generada en el dispositivo, en `frontend/src/servicios/colaOffline.ts` (depende de T015, T016)
+- [ ] T088 [US8] Disparador de sincronización al recuperar conectividad, contra el endpoint de T086, en `frontend/src/servicios/colaOffline.ts` (depende de T015, T086, T087)
+
+**Checkpoint**: las 8 historias de usuario funcionan de forma independiente.
+
+---
+
+## Phase Final: Polish & Cross-Cutting Concerns
+
+**Propósito**: validación de extremo a extremo y cumplimiento transversal.
+
+- [ ] T089 [P] Ejecutar los 10 escenarios de `quickstart.md` de extremo a extremo y confirmar el resultado esperado de cada uno
+- [ ] T090 [P] Auditar que "Despensa Los Ríos", "Quevedo Centro" y "Buena Fe" no aparecen en ningún identificador técnico, solo como valor de fila en `backend/rasero/semilla.py`
+- [ ] T091 Auditar `frontend/` en busca de color, radio o tipografía incrustados fuera de `frontend/src/estilos/tokens.css`, y confirmar que Inter no aparece en ninguna parte
+- [ ] T092 Ejecutar `pytest tests` completo y confirmar en verde las 6 suites obligatorias (T017, T018, T019, T020, T072, T084) antes de considerar el módulo fusionable
+
+---
+
+## Dependencies & Execution Order
+
+### Dependencias de fase
+
+- **Setup (Fase 1)**: sin dependencias, empieza de inmediato.
+- **Foundational (Fase 2)**: depende de Setup. **Bloquea** todas las historias de usuario.
+- **Historias de usuario (Fases 3-10)**: todas dependen de Foundational. Dentro de cada una, backend antes que frontend, como exige el enunciado.
+- **Polish (Fase final)**: depende de que las historias que se vayan a entregar estén completas.
+
+### Dependencias entre historias
+
+Las 8 historias son independientemente entregables una vez completada Foundational. No hay dependencia dura de una historia sobre otra: comparten esquema y servicios base, pero cada una puede probarse y demostrarse por separado, según sus criterios de "Independent Test" en spec.md. El orden P1→P8 es el de construcción recomendado, no una cadena de bloqueo — con capacidad suficiente, US2 a US8 podrían desarrollarse en paralelo tras el checkpoint de Foundational.
+
+### Dentro de cada historia
+
+- Pruebas obligatorias antes que la implementación que verifican.
+- Reglas de dominio antes que servicios; servicios antes que endpoints; endpoints antes que su cliente de frontend.
+- Backend completo de la historia antes que su frontend, según el enunciado de esta tarea.
+
+### Oportunidades de paralelismo
+
+- Todas las tareas [P] de Setup y Foundational pueden ejecutarse en paralelo.
+- Tras el checkpoint de Foundational, las 8 historias pueden trabajarse en paralelo por distintas personas.
+- Dentro de una historia, las pruebas [P] entre sí, y los componentes de frontend [P] entre sí, son paralelizables.
+
+---
+
+## Parallel Example: User Story 1
+
+```bash
+# Lanzar juntas las cuatro pruebas obligatorias de esta historia:
+Task: "Prueba unitaria de totales de venta en tests/unidad/test_totales_venta.py"
+Task: "Prueba unitaria de selección FEFO en tests/unidad/test_seleccion_fefo.py"
+Task: "Prueba de integración de idempotencia en tests/integracion/test_idempotencia_venta.py"
+Task: "Prueba de integración de saldo/negativo en tests/integracion/test_saldo_existencia.py"
+
+# Lanzar juntas las tres reglas de dominio que esas pruebas verifican:
+Task: "Cálculo de totales en backend/rasero/dominio/totales.py"
+Task: "Selección FEFO en backend/rasero/dominio/seleccion_lote.py"
+Task: "Resolución de precio efectivo en backend/rasero/dominio/resolucion_precio.py"
+```
+
+---
+
+## Implementation Strategy
+
+### MVP primero (User Story 1 únicamente)
+
+1. Completar Fase 1: Setup.
+2. Completar Fase 2: Foundational — crítica, bloquea todo lo demás.
+3. Completar Fase 3: User Story 1, con sus 4 pruebas obligatorias en verde.
+4. **Detenerse y validar**: ejecutar los escenarios 1 a 4 de quickstart.md.
+5. Demostrar: caja funcional, idempotente, con saldo negativo admitido.
+
+### Entrega incremental
+
+1. Setup + Foundational → fundamento listo.
+2. + US1 (venta) → probar de forma independiente → MVP demostrable.
+3. + US2 (entradas) → + US3 (consultas) → + US4 (comparación de precios) → cada una se prueba y demuestra por separado.
+4. + US5 (conteo) → + US6 (traspaso, con su prueba de invariante) → + US7 (capital inmovilizado).
+5. + US8 (sincronización offline) — no opcional pese a ir última; cierra la exigencia del Principio II.
+6. Fase final: quickstart.md completo, auditoría de nomenclatura y de tokens, suite completa en verde.
+
+### Estrategia de equipo en paralelo
+
+Con más de una persona disponible:
+
+1. El equipo completa Setup + Foundational en conjunto — es la única sección estrictamente secuencial.
+2. Completada Foundational, cada historia puede asignarse a una persona distinta, siguiendo el orden P1→P8 solo como prioridad de negocio, no como bloqueo técnico.
+3. Cada historia se integra de forma independiente contra el esquema y los servicios compartidos de Foundational.
+
+---
+
+## Notes
+
+- Las tareas [P] tocan archivos distintos y no dependen de una tarea incompleta.
+- La etiqueta [Story] traza cada tarea a su historia de usuario en spec.md.
+- Las 6 suites obligatorias del Principio III están marcadas y deben pasar antes de fusionar; no hay pruebas de interfaz, maquetación ni componentes visuales.
+- Backend en `backend/`, frontend en `frontend/`, pruebas en `tests/` — las tres en la raíz. Ninguna tarea genera código en `specs/` ni crea `src/` en la raíz del repositorio.
+- Fuera de alcance de este desglose: autenticación más allá del PIN de operador, roles y permisos, devolución de mercancía con reembolso, contenedores Docker y despliegue.

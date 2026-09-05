@@ -1,0 +1,98 @@
+/* Registro de Operación: sin tarjetas, radio 2px, cero sombras (DESIGN.md, La Regla del
+   Filo, No la Sombra). Verde Rasero NO aparece aquí — se reserva para la acción de cobro
+   en la pantalla de venta (La Regla de la Sola Voz). */
+
+.contenedor {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-operacion);
+}
+
+.panel {
+  width: 100%;
+  max-width: 360px;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 24px;
+}
+
+.titulo {
+  margin: 0 0 4px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-tinta);
+}
+
+.subtitulo {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.etiqueta {
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+}
+
+.select,
+.input {
+  font-family: var(--tipografia-operacion);
+  font-size: 15px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+  background: var(--color-superficie-base);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 10px 12px;
+}
+
+.select:focus-visible,
+.input:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}
+
+.input {
+  letter-spacing: 0.3em;
+  text-align: center;
+}
+
+.error {
+  font-size: 13px;
+  color: var(--color-critico);
+  margin: -8px 0 16px;
+}
+
+.boton {
+  width: 100%;
+  font-family: var(--tipografia-operacion);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-operacion);
+  padding: 12px;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  color: var(--color-tinta-suave);
+  border-color: var(--color-borde);
+  cursor: not-allowed;
+}
+
+.boton:not(:disabled):hover {
+  background: var(--color-superficie-base);
+}

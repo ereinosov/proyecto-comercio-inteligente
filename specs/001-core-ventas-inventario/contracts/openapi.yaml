@@ -1,0 +1,970 @@
+openapi: 3.1.0
+
+info:
+  title: Rasero — Core de Ventas e Inventario
+  version: 0.1.0
+  description: |
+    Contrato del módulo 001-core-ventas-inventario. Registra hechos de venta e inventario;
+    no decide acciones. Reglas transversales que aplican a todo el contrato:
+
+    - Importes en cadena decimal con 2 decimales; precios por unidad de medida con 4.
+      Nunca coma flotante.
+    - Pesos de productos a granel en gramos enteros. La presentación en kilogramos es
+      responsabilidad del cliente.
+    - Todos los instantes en RFC 3339 con desplazamiento. El servidor los normaliza a UTC.
+    - Ninguna validación de existencias bloquea el registro de una venta.
+
+servers:
+  - url: http://localhost:8000
+    description: Desarrollo local. La base de datos escucha aparte en el puerto 5442.
+
+tags:
+  - name: turnos
+  - name: ventas
+  - name: inventario
+  - name: traspasos
+  - name: senales
+  - name: competencia
+  - name: conteos
+  - name: sincronizacion
+
+paths:
+
+  /turnos:
+    post:
+      tags: [turnos]
+      summary: Abrir turno de operador
+      description: El operador se elige de una lista y confirma su PIN de cuatro dígitos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_operador, id_sucursal, caja, pin]
+              properties:
+                id_operador: { type: integer }
+                id_sucursal: { type: integer }
+                caja: { type: string }
+                pin:
+                  type: string
+                  pattern: '^[0-9]{4}$'
+                  writeOnly: true
+      responses:
+        '201':
+          description: Turno abierto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Turno' }
+        '401':
+          description: PIN incorrecto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /turnos/{id_turno}/cierre:
+    post:
+      tags: [turnos]
+      summary: Cerrar turno
+      parameters:
+        - $ref: '#/components/parameters/IdTurno'
+      responses:
+        '200':
+          description: Turno cerrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Turno' }
+
+  /ventas:
+    post:
+      tags: [ventas]
+      summary: Registrar una venta
+      description: |
+        Idempotente por `clave_idempotencia`. Un reintento con la misma clave devuelve `200`
+        con la venta original, nunca crea una segunda venta ni movimientos duplicados.
+
+        Si la cantidad excede el saldo, la venta **se registra igualmente** y la respuesta
+        incluye `advertencias`; la existencia queda en negativo hasta el siguiente conteo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VentaNueva' }
+      responses:
+        '201':
+          description: Venta registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Venta' }
+        '200':
+          description: Reintento con clave ya usada; se devuelve la venta original
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Venta' }
+        '422':
+          description: Renglón inválido (cantidad no positiva, o unidad y gramos a la vez)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /ventas/{id_venta}:
+    get:
+      tags: [ventas]
+      summary: Consultar una venta
+      parameters:
+        - $ref: '#/components/parameters/IdVenta'
+      responses:
+        '200':
+          description: Venta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Venta' }
+        '404':
+          description: No existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /ventas/{id_venta}/anulacion:
+    post:
+      tags: [ventas]
+      summary: Anular una venta
+      description: |
+        El operador puede anular ventas de su turno en curso. Una venta de un turno cerrado
+        solo la anula un encargado. La venta anulada permanece visible; nunca se borra.
+        No implementa devolución de mercancía con reembolso: eso queda fuera del módulo.
+      parameters:
+        - $ref: '#/components/parameters/IdVenta'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_operador]
+              properties:
+                id_operador: { type: integer }
+                motivo: { type: string }
+      responses:
+        '201':
+          description: Anulación registrada; existencias repuestas en su lote de origen
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Anulacion' }
+        '403':
+          description: Turno cerrado y el operador no es encargado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: La venta ya estaba anulada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /operadores:
+    get:
+      tags: [turnos]
+      summary: Listar operadores activos
+      description: |
+        Añadido durante /speckit-implement de User Story 1: FR-005 exige que el operador se
+        identifique "eligiéndose de una lista" al abrir turno, y el contrato no exponía ninguna
+        lectura de `operador`. Nunca expone `pin_hash`.
+      responses:
+        '200':
+          description: Operadores activos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Operador' }
+
+  /productos:
+    get:
+      tags: [inventario]
+      summary: Listar el catálogo de productos activos
+      description: |
+        Añadido durante `/speckit-implement` de User Story 1: registrar una venta exige que el
+        punto de venta pueda listar qué productos existen para construir el ticket, y el contrato
+        no exponía ninguna lectura de `producto`. Si `id_sucursal` se indica, `precio_efectivo`
+        se resuelve con la misma regla de `producto_precio_sucursal` que usa la comparación de
+        precios (override si existe, si no el precio base). Sin `id_sucursal`, se devuelve el
+        precio base.
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: false
+          schema: { type: integer }
+          description: Si se indica, resuelve el precio efectivo de esa sucursal
+      responses:
+        '200':
+          description: Catálogo
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Producto' }
+
+  /entradas-inventario:
+    post:
+      tags: [inventario]
+      summary: Registrar entrada por compra a proveedor
+      description: Crea o alimenta un lote con su costo y, si aplica, su fecha de caducidad.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sucursal, id_producto, cantidad, costo_unitario]
+              properties:
+                id_sucursal: { type: integer }
+                id_producto: { type: integer }
+                cantidad:
+                  type: integer
+                  description: Unidades, o gramos si el producto es a granel
+                  minimum: 1
+                costo_unitario:
+                  $ref: '#/components/schemas/PrecioUnitario'
+                fecha_caducidad:
+                  type: string
+                  format: date
+                  nullable: true
+      responses:
+        '201':
+          description: Lote creado o alimentado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Lote' }
+
+  /existencias:
+    get:
+      tags: [inventario]
+      summary: Consultar saldo de existencia
+      description: |
+        El saldo puede ser **negativo** cuando una venta excedió lo disponible. Los clientes
+        deben representarlo como tal; no lo limiten a cero.
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: id_producto
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Saldos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Existencia' }
+
+  /capital-inmovilizado:
+    get:
+      tags: [inventario]
+      summary: Listar lotes con capital inmovilizado
+      description: |
+        Solo hace visible el dato; no propone ni ejecuta acción alguna. Un lote sin costo
+        registrado devuelve `valor_inmovilizado: null` y `valor_calculable: false`,
+        nunca cero.
+      parameters:
+        - name: id_sucursal
+          in: query
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Lotes señalados
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CapitalInmovilizado' }
+
+  /traspasos:
+    post:
+      tags: [traspasos]
+      summary: Despachar un traspaso entre sucursales
+      description: |
+        Crea los movimientos de salida en origen. La mercancía queda en tránsito, perteneciendo
+        a la operación de traspaso: no está disponible en ninguna sucursal pero **sigue contando
+        en el inventario total del sistema**.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sucursal_origen, id_sucursal_destino, renglones]
+              properties:
+                id_sucursal_origen: { type: integer }
+                id_sucursal_destino: { type: integer }
+                renglones:
+                  type: array
+                  minItems: 1
+                  items:
+                    type: object
+                    required: [id_producto, cantidad]
+                    properties:
+                      id_producto: { type: integer }
+                      cantidad: { type: integer, minimum: 1 }
+      responses:
+        '201':
+          description: Traspaso despachado, en tránsito
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Traspaso' }
+
+  /traspasos/{id_traspaso}/recepcion:
+    post:
+      tags: [traspasos]
+      summary: Confirmar la recepción de un traspaso
+      description: |
+        Crea los movimientos de entrada en destino, conservando costo y caducidad del lote de
+        origen. Si lo recibido difiere de lo despachado, la respuesta expone la discrepancia
+        por producto; el sistema no la clasifica ni la absorbe.
+      parameters:
+        - $ref: '#/components/parameters/IdTraspaso'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [renglones]
+              properties:
+                renglones:
+                  type: array
+                  items:
+                    type: object
+                    required: [id_producto, cantidad_recibida]
+                    properties:
+                      id_producto: { type: integer }
+                      cantidad_recibida: { type: integer, minimum: 0 }
+      responses:
+        '200':
+          description: Recepción confirmada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Traspaso' }
+
+  /consultas-no-atendidas:
+    post:
+      tags: [senales]
+      summary: Registrar una consulta no atendida
+      description: |
+        Acción de dos toques desde la pantalla de venta. **No solicita ningún dato del cliente.**
+        El servidor congela el saldo del producto en ese instante, para que 004 pueda distinguir
+        un agotamiento real de un producto que estaba pero no se localizó.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_producto, id_turno]
+              properties:
+                id_producto: { type: integer }
+                id_turno: { type: integer }
+                instante_origen:
+                  type: string
+                  format: date-time
+                  description: Presente solo si la operación se registró sin conectividad
+      responses:
+        '201':
+          description: Consulta registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConsultaNoAtendida' }
+
+  /canales-competencia:
+    get:
+      tags: [competencia]
+      summary: Listar canales de competencia
+      responses:
+        '200':
+          description: Catálogo abierto de canales
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/CanalCompetencia' }
+    post:
+      tags: [competencia]
+      summary: Añadir un canal de competencia
+      description: Catálogo abierto. Se rechaza el duplicado por nombre normalizado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nombre]
+              properties:
+                nombre: { type: string }
+      responses:
+        '201':
+          description: Canal creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CanalCompetencia' }
+        '200':
+          description: Ya existía con el mismo nombre normalizado; se devuelve el existente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/CanalCompetencia' }
+
+  /observaciones-precio:
+    post:
+      tags: [competencia]
+      summary: Capturar una observación de precio de competencia
+      description: |
+        Captura manual o por archivo. La obtención automática desde sitios web de terceros
+        está prohibida y no existe endpoint para ella. La presentación observada se guarda
+        tal cual; la normalización a precio por unidad de medida ocurre al leer.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ObservacionPrecioNueva' }
+      responses:
+        '201':
+          description: Observación registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ObservacionPrecio' }
+
+  /productos/{id_producto}/comparacion-precios:
+    get:
+      tags: [competencia]
+      summary: Comparar el precio propio contra las observaciones vigentes
+      description: |
+        La antigüedad se calcula en el momento de la lectura, nunca se almacena. El cliente debe
+        representarla con tres portadores simultáneos —color, forma y texto— y nunca solo por
+        color. El sistema no ajusta ningún precio.
+
+        El precio propio se resuelve para la sucursal indicada: el override de
+        `producto_precio_sucursal` si existe, o si no el precio base del producto. Es
+        obligatorio indicar la sucursal porque el precio puede diferir entre Quevedo Centro y
+        Buena Fe.
+      parameters:
+        - $ref: '#/components/parameters/IdProducto'
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+          description: Sucursal para la que se resuelve el precio propio a comparar
+      responses:
+        '200':
+          description: Comparación
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ComparacionPrecios' }
+
+  /conteos-fisicos:
+    post:
+      tags: [conteos]
+      summary: Iniciar un conteo físico
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sucursal]
+              properties:
+                id_sucursal: { type: integer }
+                id_productos:
+                  type: array
+                  items: { type: integer }
+                  description: Alcance opcional; ausente ⇒ toda la sucursal
+      responses:
+        '201':
+          description: Conteo abierto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConteoFisico' }
+
+  /conteos-fisicos/{id_conteo_fisico}/resolucion:
+    post:
+      tags: [conteos]
+      summary: Resolver un conteo físico
+      description: |
+        Compara lo contado contra el saldo calculado y expone la diferencia por producto y lote.
+        **No clasifica la causa**: eso pertenece a 006-caja-mermas-fraude. Cada diferencia
+        distinta de cero genera un ajuste trazable a este conteo.
+      parameters:
+        - $ref: '#/components/parameters/IdConteo'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [renglones]
+              properties:
+                renglones:
+                  type: array
+                  items:
+                    type: object
+                    required: [id_producto, cantidad_contada]
+                    properties:
+                      id_producto: { type: integer }
+                      id_lote: { type: integer, nullable: true }
+                      cantidad_contada: { type: integer }
+      responses:
+        '200':
+          description: Conteo resuelto con sus diferencias
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ConteoResuelto' }
+
+  /operaciones-pendientes/sincronizacion:
+    post:
+      tags: [sincronizacion]
+      summary: Sincronizar operaciones ejecutadas sin conectividad
+      description: |
+        El servidor ordena el lote por `marca_tiempo_origen` ascendente y lo aplica en ese orden.
+        Ante dos operaciones sobre el mismo recurso prevalece la de marca más antigua, en ambas
+        direcciones. La desplazada queda en `conflicto_resuelto` con referencia a la que
+        prevaleció y **permanece visible**: nunca se elimina ni se oculta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [operaciones]
+              properties:
+                operaciones:
+                  type: array
+                  minItems: 1
+                  items: { $ref: '#/components/schemas/OperacionPendienteNueva' }
+      responses:
+        '200':
+          description: Resultado por operación
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/OperacionPendiente' }
+
+components:
+
+  parameters:
+    IdTurno:
+      name: id_turno
+      in: path
+      required: true
+      schema: { type: integer }
+    IdVenta:
+      name: id_venta
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+    IdTraspaso:
+      name: id_traspaso
+      in: path
+      required: true
+      schema: { type: integer }
+    IdProducto:
+      name: id_producto
+      in: path
+      required: true
+      schema: { type: integer }
+    IdConteo:
+      name: id_conteo_fisico
+      in: path
+      required: true
+      schema: { type: integer }
+
+  schemas:
+
+    Importe:
+      type: string
+      pattern: '^-?[0-9]+\.[0-9]{2}$'
+      description: Decimal exacto con 2 decimales, como cadena. Nunca coma flotante.
+      examples: ['12.50', '-3.00']
+
+    PrecioUnitario:
+      type: string
+      pattern: '^[0-9]+\.[0-9]{4}$'
+      description: Decimal exacto con 4 decimales. Por unidad, o por kilogramo si es a granel.
+      examples: ['4.7500']
+
+    Moneda:
+      type: string
+      pattern: '^[A-Z]{3}$'
+      description: |
+        Código ISO 4217. El sistema opera en una sola moneda (USD); el campo existe porque la
+        constitución exige que todo importe persistido lleve su moneda asociada.
+      examples: ['USD']
+
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje:
+          type: string
+          description: |
+            Redactado para el operador, indicando la acción correctiva. Nunca contiene trazas
+            técnicas: volcarlas en la interfaz de caja está prohibido.
+
+    Turno:
+      type: object
+      properties:
+        id_turno: { type: integer }
+        id_operador: { type: integer }
+        id_sucursal: { type: integer }
+        caja: { type: string }
+        instante_apertura: { type: string, format: date-time }
+        instante_cierre: { type: string, format: date-time, nullable: true }
+
+    RenglonVentaNuevo:
+      type: object
+      required: [id_producto]
+      properties:
+        id_producto: { type: integer }
+        cantidad_unidades:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Solo para productos que no son a granel
+        cantidad_gramos:
+          type: integer
+          minimum: 1
+          nullable: true
+          description: Solo para productos a granel. Peso leído en báscula
+      description: Exactamente una de las dos cantidades debe venir, y ser positiva.
+
+    VentaNueva:
+      type: object
+      required: [clave_idempotencia, id_turno, renglones]
+      properties:
+        clave_idempotencia:
+          type: string
+          minLength: 8
+          description: Generada por el cliente antes del primer intento y reusada en cada reintento
+        id_turno: { type: integer }
+        referencia_terminal_pago:
+          type: string
+          nullable: true
+          description: |
+            Referencia opaca a la terminal con que se cobró. La entidad terminal_pago es
+            propiedad de 007-pagos-seguridad; este módulo solo guarda la referencia.
+        instante_origen:
+          type: string
+          format: date-time
+          description: Presente solo si la venta se registró sin conectividad
+        renglones:
+          type: array
+          minItems: 1
+          items: { $ref: '#/components/schemas/RenglonVentaNuevo' }
+
+    Venta:
+      type: object
+      properties:
+        id_venta: { type: integer, format: int64 }
+        clave_idempotencia: { type: string }
+        id_turno: { type: integer }
+        id_operador: { type: integer }
+        id_sucursal: { type: integer }
+        referencia_terminal_pago: { type: string, nullable: true }
+        instante: { type: string, format: date-time }
+        total: { $ref: '#/components/schemas/Importe' }
+        moneda: { $ref: '#/components/schemas/Moneda' }
+        anulada: { type: boolean }
+        renglones:
+          type: array
+          items:
+            type: object
+            properties:
+              id_renglon_venta: { type: integer, format: int64 }
+              id_producto: { type: integer }
+              cantidad_unidades: { type: integer, nullable: true }
+              cantidad_gramos: { type: integer, nullable: true }
+              precio_aplicado: { $ref: '#/components/schemas/PrecioUnitario' }
+              importe: { $ref: '#/components/schemas/Importe' }
+              moneda: { $ref: '#/components/schemas/Moneda' }
+              lotes_consumidos:
+                type: array
+                description: Lotes de los que se descontó, en orden de caducidad
+                items:
+                  type: object
+                  properties:
+                    id_lote: { type: integer, nullable: true }
+                    cantidad: { type: integer }
+        advertencias:
+          type: array
+          description: |
+            Por ejemplo, que un renglón dejó la existencia en negativo. Son informativas:
+            la venta ya está registrada y ninguna advertencia impide el cobro.
+          items:
+            type: object
+            properties:
+              codigo: { type: string }
+              mensaje: { type: string }
+              id_producto: { type: integer }
+
+    Anulacion:
+      type: object
+      properties:
+        id_anulacion_venta: { type: integer, format: int64 }
+        id_venta: { type: integer, format: int64 }
+        id_operador: { type: integer }
+        instante: { type: string, format: date-time }
+        motivo: { type: string, nullable: true }
+
+    Lote:
+      type: object
+      properties:
+        id_lote: { type: integer }
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        cantidad_restante: { type: integer }
+        costo_unitario: { $ref: '#/components/schemas/PrecioUnitario' }
+        moneda: { $ref: '#/components/schemas/Moneda' }
+        fecha_caducidad: { type: string, format: date, nullable: true }
+        instante_entrada: { type: string, format: date-time }
+
+    Operador:
+      type: object
+      properties:
+        id_operador: { type: integer }
+        nombre: { type: string }
+        es_encargado: { type: boolean }
+
+    Producto:
+      type: object
+      properties:
+        id_producto: { type: integer }
+        nombre: { type: string }
+        es_granel:
+          type: boolean
+          description: Determina si la cantidad de venta es unidad entera o peso en kg
+        lleva_caducidad: { type: boolean }
+        precio_efectivo:
+          allOf:
+            - $ref: '#/components/schemas/PrecioUnitario'
+          description: |
+            Precio base, o el override de producto_precio_sucursal si se indicó id_sucursal y
+            existe una fila para esa combinación.
+        moneda: { $ref: '#/components/schemas/Moneda' }
+
+    Existencia:
+      type: object
+      properties:
+        id_sucursal: { type: integer }
+        id_producto: { type: integer }
+        cantidad:
+          type: integer
+          description: Unidades o gramos. **Puede ser negativa.**
+        es_granel: { type: boolean }
+
+    CapitalInmovilizado:
+      type: object
+      properties:
+        id_lote: { type: integer }
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        cantidad_restante: { type: integer }
+        dias_sin_salida: { type: integer }
+        dias_umbral_aplicado: { type: integer }
+        umbral_heredado_del_global:
+          type: boolean
+          description: Verdadero cuando la categoría no define umbral propio
+        valor_calculable: { type: boolean }
+        valor_inmovilizado:
+          oneOf:
+            - $ref: '#/components/schemas/Importe'
+            - type: 'null'
+          description: Nulo cuando el lote no tiene costo registrado. Nunca cero por esa causa.
+
+    Traspaso:
+      type: object
+      properties:
+        id_traspaso: { type: integer }
+        id_sucursal_origen: { type: integer }
+        id_sucursal_destino: { type: integer }
+        estado:
+          type: string
+          enum: [en_transito, recibido]
+        instante_despacho: { type: string, format: date-time }
+        instante_recepcion: { type: string, format: date-time, nullable: true }
+        renglones:
+          type: array
+          items:
+            type: object
+            properties:
+              id_producto: { type: integer }
+              cantidad_despachada: { type: integer }
+              cantidad_recibida: { type: integer, nullable: true }
+              discrepancia:
+                type: integer
+                nullable: true
+                description: Recibida − despachada. Se expone sin clasificar ni absorber.
+
+    ConsultaNoAtendida:
+      type: object
+      properties:
+        id_consulta_no_atendida: { type: integer, format: int64 }
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        instante: { type: string, format: date-time }
+        saldo_en_el_instante:
+          type: integer
+          description: Congelado al registrar, para distinguir agotado real de no localizado
+
+    CanalCompetencia:
+      type: object
+      properties:
+        id_canal_competencia: { type: integer }
+        nombre: { type: string }
+        nombre_normalizado: { type: string }
+
+    ObservacionPrecioNueva:
+      type: object
+      required:
+        [id_producto, id_canal_competencia, presentacion_cantidad, presentacion_unidad,
+         precio_observado, fuente, origen_captura]
+      properties:
+        id_producto: { type: integer }
+        id_canal_competencia: { type: integer }
+        presentacion_cantidad: { type: string, description: 'Decimal exacto, hasta 3 decimales' }
+        presentacion_unidad:
+          type: string
+          enum: [unidad, gramo, mililitro]
+        precio_observado: { $ref: '#/components/schemas/Importe' }
+        moneda:
+          allOf:
+            - $ref: '#/components/schemas/Moneda'
+          default: USD
+        fuente: { type: string }
+        origen_captura:
+          type: string
+          enum: [manual, archivo]
+          description: No existe origen automático; el scraping de terceros está prohibido.
+        id_turno: { type: integer, nullable: true }
+
+    ObservacionPrecio:
+      allOf:
+        - $ref: '#/components/schemas/ObservacionPrecioNueva'
+        - type: object
+          properties:
+            id_observacion_precio: { type: integer, format: int64 }
+            instante_captura: { type: string, format: date-time }
+            comparable:
+              type: boolean
+              description: Falso cuando la presentación no admite normalización
+
+    ComparacionPrecios:
+      type: object
+      properties:
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        precio_propio_por_unidad_medida:
+          allOf:
+            - $ref: '#/components/schemas/PrecioUnitario'
+          description: |
+            Resuelto para id_sucursal: override de producto_precio_sucursal si existe, si no el
+            precio base del producto.
+        observaciones:
+          type: array
+          items:
+            type: object
+            properties:
+              id_observacion_precio: { type: integer, format: int64 }
+              canal: { type: string }
+              presentacion: { type: string }
+              precio_observado: { $ref: '#/components/schemas/Importe' }
+              precio_por_unidad_medida:
+                oneOf:
+                  - $ref: '#/components/schemas/PrecioUnitario'
+                  - type: 'null'
+                description: Nulo si la observación no es comparable
+              dias_de_antiguedad:
+                type: integer
+                description: Calculado al leer, nunca almacenado
+              antiguedad_texto:
+                type: string
+                description: 'Texto listo para mostrar, p. ej. "hace 3 d"'
+              indicador_forma:
+                type: string
+                enum: [lleno, medio, hueco]
+                description: |
+                  Portador de forma. Junto al color semántico y al texto, son los tres
+                  portadores simultáneos que exige el sistema de diseño. Nunca solo color.
+
+    ConteoFisico:
+      type: object
+      properties:
+        id_conteo_fisico: { type: integer }
+        id_sucursal: { type: integer }
+        estado:
+          type: string
+          enum: [abierto, resuelto]
+        instante_inicio: { type: string, format: date-time }
+        instante_resolucion: { type: string, format: date-time, nullable: true }
+
+    ConteoResuelto:
+      allOf:
+        - $ref: '#/components/schemas/ConteoFisico'
+        - type: object
+          properties:
+            renglones:
+              type: array
+              items:
+                type: object
+                properties:
+                  id_producto: { type: integer }
+                  id_lote: { type: integer, nullable: true }
+                  cantidad_esperada: { type: integer }
+                  cantidad_contada: { type: integer }
+                  diferencia:
+                    type: integer
+                    description: Contada − esperada. Sin clasificar la causa.
+
+    OperacionPendienteNueva:
+      type: object
+      required: [id_operacion_pendiente, tipo_operacion, carga, recurso_afectado, marca_tiempo_origen]
+      properties:
+        id_operacion_pendiente: { type: string, format: uuid }
+        tipo_operacion:
+          type: string
+          enum: [venta, consulta_no_atendida, anulacion_venta, recepcion_traspaso, resolucion_conteo]
+        carga:
+          type: object
+          additionalProperties: true
+          description: Cuerpo original de la petición, tal como se registró sin conectividad
+        recurso_afectado:
+          type: string
+          description: Clave del recurso sobre el que actúa; base de la detección de conflicto
+        marca_tiempo_origen:
+          type: string
+          format: date-time
+          description: Reportada por el dispositivo, no por el servidor
+
+    OperacionPendiente:
+      allOf:
+        - $ref: '#/components/schemas/OperacionPendienteNueva'
+        - type: object
+          properties:
+            instante_recepcion:
+              type: string
+              format: date-time
+              description: |
+                Puesta por el servidor. Comparada con marca_tiempo_origen revela un reloj de
+                dispositivo desviado, en lugar de dejarlo pasar en silencio.
+            estado:
+              type: string
+              enum: [pendiente_de_sincronizar, sincronizada, conflicto_resuelto]
+            id_operacion_prevaleciente:
+              type: string
+              format: uuid
+              nullable: true
+              description: |
+                Presente cuando esta operación fue desplazada por otra de marca más antigua
+                sobre el mismo recurso. La operación desplazada permanece visible: eliminarla
+                u ocultarla está prohibido.

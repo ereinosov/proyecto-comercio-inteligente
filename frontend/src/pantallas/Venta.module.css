@@ -1,0 +1,245 @@
+/* Pantalla de Venta — contrato de dirección en
+   .impeccable/surfaces/frontend-src-pantallas-venta-tsx.md: tabla de fila expansible,
+   total anclado sin desplazarse. Registro de Operación: alta densidad, sin tarjetas,
+   radio 2px, cero sombras. Verde Rasero aparece UNA SOLA VEZ, en el botón de cobro
+   (DESIGN.md, La Regla de la Sola Voz) — ningún otro elemento de este archivo lo usa. */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+}
+
+.encabezado {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 20px;
+  border-bottom: 1px solid var(--color-borde);
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+}
+
+.cuerpo {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 20px;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  font-size: 14px;
+}
+
+.tabla th {
+  text-align: left;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-borde);
+  position: sticky;
+  top: 0;
+  background: var(--color-superficie-alta);
+}
+
+.tabla td {
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--color-borde);
+  vertical-align: middle;
+}
+
+.num {
+  text-align: right;
+}
+
+.filaAgregar {
+  cursor: pointer;
+  color: var(--color-tinta-suave);
+}
+
+.filaAgregar:hover {
+  background: var(--color-superficie-base);
+}
+
+.filaExpandida {
+  background: var(--color-superficie-base);
+}
+
+.filaExpandida td {
+  padding: 12px;
+}
+
+.formularioFila {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.campoFila {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.campoFila label {
+  font-size: 11px;
+  color: var(--color-tinta-suave);
+}
+
+.selectProducto,
+.inputCantidad {
+  font-family: var(--tipografia-operacion);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 8px 10px;
+}
+
+.selectProducto:focus-visible,
+.inputCantidad:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}
+
+.inputCantidad {
+  width: 100px;
+  text-align: right;
+}
+
+.botonSecundario {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-operacion);
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.botonSecundario:hover {
+  background: var(--color-superficie-base);
+}
+
+.botonTexto {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.advertencia {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--color-atencion);
+}
+
+.advertencia svg {
+  flex-shrink: 0;
+}
+
+/* Pie anclado: el total nunca se desplaza al crecer el ticket (contrato FIRST VIEWPORT). */
+.pie {
+  flex-shrink: 0;
+  position: sticky;
+  bottom: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: var(--color-superficie-alta);
+  border-top: 1px solid var(--color-borde);
+}
+
+.total {
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.totalEtiqueta {
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--color-tinta-suave);
+  margin-right: 8px;
+}
+
+/* Único uso de Verde Rasero en todo el archivo (La Regla de la Sola Voz). */
+.botonCobrar {
+  font-family: var(--tipografia-operacion);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-superficie-alta);
+  background: var(--color-marca);
+  border: 1px solid var(--color-marca);
+  border-radius: var(--radio-operacion);
+  padding: 12px 28px;
+  cursor: pointer;
+  transition: transform 120ms ease, opacity 120ms ease;
+}
+
+.botonCobrar:disabled {
+  background: var(--color-borde);
+  border-color: var(--color-borde);
+  color: var(--color-tinta-suave);
+  cursor: not-allowed;
+}
+
+/* T042 — única animación de la pantalla, y es confirmación de la acción del cajero, no
+   decorativa (constitución, Sistema de Diseño). El propio botón de cobro transiciona a su
+   estado "cobrado": no se añade un ícono o borde de éxito aparte, que repetiría el verde
+   en un segundo elemento. */
+.botonCobrar.confirmado {
+  transform: scale(1.04);
+}
+
+.pantallaConfirmada {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-operacion);
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  color: var(--color-tinta);
+}
+
+.resumenConfirmado {
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 24px 32px;
+  min-width: 320px;
+  text-align: center;
+}
+
+.resumenConfirmado .total {
+  display: block;
+  margin: 8px 0 16px;
+}
+
+.accionesConfirmado {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+}

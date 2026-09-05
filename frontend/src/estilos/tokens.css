@@ -1,0 +1,53 @@
+/* Tokens de diseño del sistema (constitución v2.2.0, sección "Sistema de Diseño"). Variables
+   CSS propias del proyecto — nunca valores incrustados por componente. Este archivo es el
+   insumo textual que consume el paso de invocación de Impeccable (T015). */
+
+:root {
+  /* Paleta — anclada en objetos del comercio físico. Sin fondos oscuros ni degradados. */
+  --color-superficie-base: #F1F4F1;
+  --color-superficie-alta: #FFFFFF;
+  --color-tinta: #1B2621;
+  --color-tinta-suave: #5A6862;
+  --color-marca: #0F5132;
+  --color-borde: #D5DCD6;
+
+  /* Semánticos — reservados exclusivamente a su significado, nunca decorativos. */
+  --color-atencion: #9A5B08;   /* dato envejecido, stock bajo */
+  --color-critico: #8E2A2A;    /* caducado, anomalía */
+  --color-estimado: #1F5673;   /* valor calculado, no observado */
+
+  /* Radios de borde por registro visual. */
+  --radio-operacion: 2px;
+  --radio-analisis: 6px;
+
+  /* Tipografía por registro. IBM Plex Sans con cifras tabulares en Operación; Source Serif 4
+     en Análisis. Inter está PROHIBIDA como tipografía por defecto. */
+  --tipografia-operacion: "IBM Plex Sans", system-ui, sans-serif;
+  --tipografia-analisis: "Source Serif 4", Georgia, serif;
+}
+
+/* Registro de Operación (punto de venta, inventario, arqueo): alta densidad, tabla como
+   elemento principal, sin tarjetas. */
+.registro-operacion {
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  background: var(--color-superficie-base);
+  color: var(--color-tinta);
+}
+
+.registro-operacion table {
+  border-radius: var(--radio-operacion);
+  border-color: var(--color-borde);
+}
+
+/* Registro de Análisis (márgenes, pronóstico, clientes, promociones): aire visual, radio 6px. */
+.registro-analisis {
+  font-family: var(--tipografia-analisis);
+  background: var(--color-superficie-base);
+  color: var(--color-tinta);
+}
+
+.registro-analisis .bloque {
+  border-radius: var(--radio-analisis);
+  border-color: var(--color-borde);
+}

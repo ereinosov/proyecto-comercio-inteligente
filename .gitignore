@@ -1,0 +1,25 @@
+# Python
+**/__pycache__/
+*.py[cod]
+**/.venv/
+**/venv/
+**/*.egg-info/
+**/.pytest_cache/
+**/.ruff_cache/
+
+# Node
+**/node_modules/
+**/dist/
+**/*.tsbuildinfo
+
+# Entorno / secretos
+.env
+.env.*
+!.env.example
+
+# Impeccable: estado de sesion/cache local, no especificacion
+.impeccable/hook.cache.json
+
+# SO
+.DS_Store
+Thumbs.db
