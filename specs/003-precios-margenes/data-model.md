@@ -16,7 +16,7 @@ Este modelo define exactamente las cuatro entidades que la constitución asigna 
 (`costo_producto`, `margen_calculado`, `rol_producto`, `sugerencia_colocacion`) se corrigió antes de
 escribir este documento — ver research.md #2 y el informe de impacto de sincronización al inicio de
 `constitution.md`. No hay discrepancia pendiente entre este documento y la tabla vigente
-(constitución v2.2.4; la entrada de 003 no cambió desde v2.2.3).
+(constitución v2.2.5; la entrada de 003 no cambió desde v2.2.3).
 
 **Frontera de propiedad explícita — lectura y escritura, no posesión**: este módulo consulta
 `producto` (`es_granel`, `precio_vigente`), `producto_precio_sucursal` (override, FR-050),

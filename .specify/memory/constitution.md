@@ -1,18 +1,19 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
-Cambio de versión: 2.2.3 → 2.2.4
-Tipo de cambio: PARCHE — añade `sustitucion_producto` a la lista de
-entidades propias de `004-pronostico-demanda`, detectado al escribir su
-`data-model.md` en `/speckit-plan`. Mismo tipo de corrección que v2.1.1 y
-v2.1.2 sobre 001 y v2.2.3 sobre 003: la lista original era un supuesto
-anterior a la especificación real del módulo, y esta enmienda la completa
-con lo que su spec y su diseño de datos realmente exigen. No cambia ningún
+Cambio de versión: 2.2.4 → 2.2.5
+Tipo de cambio: PARCHE — amplía la entrada de `005-promociones-inteligentes`
+en la tabla de Propiedad de Datos de 3 a 6 entidades, detectado al escribir
+su `spec.md` en `/speckit-specify`. Mismo tipo de corrección que v2.1.1 y
+v2.1.2 sobre 001, v2.2.3 sobre 003 y v2.2.4 sobre 004: la lista original de
+005 era un supuesto anterior a la especificación real del módulo, y esta
+enmienda la completa con lo que su spec realmente exige. No cambia ningún
 principio.
 
-Secundariamente, corrige un desliz de sincronización de v2.2.3: el pie del
-documento quedó citando "Versión: 2.2.2" cuando v2.2.3 ya regía en el cuerpo
-y en el informe. Este cambio lleva el pie a 2.2.4.
+A diferencia de v2.2.4 —que sólo añadió una entidad omitida— y en línea con
+v2.2.3 —que además retiró una entidad mal asignada—, esta enmienda retira dos
+entidades genéricas (`envio_promocional`, `grupo_control`) y añade cinco
+específicas.
 
 Principios modificados: ninguno.
 Secciones añadidas: ninguna.
@@ -21,39 +22,58 @@ Secciones eliminadas: ninguna.
 Revisión de consistencia previa a la enmienda (exigida por la "Puerta de
 propiedad de datos"; el mismo tipo de revisión que en v2.2.3 detectó el
 error de `costo_producto` en 003): se contrastó la entrada COMPLETA de
-`004-pronostico-demanda` —`demanda_observada`, `demanda_corregida`,
-`pronostico`— contra las fronteras declaradas en la propia sección antes de
-escribir esta enmienda. A diferencia de 003, no se halló ninguna entrada que
-contradijera una frontera: las tres son artefactos analíticos derivados
-(serie observada anotada por período, serie corregida por censura/precio/
-promoción/sustitución, y proyección), coherentes con la misma lógica que
-sostiene `margen_calculado` para 003 —"el cálculo derivado con reglas de
-negocio pertenece al módulo que lo produce, no al dueño del dato de origen"—.
-La única omisión era `sustitucion_producto`.
+`005-promociones-inteligentes` —`campania`, `envio_promocional`,
+`grupo_control`— contra la Lectura Crítica n.º 6 ("las promociones son tres
+mecanismos, no uno") y contra las fronteras declaradas en la propia sección.
+Resultado:
+  - `envio_promocional`, entidad genérica única de "envío de promoción",
+    contradice de frente la Lectura Crítica n.º 6, que PROHÍBE modelar las
+    promociones como un mecanismo único. Se retira y se sustituye por una
+    entidad por mecanismo: `cupon` (fecha fija / cumpleaños) y
+    `oferta_recompra` (empuje por patrón de recompra, con reserva de precio).
+    El hecho transversal —que una promoción se redimió en una venta de 001—
+    se modela como `redencion_promocion`, más estrecha y mejor definida que
+    "envío", que consulta `venta` de 001 sin poseerla.
+  - `grupo_control`, la entidad "grupo de control" a secas, es demasiado
+    gruesa para lo que el spec de 005 exige del mecanismo de reactivación:
+    no captura la semilla de aleatorización, la ventana de medición ni el
+    desenlace de retorno por cliente. Se retira y se precisa en dos:
+    `experimento_reactivacion` (semilla, ventana de medición, tasas de retorno
+    por grupo, incrementalidad, resultado de la prueba de significancia y
+    veredicto) y `asignacion_experimento` (una fila por cliente elegible con
+    su grupo tratamiento/control y su resultado de retorno). El grupo de control sigue siendo OBLIGATORIO para este
+    mecanismo (Lectura Crítica n.º 6); la enmienda no lo debilita, lo modela
+    con la granularidad que la medición de incrementalidad necesita.
+  - `campania` se conserva sin cambios como paraguas de una corrida de
+    promoción de un mecanismo dado.
 
 Secciones modificadas:
-  - Propiedad de Datos y Nomenclatura, entrada de `004-pronostico-demanda`:
-      * Se añade `sustitucion_producto`: la relación declarada manualmente
-        entre un producto y otro que puede sustituirlo.
-        `004-pronostico-demanda/spec.md` la exige como tabla propia en
-        FR-032 y User Story 6, y —tras la sesión de `/speckit-clarify` del
-        2026-09-05— también en FR-009 (b), donde el ajuste cruzado de la
-        descensura por quiebre usa esa relación. No estaba en la
-        ratificación original porque esa lista se escribió antes de que
-        existiera el spec de 004. Es el mismo patrón que `rol_producto` de
-        003: una declaración de negocio sobre un producto que NO es un
-        atributo de `producto` (001) y que su módulo modela en tabla propia
-        con FK hacia `producto`, sin alterar el esquema ajeno.
-    Lista resultante de 004: `demanda_observada`, `demanda_corregida`,
-    `pronostico`, `sustitucion_producto` (4 entidades; antes 3).
-  - Fronteras entre funcionalidades adyacentes: nueva viñeta que separa la
-    demanda observada (dato de ventas de 001) de la serie corregida y el
-    pronóstico (cálculo derivado de 004), en paralelo a la viñeta
-    costo/margen de 001/003.
-  - Pie del documento: "Versión: 2.2.2" → "2.2.4"; "Última enmienda:
-    2026-09-04" → "2026-09-05".
+  - Propiedad de Datos y Nomenclatura, entrada de `005-promociones-inteligentes`:
+      * Se retiran `envio_promocional` y `grupo_control`.
+      * Se añaden `cupon`, `oferta_recompra`, `experimento_reactivacion`,
+        `asignacion_experimento` y `redencion_promocion`.
+        `005-promociones-inteligentes/spec.md` exige un mecanismo (y su
+        entidad) por tipo de promoción en las User Stories 1–3 y en FR-001
+        a FR-025, más el registro de redención compartido (FR-005, FR-030) y
+        la marca de "promoción activa" derivada de él (FR-031 a FR-034). No
+        estaban en la ratificación original porque esa lista se escribió
+        antes de que existiera el spec de 005. Mismo patrón que `rol_producto`
+        de 003 y `sustitucion_producto` de 004: declaraciones de negocio que
+        NO son atributos de `cliente`/`producto` de 001/002 y que su módulo
+        modela en tablas propias con FK, sin alterar el esquema ajeno.
+    Lista resultante de 005: `campania`, `cupon`, `oferta_recompra`,
+    `experimento_reactivacion`, `asignacion_experimento`, `redencion_promocion`
+    (6 entidades; antes 3).
+  - Fronteras entre funcionalidades adyacentes: la viñeta que separa la
+    detección de fuga (002) de la decisión de reactivación (005) se amplía
+    para nombrar las entidades de los tres mecanismos de 005, aclarar que la
+    "reserva" del empuje por recompra es de precio y no de inventario (005 no
+    escribe contra `existencia` ni `movimiento_inventario` de 001) y fijar
+    que la marca de "promoción activa" que 004 consume es cálculo derivado
+    propiedad de 005.
+  - Pie del documento: "Versión: 2.2.4" → "2.2.5".
 
-Decisiones de alcance vigentes (sin cambio en 2.2.4):
+Decisiones de alcance vigentes (sin cambio en 2.2.5):
   - `sucursal` es entidad de primera clase con cardinalidad no acotada; el
     alcance del examen cubre exactamente dos sucursales (Quevedo Centro y
     Buena Fe, del juego de datos Despensa Los Ríos).
@@ -69,6 +89,8 @@ Decisiones de alcance vigentes (sin cambio en 2.2.4):
     desde v2.1.2.
   - Propiedad de datos de 003-precios-margenes: 4 entidades vigentes desde
     v2.2.3 (`costo_producto` retirado, `sugerencia_precio` añadida).
+  - Propiedad de datos de 004-pronostico-demanda: 4 entidades vigentes desde
+    v2.2.4 (`sustitucion_producto` añadida).
   - Puerta de sincronización de enmiendas (v2.2.0).
 
 Historial de versiones:
@@ -93,20 +115,30 @@ Historial de versiones:
     corregida a partir de su especificación real (`costo_producto` retirado,
     `sugerencia_precio` añadida), detectada al escribir `data-model.md` de
     003 en `/speckit-plan`.
-  - 2.2.4 (2026-09-05) — esta enmienda: `sustitucion_producto` añadida a
+  - 2.2.4 (2026-09-05) — `sustitucion_producto` añadida a
     `004-pronostico-demanda` a partir de su especificación real (FR-032,
     User Story 6, FR-009 b), detectada al escribir `data-model.md` de 004 en
     `/speckit-plan`; nueva viñeta de frontera demanda-observada/pronóstico;
     y corrección del pie del documento, que v2.2.3 dejó en 2.2.2.
+  - 2.2.5 (2026-09-05) — esta enmienda: propiedad de datos de
+    `005-promociones-inteligentes` ampliada de 3 a 6 entidades
+    (`envio_promocional` y `grupo_control` retiradas; `cupon`,
+    `oferta_recompra`, `experimento_reactivacion`, `asignacion_experimento`
+    y `redencion_promocion` añadidas) para cubrir los tres mecanismos de
+    promoción —cupón por fecha fija, empuje por recompra, reactivación con
+    experimento— más su registro de redención compartido, detectada al
+    escribir `spec.md` de 005 en `/speckit-specify`; ampliación de la viñeta
+    de frontera 002/005.
 
 Artefactos de funcionalidad afectados: las citas que reclaman una versión
 vigente de la constitución ("constitución vX.Y.Z", "verificación contra la
-constitución vX.Y.Z") en spec.md, plan.md y data-model.md de 001, 002 y 003
-se sincronizan a v2.2.4 en este mismo cambio (puerta de sincronización de
-enmiendas, v2.2.0). `004-pronostico-demanda` nace citando v2.2.4. Las citas
-históricas —"la enmienda v2.2.3 que añadió `sugerencia_precio`", "corregidas
-en v2.2.3"— describen qué enmienda introdujo qué regla y NO se barren
-(excepción explícita de la puerta).
+constitución vX.Y.Z") en spec.md, plan.md y data-model.md de 001, 002, 003 y
+004 se sincronizan a v2.2.5 en este mismo cambio (puerta de sincronización de
+enmiendas, v2.2.0). `005-promociones-inteligentes` nace citando v2.2.5. Las
+citas históricas —"la enmienda v2.2.3 que añadió `sugerencia_precio`",
+"`sustitucion_producto` añadida en v2.2.4", "tras la enmienda v2.2.3/v2.2.4"—
+describen qué enmienda introdujo qué regla y NO se barren (excepción explícita
+de la puerta).
 
 TODOs pendientes: ninguno.
 -->
@@ -342,7 +374,12 @@ una enmienda la corrija.
   `sustitucion_producto`. (`sustitucion_producto` añadida por la enmienda **v2.2.4**, a raíz de la
   especificación real de 004 — FR-032, User Story 6 y FR-009 b; ver frontera demanda/pronóstico más
   abajo.)
-- **005-promociones-inteligentes**: `campania`, `envio_promocional`, `grupo_control`.
+- **005-promociones-inteligentes**: `campania`, `cupon`, `oferta_recompra`,
+  `experimento_reactivacion`, `asignacion_experimento`, `redencion_promocion`. (`envio_promocional` y
+  `grupo_control` retirados, y `cupon`, `oferta_recompra`, `experimento_reactivacion`,
+  `asignacion_experimento` y `redencion_promocion` añadidos, por la enmienda **v2.2.5**, a raíz de la
+  especificación real de 005 — tres mecanismos de promoción distintos, cada uno con su entidad, más
+  el registro de redención compartido; ver frontera de "promoción" más abajo.)
 - **006-caja-mermas-fraude**: `arqueo`, `merma`, `anomalia_caja`.
 - **007-pagos-seguridad**: `terminal_pago`, `medio_pago`, `cobertura_pago`,
   `bitacora_auditoria`.
@@ -358,7 +395,15 @@ Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de conf
   causa** de esa diferencia —merma, robo, error de registro— pertenece a 006, que no ejecuta
   conteos.
 - La **detección** de riesgo de fuga pertenece a clientes (002); la **decisión** de ofrecer
-  descuento de reactivación pertenece a promociones (005).
+  descuento de reactivación pertenece a promociones (005). Las **tres promociones son tres
+  mecanismos distintos** (Lectura Crítica n.º 6), cada uno con su propia entidad en 005: `cupon`
+  (fecha fija / cumpleaños), `oferta_recompra` (empuje por recompra, con reserva **de precio**, no
+  de inventario — 005 no escribe contra `existencia` ni `movimiento_inventario` de 001) y
+  `experimento_reactivacion` + `asignacion_experimento` (reactivación con grupo de control
+  obligatorio). Que una promoción se redimió en una venta es `redencion_promocion`, propiedad de
+  005, que **consulta** `venta` de 001 sin poseerla. La **marca de "promoción activa"** por
+  producto, sucursal y período que 004 consume para corregir su serie de demanda es un cálculo
+  derivado de esas redenciones y pertenece a 005; 004 la lee, no la reimplementa.
 - La **demanda observada** —las ventas ya registradas, agregadas a una serie— descansa sobre datos
   de 001 (`venta`, `renglon_venta`, `movimiento_inventario`); la **serie de demanda corregida** por
   censura de quiebre, precio y promoción, y el **pronóstico** que se deriva de ella, son cálculo
@@ -538,4 +583,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.2.4 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-05
+**Versión**: 2.2.5 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-05
