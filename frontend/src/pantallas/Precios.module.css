@@ -1,0 +1,159 @@
+/* Pantalla de Precios y Márgenes — registro de Análisis: una decisión por bloque, aire visual,
+   radio 6px, Source Serif 4 (DESIGN.md). Sin Verde Rasero: esta pantalla no tiene ninguna acción
+   que comprometa dinero — "La Regla de la Sola Voz" exige CERO apariciones aquí, igual que ya
+   declara Clientes.tsx. */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.encabezado {
+  flex-shrink: 0;
+  padding: 24px 32px 16px;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 24px;
+  padding: 0 32px 32px;
+  overflow: hidden;
+}
+
+.instruccion,
+.error {
+  color: var(--color-tinta-suave);
+  font-size: 15px;
+  max-width: 70ch;
+}
+
+.error {
+  color: var(--color-critico);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 360px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Un bloque = una decisión (DESIGN.md, registro de Análisis): el producto completo con su
+   margen, nunca una fila densa de tabla como en Operación. */
+.bloque {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  text-align: left;
+  font-family: var(--tipografia-analisis);
+  font-size: 15px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.bloqueSeleccionado {
+  border-color: var(--color-tinta);
+}
+
+.panelDetalle {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 28px 32px;
+}
+
+.nombreDetalle {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+/* Único momento de animación deliberado al elegir un producto de la lista — mismo patrón que
+   Clientes.tsx (remount por producto vía `key`, nunca un efecto repetido en cada re-render). */
+.detalleRevelado {
+  animation: revelar 320ms ease-out;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nombreProducto {
+  max-width: 60ch;
+}
+
+.margenValor {
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  color: var(--color-tinta);
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.margenNoCalculable {
+  font-family: var(--tipografia-analisis);
+  font-style: italic;
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+/* Costo no confiable (FR-004): tres portadores simultáneos — color, forma, texto — nunca solo
+   el número (DESIGN.md, "La Regla de los Tres Portadores"). */
+.margenNoConfiable {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--color-atencion);
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.puntoMedio {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  flex-shrink: 0;
+}

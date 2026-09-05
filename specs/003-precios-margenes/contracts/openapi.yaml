@@ -1,0 +1,350 @@
+openapi: 3.1.0
+
+info:
+  title: Rasero — Precios y Márgenes
+  version: 0.1.0
+  description: |
+    Contrato del módulo 003-precios-margenes. Calcula el margen real de un producto, permite
+    clasificar su rol comercial y sugiere precio y colocación en zona de exhibición. Reglas
+    transversales que aplican a todo el contrato:
+
+    - Importes, costos y precios en cadena decimal con 4 decimales. Márgenes (ratios) como
+      número entre 0 y 1. Nunca coma flotante binaria en el almacenamiento.
+    - Todos los instantes en RFC 3339 con desplazamiento. El servidor los normaliza a UTC.
+    - Este contrato NUNCA aplica una sugerencia por su cuenta: toda aplicación exige una llamada
+      explícita a un endpoint `/aplicar`, iniciada por el encargado.
+    - Ninguna ruta de este contrato participa en `POST /ventas` de 001-core-ventas-inventario.
+
+servers:
+  - url: http://localhost:8000
+    description: Desarrollo local. Mismo servidor y misma base que 001/002 (puerto 5442).
+
+tags:
+  - name: margenes
+  - name: rol-producto
+  - name: sugerencias
+
+paths:
+
+  /margenes:
+    get:
+      tags: [margenes]
+      summary: Listar el margen real de los productos de una sucursal
+      description: |
+        Registro de Análisis. Cada margen se recalcula al leer (research.md #4): el valor
+        devuelto siempre refleja el costo y precio vigentes en el instante de la consulta.
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Márgenes por producto
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MargenProducto' }
+
+  /productos/{id_producto}/margen:
+    get:
+      tags: [margenes]
+      summary: Margen real de un producto en una sucursal
+      parameters:
+        - $ref: '#/components/parameters/IdProducto'
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Margen del producto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/MargenProducto' }
+        '404':
+          description: El producto no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /productos/{id_producto}/rol:
+    get:
+      tags: [rol-producto]
+      summary: Consultar el rol comercial vigente de un producto
+      description: |
+        Añadido durante la implementación de User Story 2: el diseño original solo preveía el
+        `PUT` de asignación y no contemplaba que el frontend necesita leer la clasificación
+        vigente para mostrarla (mismo tipo de vacío que `001` encontró para `GET /productos`).
+        `rol: null` significa "sin clasificar" (FR-007), nunca un valor supuesto.
+      parameters:
+        - $ref: '#/components/parameters/IdProducto'
+      responses:
+        '200':
+          description: Rol vigente (o "sin clasificar")
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RolProductoDetalle' }
+    put:
+      tags: [rol-producto]
+      summary: Asignar o cambiar el rol comercial de un producto
+      description: |
+        FR-005, FR-006. Sobrescribe la clasificación anterior si existía; no lleva historial de
+        cambios previos (research.md #3).
+      parameters:
+        - $ref: '#/components/parameters/IdProducto'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [rol]
+              properties:
+                rol: { $ref: '#/components/schemas/RolProducto' }
+      responses:
+        '200':
+          description: Rol asignado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/RolProductoDetalle' }
+        '404':
+          description: El producto no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /productos/{id_producto}/sugerencia-precio:
+    get:
+      tags: [sugerencias]
+      summary: Generar (o consultar la última) sugerencia de precio de un producto
+      description: |
+        FR-008 a FR-014. Cada llamada genera una fila nueva de historial (research.md, append-only)
+        salvo que el cliente pida explícitamente la última ya generada vía `solo_ultima=true`.
+        Incluye los insumos usados para que la sugerencia sea explicable (FR-014, Principio V).
+      parameters:
+        - $ref: '#/components/parameters/IdProducto'
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: solo_ultima
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+          description: Si es true, devuelve la última sugerencia ya generada sin crear una nueva.
+      responses:
+        '200':
+          description: Sugerencia de precio
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SugerenciaPrecio' }
+        '404':
+          description: El producto no existe, o solo_ultima=true y no hay ninguna generada aún
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /productos/{id_producto}/sugerencia-precio/aplicar:
+    post:
+      tags: [sugerencias]
+      summary: Aplicar una sugerencia de precio ya generada
+      description: |
+        FR-012, FR-013. Crea o actualiza producto_precio_sucursal (001) con el precio sugerido, en
+        la misma transacción en que marca la sugerencia como aplicada. El sistema nunca llega a
+        este endpoint por su cuenta: requiere una llamada explícita del encargado.
+      parameters:
+        - $ref: '#/components/parameters/IdProducto'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sugerencia_precio]
+              properties:
+                id_sugerencia_precio: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Sugerencia aplicada; override de precio por sucursal actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SugerenciaPrecio' }
+        '404':
+          description: La sugerencia no existe o no pertenece a ese producto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: La sugerencia ya estaba aplicada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /productos/{id_producto}/sugerencia-colocacion:
+    get:
+      tags: [sugerencias]
+      summary: Generar (o consultar la última) sugerencia de colocación de un producto
+      description: |
+        FR-015 a FR-019. Usa exclusivamente zonas ya catalogadas por 001 para la sucursal
+        indicada (research.md #6, ranking por margen real contra grado_privilegio).
+      parameters:
+        - $ref: '#/components/parameters/IdProducto'
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: solo_ultima
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: Sugerencia de colocación
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SugerenciaColocacion' }
+        '404':
+          description: El producto no existe, no hay zonas catalogadas para esa sucursal (FR-018), o solo_ultima=true sin ninguna generada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /productos/{id_producto}/sugerencia-colocacion/aplicar:
+    post:
+      tags: [sugerencias]
+      summary: Confirmar que una sugerencia de colocación ya fue ejecutada físicamente
+      description: |
+        FR-017. El sistema NUNCA reubica el producto por su cuenta; este endpoint solo registra
+        que el encargado ya lo hizo.
+      parameters:
+        - $ref: '#/components/parameters/IdProducto'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sugerencia_colocacion]
+              properties:
+                id_sugerencia_colocacion: { type: integer, format: int64 }
+      responses:
+        '200':
+          description: Sugerencia marcada como aplicada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SugerenciaColocacion' }
+        '404':
+          description: La sugerencia no existe o no pertenece a ese producto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: La sugerencia ya estaba aplicada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+
+  parameters:
+    IdProducto:
+      name: id_producto
+      in: path
+      required: true
+      schema: { type: integer }
+
+  schemas:
+
+    RolProducto:
+      type: string
+      enum: [gancho_trafico, generador_margen]
+
+    RolProductoDetalle:
+      type: object
+      properties:
+        id_producto: { type: integer }
+        rol:
+          oneOf:
+            - $ref: '#/components/schemas/RolProducto'
+            - type: 'null'
+          description: Nulo = "sin clasificar" (FR-007)
+        instante_asignacion: { type: string, format: date-time, nullable: true }
+
+    MargenProducto:
+      type: object
+      properties:
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        costo_vigente:
+          type: string
+          nullable: true
+          description: "Decimal con 4 decimales. Nulo si no hay costo vigente (FR-003)"
+        precio_vigente: { type: string, description: "Decimal con 4 decimales" }
+        margen:
+          type: number
+          nullable: true
+          description: "Ratio 0-1 sobre el precio de venta. Nulo si no calculable (FR-003)"
+        confiable:
+          type: boolean
+          description: "Falso cuando el costo vigente es cero o negativo (FR-004)"
+        instante_calculo: { type: string, format: date-time }
+
+    SugerenciaPrecio:
+      type: object
+      description: Incluye los insumos que la originaron, para que sea explicable (FR-014).
+      properties:
+        id_sugerencia_precio: { type: integer, format: int64 }
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        precio_sugerido: { type: string, description: "Decimal con 4 decimales" }
+        margen_usado:
+          type: number
+          nullable: true
+          description: Ratio 0-1 usado en el instante de generación
+        rol_usado:
+          oneOf:
+            - $ref: '#/components/schemas/RolProducto'
+            - type: 'null'
+          description: Nulo = "sin clasificar" en el instante de generación (FR-007)
+        observacion_competencia_usada:
+          type: object
+          nullable: true
+          description: Nulo = "sin referencia de competencia" (FR-010)
+          properties:
+            id_observacion_precio: { type: integer, format: int64 }
+            canal: { type: string }
+            precio_por_unidad_medida: { type: string }
+            dias_de_antiguedad:
+              type: integer
+              description: Calculado al leer, mismo patrón que 001 (nunca almacenado)
+        instante_generacion: { type: string, format: date-time }
+        aplicada: { type: boolean }
+        instante_aplicacion: { type: string, format: date-time, nullable: true }
+
+    SugerenciaColocacion:
+      type: object
+      properties:
+        id_sugerencia_colocacion: { type: integer, format: int64 }
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        id_zona_exhibicion: { type: integer }
+        zona_nombre: { type: string }
+        margen_usado:
+          type: number
+          nullable: true
+        rol_usado:
+          oneOf:
+            - $ref: '#/components/schemas/RolProducto'
+            - type: 'null'
+        instante_generacion: { type: string, format: date-time }
+        aplicada:
+          type: boolean
+          description: Verdadero cuando el encargado confirmó haberla ejecutado físicamente (FR-017)
+        instante_aplicacion: { type: string, format: date-time, nullable: true }
+
+    Error:
+      type: object
+      properties:
+        detalle: { type: string }

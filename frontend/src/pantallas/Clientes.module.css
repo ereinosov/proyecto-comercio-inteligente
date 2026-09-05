@@ -1,0 +1,243 @@
+/* Pantalla de Clientes — registro de Análisis: una decisión por bloque, aire visual, líneas
+   bajo 80 caracteres, radio 6px, Source Serif 4 (DESIGN.md). Sin Verde Rasero: esta pantalla no
+   tiene ninguna acción que comprometa dinero, así que "La Regla de la Sola Voz" exige CERO
+   apariciones aquí, no una — el verde queda exclusivo del botón de cobro de Venta.tsx. */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.encabezado {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 32px 16px;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.controlOrden {
+  display: flex;
+  gap: 8px;
+}
+
+.ordenActivo,
+.ordenInactivo {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 6px 14px;
+  cursor: pointer;
+  background: var(--color-superficie-alta);
+}
+
+.ordenActivo {
+  color: var(--color-tinta);
+  border-color: var(--color-tinta);
+}
+
+.ordenInactivo {
+  color: var(--color-tinta-suave);
+}
+
+.cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 24px;
+  padding: 0 32px 32px;
+  overflow: hidden;
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 320px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.vacio {
+  color: var(--color-tinta-suave);
+  font-size: 14px;
+}
+
+/* Un bloque = una decisión (constitución, registro de Análisis): el cliente completo, nunca
+   una fila densa de tabla como en Operación. */
+.bloque {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  text-align: left;
+  font-family: var(--tipografia-analisis);
+  font-size: 15px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.bloqueSeleccionado {
+  border-color: var(--color-tinta);
+}
+
+.nombreCliente {
+  max-width: 60ch;
+}
+
+.valorResumen {
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  flex-shrink: 0;
+  margin-left: 12px;
+}
+
+.panelDetalle {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 28px 32px;
+}
+
+.instruccion,
+.error {
+  color: var(--color-tinta-suave);
+  font-size: 15px;
+  max-width: 70ch;
+}
+
+.error {
+  color: var(--color-critico);
+}
+
+/* Único momento de animación deliberado de esta pantalla: revelar el detalle de un cliente
+   (constitución, ejemplo textual del registro de Análisis). Un remount por cliente (key en el
+   padre), nunca un efecto repetido en cada re-render. */
+.detalleRevelado {
+  animation: revelar 320ms ease-out;
+}
+
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.nombreDetalle {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.avisoInsuficiente {
+  color: var(--color-tinta-suave);
+  font-size: 14px;
+  max-width: 60ch;
+  margin-top: 20px;
+}
+
+.desglose {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin: 24px 0 0;
+}
+
+.bloqueDesglose {
+  border-top: 1px solid var(--color-borde);
+  padding-top: 10px;
+}
+
+.bloqueDesglose dt {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+}
+
+.bloqueDesglose dd {
+  margin: 4px 0 0;
+  font-size: 18px;
+}
+
+.compuesto {
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+
+/* Estado de fuga: tres portadores simultáneos (color, forma, texto) — nunca solo color
+   (constitución, redundancia de portadores). Los puntos "lleno/medio/hueco" son el segundo
+   portador; el texto explícito de antigüedad es el tercero. */
+.fugaOk,
+.fugaNeutra,
+.fugaAtencion,
+.fugaCritica {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+}
+
+.fugaOk,
+.fugaNeutra {
+  color: var(--color-tinta-suave);
+}
+
+.fugaAtencion {
+  color: var(--color-atencion);
+}
+
+.fugaCritica {
+  color: var(--color-critico);
+}
+
+.puntoLleno,
+.puntoMedio,
+.puntoHueco {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+}
+
+.puntoLleno {
+  background: currentColor;
+}
+
+.puntoMedio {
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+
+.puntoHueco {
+  background: transparent;
+}

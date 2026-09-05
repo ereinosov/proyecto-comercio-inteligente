@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-09-04T22:45:00Z",
+  "generatedAt": "2026-09-05T16:00:00Z",
   "title": "Design System: Rasero",
   "extensions": {
     "colorMeta": {
@@ -97,6 +97,38 @@
       "description": "Hace visible lo que el sistema no sabe con certeza. Tres portadores simultáneos: color, forma y texto.",
       "html": "<span class=\"ds-antiguedad ds-antiguedad--atencion\"><svg width=\"10\" height=\"10\" viewBox=\"0 0 10 10\" aria-hidden=\"true\"><circle cx=\"5\" cy=\"5\" r=\"4\" fill=\"none\" stroke=\"currentColor\" stroke-width=\"2\"></circle><path d=\"M5 1 A4 4 0 0 1 5 9 Z\" fill=\"currentColor\"></path></svg>hace 3 d</span>",
       "css": ".ds-antiguedad { display: inline-flex; align-items: center; gap: 6px; font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 12px; font-variant-numeric: tabular-nums; } .ds-antiguedad--atencion { color: var(--color-atencion, #9A5B08); } .ds-antiguedad--critico { color: var(--color-critico, #8E2A2A); } .ds-antiguedad--estimado { color: var(--color-estimado, #1F5673); }"
+    },
+    {
+      "name": "Identificar cliente",
+      "kind": "chip",
+      "refersTo": "chip-cliente-identificado",
+      "description": "Paso opcional en el encabezado de Venta; nunca bloquea el cobro. Colapsa a un chip removible en un toque una vez identificado.",
+      "html": "<span class=\"ds-chip-cliente\">Cliente: Ana Pérez<button class=\"ds-chip-cliente-quitar\" aria-label=\"Quitar cliente identificado\">✕</button></span>",
+      "css": ".ds-chip-cliente { display: inline-flex; align-items: center; gap: 6px; font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 13px; color: var(--color-tinta, #1B2621); } .ds-chip-cliente-quitar { font-size: 12px; color: var(--color-tinta-suave, #5A6862); background: transparent; border: none; padding: 0; cursor: pointer; line-height: 1; }"
+    },
+    {
+      "name": "Resumen de valor de cliente",
+      "kind": "custom",
+      "refersTo": null,
+      "description": "Información de contexto durante el cobro, nunca la confirmación de una acción: no se anima al aparecer. Datos insuficientes se declaran en texto, nunca como 0.",
+      "html": "<span class=\"ds-resumen-valor\">· Valor <span class=\"ds-resumen-valor-cifra\">62</span></span>",
+      "css": ".ds-resumen-valor { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--color-tinta-suave, #5A6862); } .ds-resumen-valor-cifra { font-weight: 600; color: var(--color-tinta, #1B2621); }"
+    },
+    {
+      "name": "Bloque de Análisis",
+      "kind": "card",
+      "refersTo": "bloque-analisis",
+      "description": "Primer componente real del registro de Análisis: una decisión por bloque, nunca una fila de tabla densa. El seleccionado marca su borde en Tinta.",
+      "html": "<button class=\"ds-bloque-analisis ds-bloque-analisis--seleccionado\"><span>Cliente Alta Frecuencia</span><span class=\"ds-bloque-analisis-valor\">58</span></button>",
+      "css": ".ds-bloque-analisis { width: 100%; display: flex; justify-content: space-between; align-items: baseline; text-align: left; font-family: var(--tipografia-analisis, \"Source Serif 4\", Georgia, serif); font-size: 15px; color: var(--color-tinta, #1B2621); background: var(--color-superficie-alta, #FFFFFF); border: 1px solid var(--color-borde, #D5DCD6); border-radius: var(--radio-analisis, 6px); padding: 14px 16px; cursor: pointer; } .ds-bloque-analisis--seleccionado { border-color: var(--color-tinta, #1B2621); } .ds-bloque-analisis-valor { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--color-tinta-suave, #5A6862); }"
+    },
+    {
+      "name": "Sugerencia de precio y colocación",
+      "kind": "card",
+      "refersTo": null,
+      "description": "Tarjeta de Análisis que muestra margen usado, rol usado y (para precio) la observación de competencia con sus tres portadores de antigüedad. Aplicar no usa el Verde Rasero; se confirma con texto y un único momento de animación.",
+      "html": "<section class=\"ds-tarjeta-sugerencia\"><h3>Precio sugerido</h3><p class=\"ds-tarjeta-sugerencia-cifra\">$2.0000</p><dl class=\"ds-tarjeta-sugerencia-insumos\"><div><dt>Margen usado</dt><dd>60%</dd></div><div><dt>Rol usado</dt><dd>Gancho de tráfico</dd></div></dl><button class=\"ds-tarjeta-sugerencia-boton\">Aplicar precio</button></section>",
+      "css": ".ds-tarjeta-sugerencia { font-family: var(--tipografia-analisis, \"Source Serif 4\", Georgia, serif); color: var(--color-tinta, #1B2621); border-top: 1px solid var(--color-borde, #D5DCD6); padding-top: 14px; } .ds-tarjeta-sugerencia h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; } .ds-tarjeta-sugerencia-cifra { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 600; margin: 0 0 10px; } .ds-tarjeta-sugerencia-insumos { font-size: 13px; margin: 0 0 14px; } .ds-tarjeta-sugerencia-insumos dt { color: var(--color-tinta-suave, #5A6862); font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); } .ds-tarjeta-sugerencia-boton { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 13px; border: 1px solid var(--color-tinta, #1B2621); border-radius: var(--radio-analisis, 6px); padding: 8px 16px; background: var(--color-superficie-alta, #FFFFFF); color: var(--color-tinta, #1B2621); cursor: pointer; }"
     }
   ],
   "narrative": {
@@ -139,6 +171,11 @@
         "name": "La Regla de los Tres Portadores",
         "body": "Ningún dato con antigüedad o incertidumbre se comunica solo con color. Un portador único falla ante daltonismo, impresión en blanco y negro y reflejo de pantalla — las tres condiciones normales de un local comercial.",
         "section": "components"
+      },
+      {
+        "name": "La Regla del Registro Sin Dinero",
+        "body": "Una pantalla que no tiene ninguna acción que comprometa dinero no usa el Verde Rasero ni una sola vez. \"Una vez por pantalla\" es un máximo, no una cuota que cada pantalla deba alcanzar — Clientes.tsx es la primera superficie del sistema en quedar en cero apariciones, y es el comportamiento correcto, no una omisión.",
+        "section": "components"
       }
     ],
     "dos": [
@@ -146,7 +183,9 @@
       "Do componer toda cifra de dinero y peso con cifras tabulares reales.",
       "Do transmitir profundidad con el salto de tono #F1F4F1 → #FFFFFF y el borde #D5DCD6.",
       "Do acompañar todo dato incierto o envejecido con sus tres portadores.",
-      "Do reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla."
+      "Do reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla — y cero veces en una pantalla que no tiene esa acción.",
+      "Do revelar el detalle de un bloque de Análisis con una única transición por selección, nunca con hover ni fade-in repetido en cada bloque de la lista.",
+      "Do mantener cualquier identificación o dato de contexto (como identificar a un cliente en caja) reversible en un toque y fuera del camino crítico de la acción que compromete dinero."
     ],
     "donts": [
       "Don't usar box-shadow en ninguna parte del sistema.",
@@ -154,7 +193,8 @@
       "Don't usar los semánticos (#9A5B08, #8E2A2A, #1F5673) por énfasis o decoración.",
       "Don't envolver grupos de datos en tarjetas dentro del registro de Operación.",
       "Don't usar Inter como tipografía por defecto.",
-      "Don't comunicar antigüedad o incertidumbre solo con color."
+      "Don't comunicar antigüedad o incertidumbre solo con color.",
+      "Don't animar la aparición de un dato de contexto (como un resumen o valor) que no confirma una acción del usuario — la animación se reserva para confirmaciones y revelaciones deliberadas, nunca para decorar la llegada de un dato."
     ]
   }
 }

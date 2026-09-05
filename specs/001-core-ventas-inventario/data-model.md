@@ -20,7 +20,7 @@ propiedad, y ambas ya fueron incorporadas por enmienda:
   haría imposible responder a la presión competitiva local.
 
 **No hay discrepancia pendiente**: las 20 entidades de este documento coinciden con la tabla
-vigente (constitución v2.2.2).
+vigente (constitución v2.2.3).
 
 `traspaso` deliberadamente **no** tiene tabla de renglones: sus líneas son los propios movimientos
 de inventario que lo referencian, lo que evita una segunda entidad nueva.

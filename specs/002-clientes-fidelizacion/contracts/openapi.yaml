@@ -1,0 +1,270 @@
+openapi: 3.1.0
+
+info:
+  title: Rasero — Clientes y Fidelización
+  version: 0.1.0
+  description: |
+    Contrato del módulo 002-clientes-fidelizacion. Mide valor de cliente y detecta fuga
+    silenciosa; no decide ninguna acción promocional (eso es 005-promociones-inteligentes).
+    Reglas transversales que aplican a todo el contrato:
+
+    - Importes en cadena decimal con 2 decimales. Nunca coma flotante.
+    - Todos los instantes en RFC 3339 con desplazamiento. El servidor los normaliza a UTC.
+    - Identificar a un cliente durante una venta es siempre opcional; este contrato nunca
+      participa en la transacción de `POST /ventas` de 001-core-ventas-inventario.
+    - Un cliente anonimizado (ver `cliente.anonimizado`) nunca devuelve nombre, fecha de
+      nacimiento ni contacto, aunque el identificador y sus métricas agregadas sigan existiendo.
+
+servers:
+  - url: http://localhost:8000
+    description: Desarrollo local. Mismo servidor y misma base que 001 (puerto 5442).
+
+tags:
+  - name: clientes
+  - name: visitas
+
+paths:
+
+  /clientes:
+    post:
+      tags: [clientes]
+      summary: Registrar un cliente
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ClienteNuevo' }
+      responses:
+        '201':
+          description: Cliente registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Cliente' }
+        '422':
+          description: Falta nombre o fecha de nacimiento (FR-001)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      tags: [clientes]
+      summary: Listar clientes con su valor compuesto
+      description: |
+        Registro de Análisis. Devuelve la puntuación compuesta de cada cliente
+        (FR-011a); el desglose completo se obtiene en `GET /clientes/{id_cliente}`.
+        Un cliente en `datos_insuficientes` aparece con `valor: null`, nunca con 0.
+      parameters:
+        - name: orden
+          in: query
+          schema: { type: string, enum: [valor, monto_total], default: valor }
+      responses:
+        '200':
+          description: Listado
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ClienteResumenValor' }
+
+  /clientes/busqueda:
+    get:
+      tags: [clientes]
+      summary: Buscar cliente para identificación opcional en punto de venta
+      description: |
+        Uso desde el registro de Operación (Venta.tsx). Responde solo lo necesario para
+        una identificación rápida y no bloqueante (FR-003, SC-006): nombre y puntuación
+        compuesta, nunca el desglose.
+      parameters:
+        - name: q
+          in: query
+          required: true
+          schema: { type: string, minLength: 1 }
+      responses:
+        '200':
+          description: Coincidencias
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ClienteResumenValor' }
+
+  /clientes/cumpleanos:
+    get:
+      tags: [clientes]
+      summary: Clientes que cumplen años en un rango de fechas
+      description: |
+        FR-012. Expuesto para que 005-promociones-inteligentes decida sobre el cupón de
+        cumpleaños; este endpoint no aplica ni sugiere ninguna acción (FR-013). Excluye
+        clientes anonimizados (ya no tienen fecha de nacimiento).
+      parameters:
+        - name: desde
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: hasta
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Clientes cuyo cumpleaños cae en el rango
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/ClienteCumpleanos' }
+
+  /clientes/{id_cliente}:
+    get:
+      tags: [clientes]
+      summary: Detalle de un cliente
+      description: |
+        Registro de Análisis. Incluye el desglose de las tres dimensiones (FR-011b) y el
+        estado de fuga con su intervalo esperado.
+      parameters:
+        - $ref: '#/components/parameters/IdCliente'
+      responses:
+        '200':
+          description: Cliente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ClienteDetalle' }
+        '404':
+          description: No existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /clientes/{id_cliente}/visitas:
+    post:
+      tags: [visitas]
+      summary: Registrar la visita de un cliente ya identificado en una venta
+      description: |
+        Se llama **después** de que la venta ya se confirmó en 001 (research.md #5); nunca
+        forma parte de esa transacción. Idempotente por `id_venta`: reintentar con la misma
+        venta devuelve la visita ya creada, nunca una segunda.
+      parameters:
+        - $ref: '#/components/parameters/IdCliente'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_venta]
+              properties:
+                id_venta: { type: integer, format: int64 }
+      responses:
+        '201':
+          description: Visita registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Visita' }
+        '200':
+          description: Reintento sobre una venta ya vinculada; se devuelve la visita original
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Visita' }
+        '404':
+          description: El cliente o la venta no existen
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: Esa venta ya está vinculada a otro cliente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+
+  parameters:
+    IdCliente:
+      name: id_cliente
+      in: path
+      required: true
+      schema: { type: integer }
+
+  schemas:
+
+    ClienteNuevo:
+      type: object
+      required: [nombre, fecha_nacimiento]
+      properties:
+        nombre: { type: string }
+        fecha_nacimiento: { type: string, format: date }
+        contacto: { type: string, nullable: true }
+
+    Cliente:
+      type: object
+      properties:
+        id_cliente: { type: integer }
+        nombre: { type: string, nullable: true }
+        fecha_nacimiento: { type: string, format: date, nullable: true }
+        contacto: { type: string, nullable: true }
+        fecha_alta: { type: string, format: date-time }
+        anonimizado: { type: boolean }
+
+    ClienteResumenValor:
+      type: object
+      description: Resumen de Operación — solo la puntuación compuesta, nunca el desglose.
+      properties:
+        id_cliente: { type: integer }
+        nombre: { type: string, nullable: true }
+        valor:
+          type: number
+          nullable: true
+          description: Percentil compuesto (0-100). `null` si el cliente está en datos_insuficientes.
+        monto_total: { type: string, description: "Decimal con 2 decimales" }
+
+    ClienteDetalle:
+      type: object
+      description: Detalle de Análisis — incluye el desglose de las tres dimensiones.
+      allOf:
+        - $ref: '#/components/schemas/Cliente'
+        - type: object
+          properties:
+            valor:
+              type: object
+              nullable: true
+              description: Ausente/null si el cliente está en datos_insuficientes (FR-007).
+              properties:
+                compuesto: { type: number, description: "Percentil compuesto (0-100)" }
+                percentil_frecuencia: { type: number }
+                percentil_monto: { type: number }
+                percentil_margen: { type: number }
+            fuga:
+              type: object
+              properties:
+                estado:
+                  type: string
+                  enum: [sin_senal, datos_insuficientes, activa, confirmada, resuelta]
+                intervalo_esperado_dias: { type: number, nullable: true }
+                instante_deteccion: { type: string, format: date-time, nullable: true }
+                instante_confirmacion: { type: string, format: date-time, nullable: true }
+                instante_resolucion: { type: string, format: date-time, nullable: true }
+
+    ClienteCumpleanos:
+      type: object
+      properties:
+        id_cliente: { type: integer }
+        nombre: { type: string }
+        fecha_nacimiento: { type: string, format: date }
+
+    Visita:
+      type: object
+      properties:
+        id_visita: { type: integer, format: int64 }
+        id_cliente: { type: integer }
+        id_venta: { type: integer, format: int64 }
+        instante: { type: string, format: date-time }
+        monto_total: { type: string, description: "Decimal con 2 decimales" }
+        margen_relativo:
+          type: number
+          description: >-
+            Ratio de margen sobre el precio de venta, no un monto (ej. 0.25 = 25%).
+            Ver research.md #2.
+
+    Error:
+      type: object
+      properties:
+        detalle: { type: string }

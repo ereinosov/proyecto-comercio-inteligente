@@ -408,3 +408,194 @@ class OperacionPendiente(Base):
             name="ck_operacion_pendiente_estado",
         ),
     )
+
+
+# --------------------------------------------------------------------------
+# Clientes y fidelización (002-clientes-fidelizacion, data-model.md)
+# --------------------------------------------------------------------------
+
+
+class Cliente(Base):
+    __tablename__ = "cliente"
+
+    id_cliente: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nombre: Mapped[str | None] = mapped_column(String, nullable=True)
+    fecha_nacimiento: Mapped[date | None] = mapped_column(Date, nullable=True)
+    contacto: Mapped[str | None] = mapped_column(String, nullable=True)
+    fecha_alta: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    anonimizado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    instante_anonimizacion: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
+class Visita(Base):
+    """`monto_total` y `margen_relativo` son snapshots congelados al crear la visita, no se
+    recalculan si `venta` o el costo del lote cambian después (FR-005, research.md #2 de 002).
+    `margen_relativo` es un RATIO sobre el precio de venta, nunca un monto.
+    """
+
+    __tablename__ = "visita"
+
+    id_visita: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_cliente: Mapped[int] = mapped_column(ForeignKey("cliente.id_cliente"), nullable=False)
+    id_venta: Mapped[int] = mapped_column(ForeignKey("venta.id_venta"), unique=True, nullable=False)
+    instante: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    monto_total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    margen_relativo: Mapped[Decimal] = mapped_column(Numeric(6, 4), nullable=False)
+
+
+class IntervaloCompra(Base):
+    """Una fila por cliente, actualizada en el sitio con cada nueva visita (research.md #3 de
+    002: mediana de los intervalos entre visitas consecutivas, mínimo 3 visitas).
+    """
+
+    __tablename__ = "intervalo_compra"
+
+    id_cliente: Mapped[int] = mapped_column(
+        ForeignKey("cliente.id_cliente"), primary_key=True
+    )
+    intervalo_esperado_dias: Mapped[Decimal | None] = mapped_column(Numeric(8, 2), nullable=True)
+    visitas_consideradas: Mapped[int] = mapped_column(Integer, nullable=False, default=0)
+    estado: Mapped[str] = mapped_column(String, nullable=False, default="datos_insuficientes")
+    instante_calculo: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "estado IN ('datos_insuficientes','calculado')", name="ck_intervalo_compra_estado"
+        ),
+    )
+
+
+class SenalFuga(Base):
+    """Máquina de estados de data-model.md: activa (supera 1x el intervalo esperado) →
+    confirmada (supera 5x, o 12 meses, el mayor — FR-014) → resuelta (nueva visita). A lo sumo
+    una fila abierta (activa/confirmada) por cliente a la vez — índice único parcial en la
+    migración 0002, no expresable como CheckConstraint de SQLAlchemy.
+    """
+
+    __tablename__ = "senal_fuga"
+
+    id_senal_fuga: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_cliente: Mapped[int] = mapped_column(ForeignKey("cliente.id_cliente"), nullable=False)
+    estado: Mapped[str] = mapped_column(String, nullable=False)
+    instante_deteccion: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    instante_confirmacion: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    instante_resolucion: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    instante_purga_programada: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "estado IN ('activa','confirmada','resuelta')", name="ck_senal_fuga_estado"
+        ),
+    )
+
+
+# --------------------------------------------------------------------------
+# Precios y márgenes (003-precios-margenes, data-model.md)
+# --------------------------------------------------------------------------
+
+
+class RolProducto(Base):
+    """Tabla propia de 003, no columna de `producto`: alterar el esquema de `producto`
+    (propiedad de 001) desde 003 está prohibido por la constitución (research.md #3 de 003).
+    Ausencia de fila para un `id_producto` = "sin clasificar" (FR-007).
+    """
+
+    __tablename__ = "rol_producto"
+
+    id_producto: Mapped[int] = mapped_column(ForeignKey("producto.id_producto"), primary_key=True)
+    rol: Mapped[str] = mapped_column(String, nullable=False)
+    instante_asignacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "rol IN ('gancho_trafico','generador_margen')", name="ck_rol_producto_rol"
+        ),
+    )
+
+
+class MargenCalculado(Base):
+    """Se recalcula y sobrescribe (upsert) en cada lectura, nunca por disparador ni tarea de
+    fondo (research.md #4 de 003). `costo_vigente`/`margen` son `NULL` cuando el producto no
+    tiene existencia con lote (FR-003), no cero. `confiable = False` cuando el costo vigente es
+    cero o negativo (FR-004).
+    """
+
+    __tablename__ = "margen_calculado"
+
+    id_producto: Mapped[int] = mapped_column(ForeignKey("producto.id_producto"), primary_key=True)
+    id_sucursal: Mapped[int] = mapped_column(ForeignKey("sucursal.id_sucursal"), primary_key=True)
+    costo_vigente: Mapped[Decimal | None] = mapped_column(Numeric(12, 4), nullable=True)
+    precio_vigente: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
+    margen: Mapped[Decimal | None] = mapped_column(Numeric(6, 4), nullable=True)
+    confiable: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    instante_calculo: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+
+class SugerenciaPrecio(Base):
+    """Append-only (Principio IV): cada sugerencia generada es una fila nueva. `margen_usado` y
+    `rol_usado` son snapshots del instante de generación, no referencias mutables a
+    `margen_calculado`/`rol_producto` (que sí cambian con cada lectura/reclasificación) — así la
+    sugerencia sigue siendo explicable después, aunque el margen o el rol actuales ya sean otros
+    (data-model.md, FR-014).
+    """
+
+    __tablename__ = "sugerencia_precio"
+
+    id_sugerencia_precio: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_producto: Mapped[int] = mapped_column(ForeignKey("producto.id_producto"), nullable=False)
+    id_sucursal: Mapped[int] = mapped_column(ForeignKey("sucursal.id_sucursal"), nullable=False)
+    precio_sugerido: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
+    margen_usado: Mapped[Decimal | None] = mapped_column(Numeric(6, 4), nullable=True)
+    rol_usado: Mapped[str | None] = mapped_column(String, nullable=True)
+    id_observacion_precio_usada: Mapped[int | None] = mapped_column(
+        ForeignKey("observacion_precio.id_observacion_precio"), nullable=True
+    )
+    instante_generacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    aplicada: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    instante_aplicacion: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "rol_usado IS NULL OR rol_usado IN ('gancho_trafico','generador_margen')",
+            name="ck_sugerencia_precio_rol_usado",
+        ),
+    )
+
+
+class SugerenciaColocacion(Base):
+    """Append-only, mismo principio que `SugerenciaPrecio`. Referencia una `zona_exhibicion` ya
+    catalogada por 001; nunca crea zonas nuevas (FR-016 de 003).
+    """
+
+    __tablename__ = "sugerencia_colocacion"
+
+    id_sugerencia_colocacion: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_producto: Mapped[int] = mapped_column(ForeignKey("producto.id_producto"), nullable=False)
+    id_sucursal: Mapped[int] = mapped_column(ForeignKey("sucursal.id_sucursal"), nullable=False)
+    id_zona_exhibicion: Mapped[int] = mapped_column(
+        ForeignKey("zona_exhibicion.id_zona_exhibicion"), nullable=False
+    )
+    margen_usado: Mapped[Decimal | None] = mapped_column(Numeric(6, 4), nullable=True)
+    rol_usado: Mapped[str | None] = mapped_column(String, nullable=True)
+    instante_generacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    aplicada: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    instante_aplicacion: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "rol_usado IS NULL OR rol_usado IN ('gancho_trafico','generador_margen')",
+            name="ck_sugerencia_colocacion_rol_usado",
+        ),
+    )

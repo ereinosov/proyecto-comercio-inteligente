@@ -30,6 +30,21 @@ components:
     textColor: "{colors.tinta}"
     typography: "{typography.operacion}"
     rounded: "{rounded.operacion}"
+  chip-cliente-identificado:
+    backgroundColor: "{colors.superficie-alta}"
+    textColor: "{colors.tinta}"
+    typography: "{typography.operacion}"
+    rounded: "{rounded.operacion}"
+  bloque-analisis:
+    backgroundColor: "{colors.superficie-alta}"
+    textColor: "{colors.tinta}"
+    typography: "{typography.analisis}"
+    rounded: "{rounded.analisis}"
+  bloque-analisis-seleccionado:
+    backgroundColor: "{colors.superficie-alta}"
+    textColor: "{colors.tinta}"
+    typography: "{typography.analisis}"
+    rounded: "{rounded.analisis}"
 ---
 
 # Design System: Rasero
@@ -171,12 +186,76 @@ sugerir suavidad. Los degradados y los fondos oscuros están prohibidos en todo 
 - **Carácter:** el componente que hace visible lo que el sistema no sabe con certeza.
 - **Comportamiento:** muestra **tres portadores simultáneos** — color semántico, indicador de
   forma (punto lleno / medio / hueco) y el texto explícito de la antigüedad ("hace 3 d").
+- **Instancia real:** el estado de fuga de un cliente (Análisis). `sin_senal`/`resuelta` en
+  Tinta Suave con punto lleno; `activa` en atención #9A5B08 con punto medio; `confirmada` en
+  crítico #8E2A2A con punto hueco — el hueco marca que ese dato está a punto de desaparecer
+  (la anonimización programada), no solo que es antiguo.
+
+### Identificar cliente (Operación)
+
+- **Carácter:** un paso opcional que nunca bloquea el cobro; vive en el encabezado de la
+  pantalla de venta, nunca dentro de la tabla del ticket ni como modal.
+- **Colapsado:** enlace de texto subrayado en Tinta Suave, sin fondo ni borde — no compite con
+  la tabla.
+- **Expandido:** panel flotante en Superficie Alta, borde de 1px en Borde, filo de Operación
+  (2px), tipografía IBM Plex Sans; ofrece buscar o registrar un cliente nuevo en el mismo panel.
+- **Seleccionado:** se colapsa a un chip de texto ("Cliente: Nombre") con un botón de quitar
+  (✕) en Tinta Suave — reversible en un toque, porque identificar al cliente fue siempre una
+  decisión del cajero, no un compromiso.
+
+### Resumen de valor de cliente (Operación)
+
+- **Carácter:** información de contexto durante el cobro, no la confirmación de una acción —
+  por eso **nunca se anima al aparecer**, a diferencia del botón de cobro.
+- **Con datos suficientes:** la puntuación compuesta en Tinta, cifras tabulares, junto al chip
+  de cliente identificado.
+- **Con datos insuficientes:** texto en cursiva Tinta Suave ("datos insuficientes") — nunca un
+  0 ni una omisión silenciosa (Regla de los Tres Portadores aplicada a un caso sin dato, no
+  solo a un dato envejecido).
+
+### Bloque de Análisis: listado y detalle de clientes
+
+- **Carácter:** el primer componente real construido en el registro de Análisis — valida en
+  código lo que Colors, Typography y Shapes ya declaraban sobre ese registro sin evidencia
+  propia hasta ahora.
+- **Bloque de lista:** una decisión por bloque (nunca una fila de tabla densa), Superficie Alta,
+  borde de 1px en Borde, filo de Análisis (6px), Source Serif 4; el bloque seleccionado marca
+  su borde en Tinta.
+- **Panel de detalle:** aparece junto a la lista, nunca en un modal ni reemplazando la lista —
+  el gerente compara sin perder su lugar. Desglosa las tres dimensiones del valor (frecuencia,
+  monto, margen) que Operación nunca muestra.
+- **Momento de revelación:** al elegir un cliente, el panel de detalle entra con una única
+  transición de opacidad y desplazamiento vertical corto (320ms) — el momento de animación
+  deliberado por pantalla que el registro de Análisis admite, y el único de esta superficie.
+
+### Sugerencia de precio y colocación (Análisis)
+
+- **Carácter:** el primer componente del sistema que pide una acción que sí compromete dinero
+  fuera del registro de Operación — aplicar una sugerencia de precio reescribe lo que se cobra.
+  Aun así no usa el Verde Rasero: ese color queda reservado a la caja (La Regla de la Sola Voz);
+  aquí la confirmación se distingue por texto ("Aplicada"/"Ejecutada") y por el único momento de
+  animación de esta tarjeta, no por color de marca.
+- **Insumos visibles:** cada sugerencia muestra el margen usado, el rol usado ("sin clasificar" en
+  texto explícito si no hay rol) y, para precio, la observación de competencia usada con sus tres
+  portadores de antigüedad — o "sin referencia de competencia" en texto si no hubo ninguna.
+- **Momento de confirmación:** al aplicar una sugerencia, una única transición de opacidad
+  (320ms) marca que la acción ya ocurrió — no es una revelación pasiva como la del detalle de
+  cliente, es la confirmación de un acto del encargado, el mismo principio que ya rige la
+  animación del botón de cobro en Operación, trasladado a Análisis.
+- **Colocación sugerida nunca ejecuta nada:** el botón dice "Confirmar ejecución física", nunca
+  "Mover" ni "Reubicar" — el sistema no reubica nada por su cuenta (Principio V, consultiva por
+  defecto); el texto del botón es, en sí, parte de la explicabilidad.
 
 ### Named Rules
 
 **La Regla de los Tres Portadores.** Ningún dato con antigüedad o incertidumbre se comunica solo
 con color. Un portador único falla ante daltonismo, impresión en blanco y negro y reflejo de
 pantalla — las tres condiciones normales de un local comercial.
+
+**La Regla del Registro Sin Dinero.** Una pantalla que no tiene ninguna acción que comprometa
+dinero no usa el Verde Rasero ni una sola vez. "Una vez por pantalla" es un máximo, no una cuota
+que cada pantalla deba alcanzar — Clientes.tsx es la primera superficie del sistema en quedar
+en cero apariciones, y es el comportamiento correcto, no una omisión.
 
 ## Do's and Don'ts
 
@@ -187,7 +266,12 @@ pantalla — las tres condiciones normales de un local comercial.
 - **Do** componer toda cifra de dinero y peso con cifras tabulares reales.
 - **Do** transmitir profundidad con el salto de tono #F1F4F1 → #FFFFFF y el borde #D5DCD6.
 - **Do** acompañar todo dato incierto o envejecido con sus tres portadores.
-- **Do** reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla.
+- **Do** reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla —
+  y cero veces en una pantalla que no tiene esa acción.
+- **Do** revelar el detalle de un bloque de Análisis con una única transición por selección,
+  nunca con hover ni fade-in repetido en cada bloque de la lista.
+- **Do** mantener cualquier identificación o dato de contexto (como identificar a un cliente en
+  caja) reversible en un toque y fuera del camino crítico de la acción que compromete dinero.
 
 ### Don't:
 
@@ -197,3 +281,6 @@ pantalla — las tres condiciones normales de un local comercial.
 - **Don't** envolver grupos de datos en tarjetas dentro del registro de Operación.
 - **Don't** usar Inter como tipografía por defecto.
 - **Don't** comunicar antigüedad o incertidumbre solo con color.
+- **Don't** animar la aparición de un dato de contexto (como un resumen o valor) que no
+  confirma una acción del usuario — la animación se reserva para confirmaciones y revelaciones
+  deliberadas, nunca para decorar la llegada de un dato.

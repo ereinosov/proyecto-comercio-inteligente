@@ -1,0 +1,107 @@
+/* Identificación opcional de cliente (T014). Registro de Operación: sin Verde Rasero (La
+   Regla de la Sola Voz, reservado al botón de cobro de Venta.module.css), sin animación de
+   revelación — es información de contexto, no confirmación de una acción de cobro. */
+
+.abrir {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+}
+
+.quitar {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  min-width: 220px;
+}
+
+.input {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 6px 8px;
+}
+
+.input:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}
+
+.resultados {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 140px;
+  overflow-y: auto;
+}
+
+.filaResultado {
+  display: block;
+  width: 100%;
+  text-align: left;
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: transparent;
+  border: none;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.filaResultado:hover {
+  background: var(--color-superficie-base);
+}
+
+.acciones {
+  display: flex;
+  justify-content: space-between;
+}
+
+.enlace {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.enlace:disabled {
+  color: var(--color-borde);
+  cursor: not-allowed;
+}

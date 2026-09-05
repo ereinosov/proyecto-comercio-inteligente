@@ -1,0 +1,44 @@
+/* Contenedor de navegación entre registros (Operación/Venta y Análisis/Clientes). Elemento de
+   estructura de la aplicación, no de un registro en particular: sin Verde Rasero, sin radio de
+   registro propio — solo cambia de pestaña, no compromete dinero. */
+
+.aplicacion {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+.navegacion {
+  flex-shrink: 0;
+  display: flex;
+  gap: 4px;
+  padding: 8px 20px 0;
+  background: var(--color-superficie-alta);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.pestanaActiva,
+.pestanaInactiva {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 4px;
+  cursor: pointer;
+}
+
+.pestanaActiva {
+  color: var(--color-tinta);
+  border-bottom-color: var(--color-tinta);
+  font-weight: 600;
+}
+
+.pestanaInactiva {
+  color: var(--color-tinta-suave);
+}
+
+.contenido {
+  flex: 1;
+  min-height: 0;
+}

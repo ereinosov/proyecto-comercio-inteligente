@@ -18,7 +18,10 @@ import {
   generarClaveIdempotencia,
   registrarVenta,
 } from "../servicios/ventas";
+import { registrarVisita } from "../servicios/clientes";
 import { gramosDesdeKg, RenglonGranel } from "../componentes/RenglonGranel";
+import { IdentificarCliente, type ClienteSeleccionado } from "../componentes/IdentificarCliente";
+import { ValorClienteResumen } from "../componentes/ValorClienteResumen";
 import estilos from "./Venta.module.css";
 
 interface RenglonTicket {
@@ -52,6 +55,7 @@ export function Venta({ turno, onCerrarTurno }: Props) {
   const [ventaConfirmada, setVentaConfirmada] = useState<VentaConfirmada | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [anulando, setAnulando] = useState(false);
+  const [clienteIdentificado, setClienteIdentificado] = useState<ClienteSeleccionado | null>(null);
 
   useEffect(() => {
     listarProductos(turno.id_sucursal).then(setProductos);
@@ -121,6 +125,14 @@ export function Venta({ turno, onCerrarTurno }: Props) {
         })),
       };
       const venta = await registrarVenta(cuerpo);
+      if (clienteIdentificado) {
+        // Identificar cliente NUNCA es parte del cobro (Principio II, FR-003): la venta ya
+        // está confirmada: si esta llamada falla, la venta se queda igual, solo se pierde la
+        // visita de este módulo (research.md #5 de 002-clientes-fidelizacion).
+        registrarVisita(clienteIdentificado.id_cliente, venta.id_venta).catch(() => {
+          console.warn("No se pudo registrar la visita del cliente; la venta sí quedó registrada.");
+        });
+      }
       // La confirmación se muestra EN el botón antes de cambiar de pantalla — si
       // ventaConfirmada se fija ya, la pantalla cambia en el mismo render y la animación
       // nunca llega a verse (defecto detectado al verificar visualmente).
@@ -140,6 +152,7 @@ export function Venta({ turno, onCerrarTurno }: Props) {
     setVentaConfirmada(null);
     setRenglones([]);
     setClaveIdempotencia(generarClaveIdempotencia());
+    setClienteIdentificado(null);
   }
 
   async function anular() {
@@ -188,9 +201,16 @@ export function Venta({ turno, onCerrarTurno }: Props) {
     <div className={estilos.pantalla}>
       <div className={estilos.encabezado}>
         <span>Quevedo Centro · {turno.caja}</span>
-        <button className={estilos.botonTexto} onClick={onCerrarTurno}>
-          Cerrar turno
-        </button>
+        <div className={estilos.accionesEncabezado}>
+          <IdentificarCliente
+            seleccionado={clienteIdentificado}
+            onSeleccionar={setClienteIdentificado}
+          />
+          {clienteIdentificado && <ValorClienteResumen valor={clienteIdentificado.valor} />}
+          <button className={estilos.botonTexto} onClick={onCerrarTurno}>
+            Cerrar turno
+          </button>
+        </div>
       </div>
 
       <div className={estilos.cuerpo}>

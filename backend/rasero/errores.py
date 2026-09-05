@@ -62,3 +62,19 @@ class VentaYaAnulada(ErrorDominio):
 class RecursoNoEncontrado(ErrorDominio):
     codigo = "no_encontrado"
     status_code = 404
+
+
+class VentaYaVinculada(ErrorDominio):
+    codigo = "venta_ya_vinculada"
+    status_code = 409
+
+    def __init__(self):
+        super().__init__("Esta venta ya está vinculada a otro cliente.")
+
+
+class SugerenciaYaAplicada(ErrorDominio):
+    codigo = "sugerencia_ya_aplicada"
+    status_code = 409
+
+    def __init__(self):
+        super().__init__("Esta sugerencia ya había sido aplicada.")

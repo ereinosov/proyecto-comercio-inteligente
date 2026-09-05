@@ -1,41 +1,43 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
-Cambio de versión: 2.2.1 → 2.2.2
-Tipo de cambio: PARCHE — precisa el mecanismo real de una herramienta ya
-citada. No cambia qué se exige (que el sistema de diseño llegue a la
-herramienta antes de generar interfaz), solo cómo y en qué paso ocurre.
+Cambio de versión: 2.2.2 → 2.2.3
+Tipo de cambio: PARCHE — corrige la propiedad de datos de
+`003-precios-margenes`, detectada al escribir su `data-model.md` en
+`/speckit-plan`. Mismo tipo de corrección que v2.1.1/v2.1.2 sobre 001: la
+tabla original era un supuesto anterior a la especificación real del módulo,
+y esta enmienda la reemplaza por lo que su spec y su diseño de datos
+realmente exigen. No cambia ningún principio.
 
 Principios modificados: ninguno.
 Secciones añadidas: ninguna.
 Secciones eliminadas: ninguna.
 
 Secciones modificadas:
-  - Sistema de Diseño, "Herramienta de ejecución": se documentan los pasos
-    distintos de Impeccable, verificados leyendo las referencias de la
-    herramienta instalada (impeccable@4.0.1):
-      * `init` captura verdad de producto en PRODUCT.md y tiene PROHIBIDO
-        escribir DESIGN.md o recibir contenido visual ("It does not invent a
-        visual world and does not write DESIGN.md"; "Do not ask for an
-        aesthetic direction... colors, typography, or style during init").
-      * `new-work` construye la superficie y es el paso que recibe el mundo
-        visual fijado; con el mundo ya establecido no abre torneo de
-        identidad, solo decide composición.
-      * El agente documenter escribe DESIGN.md AL FINAL, derivado de la
-        interfaz construida ("DESIGN.md is written at finish, from the built
-        world, by the shipped documenter"), no antes de la primera pantalla.
-    Se añade además la prohibición explícita de que cualquier paso de
-    Impeccable proponga paleta o tipografía alternativas.
+  - Propiedad de Datos y Nomenclatura, entrada de `003-precios-margenes`:
+      * Se retira `costo_producto` de la lista de entidades propias de 003.
+        Contradecía la frontera ya declarada dos líneas más abajo en la
+        misma sección ("el costo del producto es dato de compra y pertenece
+        a 001; el margen es cálculo derivado... y pertenece a 003") y el
+        patrón ya implementado en 002 (`margen_resolver.py` lee
+        `lote.costo_unitario` de 001 sin poseerlo, documentado en su
+        research.md #2). `003` consulta el costo vigente vía `lote` y
+        `existencia` de 001; no necesita ni debe mantener una tabla de costo
+        propia.
+      * Se añade `sugerencia_precio` a la lista de entidades propias de 003.
+        `003-precios-margenes/spec.md` (FR-008, FR-013, FR-014) exige
+        generar una sugerencia de precio con registro de los insumos que la
+        originaron y, al aplicarla, dejar registro de qué sugerencia creó o
+        modificó el override de precio por sucursal — lo mismo que la
+        entidad hermana `sugerencia_colocacion`, ya presente en la lista
+        original, hace para colocación. No estaba en la ratificación
+        original porque esa lista se escribió antes de que existiera el
+        spec de 003.
+    Lista resultante de 003: `margen_calculado`, `rol_producto`,
+    `sugerencia_precio`, `sugerencia_colocacion` (4 entidades, mismo conteo
+    que antes; cambia la composición, no el tamaño).
 
-Tercera corrección consecutiva sobre el mecanismo real de esta herramienta:
-  1. v2.2.0 y anteriores describían un paso `teach` que no existe.
-  2. v2.2.1 corrigió el nombre a `init`, pero seguía atribuyéndole la
-     generación de PRODUCT.md *y* DESIGN.md en un solo paso.
-  3. v2.2.2 (esta) separa los tres pasos reales. La causa raíz de las tres
-     fue describir una herramienta externa de memoria en lugar de verificarla
-     antes de convertirla en regla constitucional.
-
-Decisiones de alcance vigentes (sin cambio en 2.2.2):
+Decisiones de alcance vigentes (sin cambio en 2.2.3):
   - `sucursal` es entidad de primera clase con cardinalidad no acotada; el
     alcance del examen cubre exactamente dos sucursales (Quevedo Centro y
     Buena Fe, del juego de datos Despensa Los Ríos).
@@ -66,13 +68,19 @@ Historial de versiones:
   - 2.2.0 (2026-09-04) — puerta de sincronización de enmiendas.
   - 2.2.1 (2026-09-04) — nombre del comando de Impeccable corregido de `teach`
     a `init`, tras verificar la herramienta instalada.
-  - 2.2.2 (2026-09-04) — esta enmienda: los tres pasos reales de Impeccable
-    (init / new-work / documenter) documentados por separado; tercera
-    corrección consecutiva sobre el mecanismo de la misma herramienta.
+  - 2.2.2 (2026-09-04) — los tres pasos reales de Impeccable (init / new-work /
+    documenter) documentados por separado; tercera corrección consecutiva
+    sobre el mecanismo de la misma herramienta.
+  - 2.2.3 (2026-09-05) — esta enmienda: propiedad de datos de
+    `003-precios-margenes` corregida a partir de su especificación real
+    (`costo_producto` retirado, `sugerencia_precio` añadida), detectada al
+    escribir `data-model.md` de 003 en `/speckit-plan`.
 
 Artefactos de funcionalidad afectados: las citas de versión vigente en
-spec.md, plan.md y data-model.md se sincronizan a v2.2.2 en este mismo cambio
-(puerta de sincronización de enmiendas, v2.2.0).
+spec.md, plan.md y data-model.md de 001 y de 002 se sincronizan a v2.2.3 en
+este mismo cambio (puerta de sincronización de enmiendas, v2.2.0);
+`003-precios-margenes` nace directamente citando v2.2.3, no requiere
+sincronización retroactiva.
 
 TODOs pendientes: ninguno.
 -->
@@ -300,8 +308,10 @@ una enmienda la corrija.
   `canal_competencia`, `conteo_fisico`, `conteo_renglon`, `operador`, `turno`,
   `operacion_pendiente`.
 - **002-clientes-fidelizacion**: `cliente`, `visita`, `intervalo_compra`, `senal_fuga`.
-- **003-precios-margenes**: `costo_producto`, `margen_calculado`, `rol_producto`,
-  `sugerencia_colocacion`.
+- **003-precios-margenes**: `margen_calculado`, `rol_producto`, `sugerencia_precio`,
+  `sugerencia_colocacion`. (`costo_producto` retirado y `sugerencia_precio` añadida por la
+  enmienda **v2.2.3**, a raíz de la especificación real de 003 — ver frontera de "costo" más
+  abajo.)
 - **004-pronostico-demanda**: `demanda_observada`, `demanda_corregida`, `pronostico`.
 - **005-promociones-inteligentes**: `campania`, `envio_promocional`, `grupo_control`.
 - **006-caja-mermas-fraude**: `arqueo`, `merma`, `anomalia_caja`.

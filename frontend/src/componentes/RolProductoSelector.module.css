@@ -1,0 +1,45 @@
+/* Selector de rol de producto — registro de Análisis, integrado en el panel de detalle de
+   Precios.tsx (DESIGN.md). Sin Verde Rasero: clasificar un rol no compromete dinero. */
+
+.selector {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.etiqueta {
+  font-family: var(--tipografia-analisis);
+  font-size: 14px;
+  color: var(--color-tinta);
+}
+
+.sinClasificar {
+  font-style: italic;
+  color: var(--color-tinta-suave);
+}
+
+.botones {
+  display: flex;
+  gap: 8px;
+}
+
+.boton {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 6px 12px;
+  cursor: pointer;
+  background: var(--color-superficie-alta);
+  color: var(--color-tinta-suave);
+}
+
+.boton:disabled {
+  cursor: default;
+}
+
+.botonActivo {
+  color: var(--color-tinta);
+  border-color: var(--color-tinta);
+  font-weight: 600;
+}

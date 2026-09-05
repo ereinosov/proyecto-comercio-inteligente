@@ -1,0 +1,110 @@
+/* Tarjetas de sugerencia de precio y de colocación — registro de Análisis (DESIGN.md). Sin
+   Verde Rasero: sugerir no compromete dinero; solo aplicar lo hace, y aun así el sistema nunca lo
+   hace por su cuenta (Principio V, "consultiva por defecto"). */
+
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.tarjeta {
+  border-top: 1px solid var(--color-borde);
+  padding-top: 14px;
+}
+
+.tituloTarjeta {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.instruccion,
+.error {
+  color: var(--color-tinta-suave);
+  font-size: 13px;
+}
+
+.error {
+  color: var(--color-critico);
+}
+
+.precioSugerido,
+.zonaSugerida {
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 10px;
+}
+
+.insumos {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin: 0 0 14px;
+  font-size: 13px;
+}
+
+.insumos dt {
+  display: inline;
+  color: var(--color-tinta-suave);
+  font-family: var(--tipografia-operacion);
+}
+
+.insumos dt::after {
+  content: ": ";
+}
+
+.insumos dd {
+  display: inline;
+  margin: 0;
+}
+
+.observacion {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--color-estimado);
+}
+
+.puntoAntiguedad {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.boton {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-analisis);
+  padding: 8px 16px;
+  cursor: pointer;
+  background: var(--color-superficie-alta);
+  color: var(--color-tinta);
+}
+
+.boton:disabled {
+  cursor: default;
+  color: var(--color-tinta-suave);
+  border-color: var(--color-borde);
+}
+
+/* Único momento de animación deliberado de este módulo: confirmar la aplicación de una
+   sugerencia (precio o colocación) — no una revelación pasiva, sino la confirmación de una
+   acción del encargado (plan.md, "Sistema de diseño en el frontend"). */
+.confirmada {
+  animation: confirmar 320ms ease-out;
+}
+
+@keyframes confirmar {
+  from {
+    opacity: 0.4;
+  }
+  to {
+    opacity: 1;
+  }
+}

@@ -1,0 +1,21 @@
+/* Resumen de valor de cliente en Operación (T024). Mismos tokens que Venta.module.css: sin
+   Verde Rasero (reservado al botón de cobro), radio 2px, IBM Plex Sans tabular. */
+
+.resumen {
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+}
+
+.puntuacion {
+  font-weight: 600;
+  color: var(--color-tinta);
+}
+
+.insuficiente {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  font-style: italic;
+}
