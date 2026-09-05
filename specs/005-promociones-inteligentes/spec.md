@@ -312,10 +312,11 @@ producto sin ninguna promoción en ese período no aparece marcado.
   precio**: un código o registro que garantiza el precio ofertado si el cliente vuelve a comprar
   dentro de la ventana definida. La reserva NO aparta stock físico ni escribe contra ninguna tabla
   de inventario de `001`.
-- **FR-011**: Si al momento de redimir la oferta no hay existencia suficiente del producto, el
-  cliente recibe el mismo tratamiento que cualquier comprador sin oferta activa: la reserva de
-  precio garantiza el precio, nunca la disponibilidad. El sistema NO DEBE alterar `existencia` ni
-  `movimiento_inventario` de `001` en ningún momento del ciclo de la oferta.
+- **FR-011**: Si al momento de redimir la oferta el punto de venta de `001` no tiene existencia
+  suficiente del producto, el cliente recibe el mismo tratamiento que cualquier comprador sin oferta
+  activa (es `001` quien resuelve la venta): la reserva de precio garantiza el precio, nunca la
+  disponibilidad. El sistema NO DEBE alterar `existencia` ni `movimiento_inventario` de `001` en
+  ningún momento del ciclo de la oferta, y **no necesita leerlos**.
 - **FR-012**: El empuje por recompra NO DEBE exigir grupo de control ni medición de incrementalidad.
 - **FR-013**: Cada oferta de recompra DEBE registrar el cliente, el producto, el intervalo esperado
   que la disparó, el estado de la reserva de precio (vigente o vencida) y el desenlace (comprado, no
@@ -449,10 +450,11 @@ Entidades de `002` que este módulo consulta pero no posee (frontera de propieda
 `cliente` (a través de la consulta de cumpleañeros de FR-012 de `002`), `intervalo_compra`
 (`intervalo_esperado_dias`, `estado`), `senal_fuga` (estado y su historia), `visita`. Entidades de
 `001` que este módulo consulta (solo lectura) pero no posee: `producto`, `sucursal`, `venta`,
-`renglon_venta`, `existencia`, `producto_precio_sucursal`. `005` nunca escribe contra `existencia`
-ni `movimiento_inventario` de `001` (la reserva del empuje por recompra es de precio, no de
-inventario). Entidades de `004` hacia las que este módulo expone la marca de promoción activa (sin
-escribir en ellas): `demanda_observada`, `demanda_corregida`.
+`renglon_venta`, `producto_precio_sucursal`, `turno`. `005` **no lee ni escribe** `existencia` ni
+`movimiento_inventario` de `001`: la reserva del empuje por recompra es de precio, no de inventario,
+y la disponibilidad al vender la resuelve `001` (FR-011). Entidades de `004` hacia las que este
+módulo expone la marca de promoción activa (sin escribir en ellas): `demanda_observada`,
+`demanda_corregida`.
 
 ## Dependencias entre módulos
 
@@ -468,10 +470,11 @@ debe quedar oculta en `plan.md`.
   `estado` para el mecanismo 2; `senal_fuga` y su estado para definir "cliente inactivo elegible" en
   el mecanismo 3; `visita` como contexto de historial de compra del cliente.
 - De `001-core-ventas-inventario`: `venta` y `renglon_venta` (historial de compras del cliente para
-  elegir el producto de recompra y para detectar retornos), `producto` y `sucursal`, `existencia`
-  (lectura de disponibilidad al redimir una oferta — nunca escritura; ver FR-011),
+  elegir el producto de recompra y para detectar retornos), `producto`, `sucursal` y `turno`
+  (para resolver la sucursal y el día local de una venta con redención),
   `producto_precio_sucursal` (precio vigente sobre el que se fija la reserva de precio o se aplica
-  un descuento).
+  un descuento). **No** consulta `existencia` ni `movimiento_inventario`: la disponibilidad al
+  vender la resuelve `001` (FR-011).
 
 **Verificación exigida por el enunciado — `cliente.fecha_nacimiento`**: el enunciado pedía
 confirmar que ese campo exista antes de apoyar el cupón de cumpleaños en él. **Verificado**:
@@ -611,6 +614,17 @@ reales de fuga (mecanismo 3) espera a que `002` implemente su User Story 3, y as
   la demostración sea reproducible (mismos datos + misma semilla → mismos grupos). No es un reparto
   determinista: el generador es genuinamente aleatorio y la semilla solo fija su punto de partida.
   El tamaño relativo de los grupos tratamiento y control (por ejemplo 50/50) se decide en `plan.md`.
+- **`campania` no tiene endpoint de lectura propio** (decisión intencional): el contrato de `005`
+  no expone ninguna ruta para listar o consultar campañas. `campania` es la agrupación interna de
+  una corrida de un mecanismo (de cupones, de ofertas de recompra o de un experimento);
+  ningún escenario de aceptación de las cuatro historias de este spec requiere listar campañas de
+  forma independiente de sus mecanismos, y cada `cupon`, `oferta_recompra` y `experimento_reactivacion`
+  ya lleva su `id_campania`. Si una versión futura necesitara una vista de "todas las campañas",
+  añadir ese endpoint sería trabajo aditivo sin cambio de esquema.
+- **`005` no lee `existencia` ni `movimiento_inventario` de `001`**: la reserva del empuje por
+  recompra es de precio, no de inventario (FR-010), y si al redimir falta stock es `001` quien
+  resuelve la venta (FR-011). Las únicas lecturas de esas dos tablas ocurren en las **pruebas de
+  frontera**, que cuentan filas antes y después para confirmar que `005` nunca escribió.
 - **Constitución vigente citada**: v2.2.5. La enmienda **v2.2.5** (2026-09-05) reconcilió la lista
   de entidades de `005` en la tabla de Propiedad de Datos (`campania`, `envio_promocional`,
   `grupo_control` → `campania`, `cupon`, `oferta_recompra`, `experimento_reactivacion`,

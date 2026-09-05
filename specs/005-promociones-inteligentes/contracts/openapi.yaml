@@ -1,0 +1,555 @@
+openapi: 3.1.0
+
+info:
+  title: Rasero — Promociones Inteligentes
+  version: 0.1.0
+  description: |
+    Contrato del módulo 005-promociones-inteligentes. Tres mecanismos de promoción distintos
+    (Lectura Crítica n.º 6 de la constitución), cada uno con su propio recurso:
+
+    - `/promociones/cupones` — cupón por fecha fija (cumpleaños). Regla directa, sin grupo de
+      control ni medición (FR-001 a FR-007).
+    - `/promociones/ofertas-recompra` — empuje por patrón de recompra con **reserva de precio**
+      (no de inventario): garantiza el precio ofertado dentro de una ventana, nunca la
+      disponibilidad (FR-008 a FR-014).
+    - `/promociones/experimentos` — reactivación de cliente inactivo con **grupo de control
+      obligatorio**, aleatorización real con semilla fija y umbral de incrementalidad por prueba
+      z de dos proporciones (p < 0,05) (FR-015 a FR-025).
+    - `/promociones/redenciones` — registro transversal de que una promoción se usó en una venta.
+    - `/promociones/marca-activa` — la marca de "promoción activa" por producto, sucursal y
+      período que 004-pronostico-demanda consume (FR-031 a FR-034; cierra el contrato que
+      FR-029/FR-031/FR-039 de 004 dejaron abierto).
+
+    Reglas transversales que aplican a todo el contrato:
+
+    - Este contrato NUNCA participa en `POST /ventas` de 001 ni es camino crítico de un cobro
+      (Principio II). La redención de una promoción se registra DESPUÉS de la venta, por una
+      llamada aparte e idempotente (mismo patrón que `POST /clientes/{id}/visitas` de 002).
+    - 005 NUNCA ajusta un precio ni un inventario de forma automática (FR-036, Principio V). No
+      escribe en `existencia` ni `movimiento_inventario` de 001, ni en `senal_fuga` de 002, ni en
+      `demanda_*` de 004.
+    - Porcentajes de descuento como cadena decimal con 2 decimales; precios y montos como cadena
+      decimal con hasta 4 decimales; proporciones e incrementalidad con hasta 4 decimales; el
+      valor p con hasta 6 decimales. Nunca coma flotante.
+    - Instantes en RFC 3339 con desplazamiento; el servidor los normaliza a UTC. Las fechas de
+      vigencia y los períodos son `YYYY-MM-DD` (día local de la sucursal).
+    - Toda campaña y experimento se identifica por `id_sucursal` cuando aplica; `GET
+      /promociones/marca-activa` lo EXIGE y nunca agrega dos sucursales sin discriminar (FR-035).
+    - Formato de error unificado con 001-004: `{ codigo, mensaje }`, el mensaje redactado para el
+      operador con la acción correctiva, nunca una traza técnica.
+
+    Estado de dependencias (verificado contra el repositorio): 002 está completo (`cliente`,
+    `visita`, `intervalo_compra`, `senal_fuga`, `GET /clientes/cumpleanos`); 001 User Story 1 está
+    completa (`venta`, `renglon_venta`, `existencia`, `producto_precio_sucursal`); 004 está
+    completo y espera esta marca. Ninguna ruta de este contrato está bloqueada.
+
+servers:
+  - url: http://localhost:8000
+    description: Desarrollo local. Mismo servidor y misma base que 001-004 (puerto 5442).
+
+tags:
+  - name: cupones
+  - name: ofertas-recompra
+  - name: experimentos
+  - name: redenciones
+  - name: marca-activa
+
+paths:
+
+  /promociones/cupones/generacion:
+    post:
+      tags: [cupones]
+      summary: Generar los cupones de cumpleaños de un rango de fechas
+      description: |
+        FR-001 a FR-003, FR-007. Para cada cliente que `GET /clientes/cumpleanos` de 002 devuelve
+        en el rango, crea un `cupon` con su ventana de validez. IDEMPOTENTE: ejecutarlo dos veces
+        para el mismo rango (o rangos solapados) no crea un segundo cupón por la misma fecha
+        objetivo del mismo cliente (`UNIQUE (id_cliente, fecha_objetivo)`). Un cliente anonimizado
+        no recibe cupón porque 002 ya lo excluye de la consulta de cumpleañeros. 005 nunca lee
+        `cliente.fecha_nacimiento`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [desde, hasta]
+              properties:
+                desde: { type: string, format: date }
+                hasta: { type: string, format: date }
+                nombre_campania:
+                  type: string
+                  description: Etiqueta de la campaña. Por defecto, "Cumpleaños — <mes> <año>".
+      responses:
+        '200':
+          description: Generación ejecutada (incluye el caso de 0 cupones nuevos por idempotencia)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id_campania: { type: integer }
+                  cupones_generados: { type: integer, description: Cupones nuevos creados en esta corrida }
+                  cupones_ya_existentes: { type: integer, description: Clientes del rango que ya tenían su cupón }
+        '400':
+          description: '`hasta` anterior a `desde`, o rango mayor a un año'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /promociones/cupones:
+    get:
+      tags: [cupones]
+      summary: Listar cupones
+      parameters:
+        - name: id_cliente
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: estado
+          in: query
+          required: false
+          schema: { type: string, enum: [generado, redimido, vencido] }
+        - name: vigentes
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+          description: Si es true, sólo los `generado` cuya fecha actual cae en su ventana de validez.
+      responses:
+        '200':
+          description: Cupones
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Cupon' }
+
+  /promociones/ofertas-recompra/deteccion:
+    post:
+      tags: [ofertas-recompra]
+      summary: Detectar y proponer ofertas de recompra para una sucursal
+      description: |
+        FR-008 a FR-013. Busca clientes con `intervalo_compra.estado = 'calculado'` en 002 cuyo
+        tiempo desde la última compra se ACERCA a su intervalo esperado (>= 80 % por defecto) sin
+        superarlo, y para cada uno selecciona el producto que más ha recomprado en su historial
+        identificado reciente (research.md #7). Crea una `oferta_recompra` con una RESERVA DE
+        PRECIO (el precio resuelto para la sucursal menos el descuento), NUNCA una reserva de
+        inventario: no se escribe en `existencia` ni `movimiento_inventario` de 001 (FR-010,
+        FR-011). A lo sumo una oferta `pendiente` por (cliente, producto) (FR-014).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sucursal]
+              properties:
+                id_sucursal: { type: integer }
+      responses:
+        '200':
+          description: Detección ejecutada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id_campania: { type: integer }
+                  ofertas_propuestas: { type: integer }
+                  ofertas_ya_activas: { type: integer, description: Clientes ya con una oferta `pendiente` del mismo producto }
+        '404':
+          description: La sucursal no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /promociones/ofertas-recompra:
+    get:
+      tags: [ofertas-recompra]
+      summary: Listar ofertas de recompra
+      parameters:
+        - name: id_cliente
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: desenlace
+          in: query
+          required: false
+          schema: { type: string, enum: [pendiente, comprado, no_comprado, reserva_vencida] }
+      responses:
+        '200':
+          description: Ofertas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/OfertaRecompra' }
+
+  /promociones/experimentos:
+    post:
+      tags: [experimentos]
+      summary: Crear un experimento de reactivación (asigna grupos por aleatorización con semilla fija)
+      description: |
+        FR-015 a FR-025. Toma los clientes con `senal_fuga` ACTIVA en 002 (reutiliza la detección
+        de fuga silenciosa; no crea un criterio nuevo — FR-015), calcula el tamaño mínimo de
+        muestra por grupo (prueba z de dos proporciones, α=0,05, poder=0,80, MDE en puntos
+        porcentuales — research.md #10b) y:
+        - si `n_elegibles >= 2 × tamano_minimo_muestra`: reparte por `random.Random(semilla)`
+          (Mersenne Twister, biblioteca estándar) en tratamiento/control 50/50 (research.md #9) y
+          devuelve `veredicto: "en_curso"`. Sólo el grupo tratamiento tiene derecho al descuento
+          (FR-018).
+        - si no: devuelve `veredicto: "muestra_insuficiente"` SIN asignar grupos ni enviar
+          tratamiento, con el número exacto ("84 elegibles, mínimo 242") (FR-025).
+        La semilla y el algoritmo quedan registrados en el experimento (FR-017, FR-024). 005 NO
+        modifica ninguna `senal_fuga` (FR-028): lee su estado y su id.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_sucursal:
+                  type: integer
+                  nullable: true
+                  description: Acota los elegibles a esa sucursal (por su última visita). Nulo = toda la cadena.
+                semilla:
+                  type: integer
+                  description: Semilla de aleatorización. Por defecto, `SEMILLA_ALEATORIZACION` de config.
+                ventana_medicion_dias: { type: integer, default: 42 }
+                porcentaje_descuento: { type: string, description: 'Por defecto, DESCUENTO_REACTIVACION_PCT (15,00)' }
+                mde_puntos_porcentuales:
+                  type: string
+                  description: 'Efecto mínimo detectable. Por defecto, MDE_REACTIVACION_PP (15). Determina el tamaño mínimo de muestra.'
+                nombre_campania: { type: string }
+      responses:
+        '201':
+          description: Experimento creado (en curso o muestra insuficiente)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Experimento' }
+        '400':
+          description: |
+            Parámetros de aleatorización o de medición inválidos: `ventana_medicion_dias <= 0`,
+            `mde_puntos_porcentuales` fuera de `(0, 100)`, `porcentaje_descuento` fuera de
+            `(0, 100)`, o `semilla` no entera.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: |
+            Ya hay un experimento de reactivación con `veredicto = "en_curso"`. Sólo se ejecuta un
+            experimento a la vez; ciérralo (`POST .../cierre`) antes de crear otro.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /promociones/experimentos/{id_experimento_reactivacion}:
+    get:
+      tags: [experimentos]
+      summary: Detalle de un experimento con sus tasas de retorno y su prueba de significancia
+      parameters:
+        - $ref: '#/components/parameters/IdExperimento'
+      responses:
+        '200':
+          description: Experimento
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Experimento' }
+        '404':
+          description: El experimento no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /promociones/experimentos/{id_experimento_reactivacion}/asignaciones:
+    get:
+      tags: [experimentos]
+      summary: Asignaciones por cliente (auditoría de la aleatorización y del retorno)
+      description: |
+        FR-022, FR-024, SC-006, SC-007. Permite reconstruir qué cliente quedó en qué grupo y si
+        retornó. Es la evidencia de que la asignación no depende de la paridad del id ni de ningún
+        otro atributo no aleatorio.
+      parameters:
+        - $ref: '#/components/parameters/IdExperimento'
+        - name: grupo
+          in: query
+          required: false
+          schema: { type: string, enum: [tratamiento, control] }
+      responses:
+        '200':
+          description: Asignaciones
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Asignacion' }
+        '404':
+          description: El experimento no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /promociones/experimentos/{id_experimento_reactivacion}/cierre:
+    post:
+      tags: [experimentos]
+      summary: Cerrar la ventana de medición y calcular incrementalidad + prueba z + veredicto
+      description: |
+        FR-019 a FR-024. Para cada asignación, fija `retorno = true` si el cliente registró una
+        `visita` de 002 dentro de `[instante_asignacion, instante_asignacion + ventana_medicion_dias]`
+        (research.md #11). Calcula `retorno_tratamiento`, `retorno_control`, `incrementalidad`
+        (diferencia — puede ser negativa), el estadístico z de dos proporciones y el valor p de
+        dos colas (`1 − erf(|z|/√2)`, research.md #10a). `veredicto = "efectivo"` si y sólo si
+        `incrementalidad > 0` y `valor_p < 0,05`; en cualquier otro caso `"no_efectivo"`.
+        Idempotente: cerrar dos veces devuelve el mismo resultado.
+      parameters:
+        - $ref: '#/components/parameters/IdExperimento'
+      responses:
+        '200':
+          description: Experimento cerrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Experimento' }
+        '404':
+          description: El experimento no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: |
+            La ventana de medición todavía no ha vencido, o el experimento es
+            `muestra_insuficiente` (no hay grupos que medir).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /promociones/redenciones:
+    post:
+      tags: [redenciones]
+      summary: Registrar que una promoción se usó en una venta
+      description: |
+        FR-005, FR-030. Se llama DESPUÉS de que la venta de 001 se completó — nunca dentro de la
+        transacción de venta (Principio II). Vincula la venta (referencia de sólo lectura) con el
+        origen (`cupon`, `oferta_recompra` o `asignacion_experimento` de tratamiento). IDEMPOTENTE
+        por el origen: un `POST` repetido sobre el mismo `id_*` devuelve la redención existente
+        (200). Marca el cupón `redimido` o la oferta `comprado` en la misma transacción. Deriva y
+        denormaliza `id_sucursal` y `periodo` de la venta para la consulta de marca activa
+        (research.md #4).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_venta, tipo_origen]
+              properties:
+                id_venta: { type: integer, format: int64 }
+                tipo_origen: { type: string, enum: [cupon, oferta_recompra, reactivacion] }
+                id_cupon: { type: integer, format: int64, nullable: true }
+                id_oferta_recompra: { type: integer, format: int64, nullable: true }
+                id_asignacion_experimento: { type: integer, format: int64, nullable: true }
+                id_producto:
+                  type: integer
+                  nullable: true
+                  description: Producto afectado. Nulo = toda la venta (cupón / reactivación).
+      responses:
+        '201':
+          description: Redención registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Redencion' }
+        '200':
+          description: Ya existía una redención para ese origen (idempotencia)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Redencion' }
+        '400':
+          description: |
+            `tipo_origen` incoherente con el `id_*` provisto; o se redime una
+            `asignacion_experimento` de grupo `control`; o el cupón está fuera de su ventana de
+            validez.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: La venta, el cupón, la oferta o la asignación no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /promociones/marca-activa:
+    get:
+      tags: [marca-activa]
+      summary: Marca de "promoción activa" por producto, sucursal y período (contrato con 004)
+      description: |
+        FR-031 a FR-034. Devuelve, para la ventana pedida, los `(id_producto, id_sucursal,
+        periodo)` que tuvieron al menos una redención de promoción, con los tipos de promoción que
+        los afectaron. Las redenciones de cupón/reactivación (`id_producto` nulo) se EXPANDEN a
+        todos los productos de su venta (research.md #5). 004 consume esto para poblar
+        `demanda_observada.con_promocion` y excluir o marcar esos períodos de su serie corregida
+        (FR-029/FR-031 de 004). `id_sucursal` es OBLIGATORIO; nunca se agregan dos sucursales sin
+        discriminar (FR-035).
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: desde
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: hasta
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Marcas de promoción activa
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MarcaPromocionActiva' }
+        '404':
+          description: La sucursal no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+
+  parameters:
+    IdExperimento:
+      name: id_experimento_reactivacion
+      in: path
+      required: true
+      schema: { type: integer, format: int64 }
+
+  schemas:
+
+    Cupon:
+      type: object
+      properties:
+        id_cupon: { type: integer, format: int64 }
+        id_campania: { type: integer }
+        id_cliente: { type: integer }
+        motivo: { type: string, enum: [fecha_fija_cumpleanos] }
+        fecha_objetivo: { type: string, format: date }
+        valido_desde: { type: string, format: date }
+        valido_hasta: { type: string, format: date }
+        porcentaje_descuento: { type: string, description: 'Decimal con 2 decimales, p. ej. "10.00"' }
+        estado: { type: string, enum: [generado, redimido, vencido] }
+        instante_generacion: { type: string, format: date-time }
+
+    OfertaRecompra:
+      type: object
+      properties:
+        id_oferta_recompra: { type: integer, format: int64 }
+        id_campania: { type: integer }
+        id_cliente: { type: integer }
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        intervalo_esperado_dias_disparo: { type: string, description: 'Snapshot del intervalo de 002 que disparó la oferta' }
+        justificacion:
+          type: object
+          description: 'Qué compras del propio cliente sustentan la elección del producto (FR-009)'
+          properties:
+            ventas_consideradas:
+              type: array
+              items: { type: integer, format: int64 }
+            compras_del_producto: { type: integer }
+            ventana_dias: { type: integer }
+        precio_garantizado:
+          type: string
+          description: 'RESERVA DE PRECIO: el precio que se honra si el cliente vuelve dentro de la ventana. No garantiza disponibilidad (FR-011)'
+        reserva_desde: { type: string, format: date }
+        reserva_hasta: { type: string, format: date }
+        estado_reserva: { type: string, enum: [vigente, vencida] }
+        desenlace: { type: string, enum: [pendiente, comprado, no_comprado, reserva_vencida] }
+        instante_generacion: { type: string, format: date-time }
+
+    Experimento:
+      type: object
+      description: |
+        Incluye toda la parametrización y el resultado, para que la incrementalidad sea
+        reconstruible del registro (FR-022, FR-024, SC-007).
+      properties:
+        id_experimento_reactivacion: { type: integer, format: int64 }
+        id_campania: { type: integer }
+        id_sucursal: { type: integer, nullable: true }
+        semilla: { type: integer, format: int64 }
+        algoritmo: { type: string, example: 'random.Random / MT19937 (biblioteca estándar de Python)' }
+        proporcion_tratamiento: { type: string, example: '0.500' }
+        ventana_medicion_dias: { type: integer }
+        porcentaje_descuento: { type: string }
+        parametros_muestra:
+          type: object
+          description: 'Cómo se calculó el tamaño mínimo de muestra (research.md #10b)'
+          properties:
+            tasa_retorno_base_esperada: { type: string, example: '0.1500' }
+            mde_puntos_porcentuales: { type: string, example: '15.00' }
+            alfa: { type: string, example: '0.050' }
+            poder: { type: string, example: '0.800' }
+            tamano_minimo_muestra: { type: integer, description: 'n* por grupo' }
+        n_elegibles: { type: integer }
+        n_tratamiento: { type: integer, nullable: true }
+        n_control: { type: integer, nullable: true }
+        retorno_tratamiento: { type: string, nullable: true, description: 'Proporción 0..1' }
+        retorno_control: { type: string, nullable: true }
+        incrementalidad: { type: string, nullable: true, description: 'retorno_tratamiento − retorno_control. Puede ser negativa' }
+        estadistico_z: { type: string, nullable: true }
+        valor_p: { type: string, nullable: true, description: 'Prueba de dos colas' }
+        veredicto: { type: string, enum: [en_curso, efectivo, no_efectivo, muestra_insuficiente] }
+        motivo_muestra_insuficiente:
+          type: string
+          nullable: true
+          example: '84 elegibles, mínimo 242 (MDE 15 pp, poder 0,80)'
+        instante_asignacion: { type: string, format: date-time }
+        instante_cierre: { type: string, format: date-time, nullable: true }
+
+    Asignacion:
+      type: object
+      properties:
+        id_asignacion_experimento: { type: integer, format: int64 }
+        id_experimento_reactivacion: { type: integer, format: int64 }
+        id_cliente: { type: integer }
+        id_senal_fuga: { type: integer, format: int64, description: 'La senal_fuga de 002 que hizo elegible al cliente. Sólo auditoría; 005 nunca la modifica' }
+        grupo: { type: string, enum: [tratamiento, control] }
+        retorno: { type: boolean }
+        id_venta_retorno: { type: integer, format: int64, nullable: true }
+        instante_retorno: { type: string, format: date-time, nullable: true }
+
+    Redencion:
+      type: object
+      properties:
+        id_redencion_promocion: { type: integer, format: int64 }
+        tipo_origen: { type: string, enum: [cupon, oferta_recompra, reactivacion] }
+        id_cupon: { type: integer, format: int64, nullable: true }
+        id_oferta_recompra: { type: integer, format: int64, nullable: true }
+        id_asignacion_experimento: { type: integer, format: int64, nullable: true }
+        id_venta: { type: integer, format: int64 }
+        id_producto: { type: integer, nullable: true }
+        id_sucursal: { type: integer }
+        periodo: { type: string, format: date }
+        descuento_aplicado: { type: string, nullable: true }
+        instante_redencion: { type: string, format: date-time }
+
+    MarcaPromocionActiva:
+      type: object
+      description: 'Un (producto, sucursal, período) con promoción activa. Lo consume 004 (FR-003 de 004).'
+      properties:
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        periodo: { type: string, format: date }
+        tipos:
+          type: array
+          items: { type: string, enum: [fecha_fija, recompra, reactivacion] }
+          description: 'Tipos de promoción que afectaron a ese producto ese día en esa sucursal'
+
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje:
+          type: string
+          description: Redactado para el operador, con la acción correctiva. Nunca una traza técnica.
