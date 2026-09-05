@@ -1,0 +1,136 @@
+/* Pantalla de Pronóstico de Demanda — registro de Análisis: una decisión por bloque, aire
+   visual, radio 6px, Source Serif 4 (DESIGN.md). Sin Verde Rasero: esta pantalla no tiene
+   ninguna acción que comprometa dinero (Regla del Registro Sin Dinero). Mismo patrón
+   lista/detalle que Precios.tsx y Clientes.tsx. */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.encabezado {
+  flex-shrink: 0;
+  padding: 24px 32px 16px;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.cuerpo {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  gap: 24px;
+  padding: 0 32px 32px;
+  overflow: hidden;
+}
+
+.instruccion,
+.error {
+  color: var(--color-tinta-suave);
+  font-size: 15px;
+  max-width: 70ch;
+}
+
+.error {
+  color: var(--color-critico);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  width: 320px;
+  flex-shrink: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.bloque {
+  width: 100%;
+  text-align: left;
+  font-family: var(--tipografia-analisis);
+  font-size: 15px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 14px 16px;
+  cursor: pointer;
+}
+
+.bloqueSeleccionado {
+  border-color: var(--color-tinta);
+}
+
+.panelDetalle {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 28px 32px;
+}
+
+.nombreDetalle {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 16px;
+}
+
+/* Selector de vista: serie de demanda (producción) vs validación (datos sintéticos). Segmentado
+   de texto, sin fondo de color — no compite con el contenido ni usa el Verde Rasero. */
+.selectorVista {
+  display: flex;
+  gap: 4px;
+  margin: 0 0 18px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.vistaActiva,
+.vistaInactiva {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 6px 4px;
+  cursor: pointer;
+}
+
+.vistaActiva {
+  color: var(--color-tinta);
+  border-bottom-color: var(--color-tinta);
+  font-weight: 600;
+}
+
+.vistaInactiva {
+  color: var(--color-tinta-suave);
+}
+
+/* Único momento de animación deliberado: al revelar el detalle de un producto (mismo patrón que
+   Clientes.tsx y Precios.tsx — remount por producto vía `key`, nunca hover ni fade-in por fila). */
+.detalleRevelado {
+  animation: revelar 320ms ease-out;
+}
+
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

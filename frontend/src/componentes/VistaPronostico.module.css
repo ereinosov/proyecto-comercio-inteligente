@@ -1,0 +1,126 @@
+/* Vista de pronóstico — registro de Análisis. La proyección es un VALOR ESTIMADO: se distingue
+   del dato con los tres portadores (color estimado, forma, texto). Sin Verde Rasero. */
+
+.contenedor {
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.controles {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+
+.horizonteActivo,
+.horizonteInactivo {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  background: var(--color-superficie-alta);
+  cursor: pointer;
+}
+
+.horizonteActivo {
+  border-color: var(--color-tinta);
+  color: var(--color-tinta);
+  font-weight: 600;
+}
+
+.horizonteInactivo {
+  color: var(--color-tinta-suave);
+}
+
+.instruccion,
+.error {
+  font-size: 14px;
+  color: var(--color-tinta-suave);
+  max-width: 70ch;
+}
+
+.error {
+  color: var(--color-critico);
+}
+
+/* Veredicto: el pronóstico supera (o no) a su línea base determinista (SC-004). */
+.veredicto {
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 6px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.veredictoVigente {
+  color: var(--color-estimado);
+}
+
+.veredictoLineaBase {
+  color: var(--color-atencion);
+}
+
+.puntoHueco {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+}
+
+.puntoMedio {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+}
+
+.factores {
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  max-width: 70ch;
+  margin: 4px 0 16px;
+}
+
+.tabla {
+  border-collapse: collapse;
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.tabla th,
+.tabla td {
+  padding: 5px 14px;
+  border-bottom: 1px solid var(--color-borde);
+  text-align: right;
+}
+
+.tabla th:first-child,
+.tabla td:first-child {
+  text-align: left;
+  color: var(--color-tinta-suave);
+}
+
+.proyeccion {
+  color: var(--color-estimado);
+}
+
+/* Único momento de animación deliberado de la pantalla: al revelarse el pronóstico ya calculado
+   (constitución, registro de Análisis: "un momento orquestado por pantalla"). */
+.revelar {
+  animation: aparecer 320ms ease-out;
+}
+
+@keyframes aparecer {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

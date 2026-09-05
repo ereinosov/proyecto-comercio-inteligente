@@ -1,0 +1,117 @@
+/* Serie de demanda observada vs corregida — registro de Análisis (radio 6px, Source Serif 4).
+   La demanda OBSERVADA es dato (tinta normal); la CORREGIDA y el "no estimable" son valor
+   estimado, y se distinguen con los TRES portadores simultáneos que exige la constitución:
+   color `estimado` (#1F5673), forma (punto hueco / subrayado punteado) y texto explícito.
+   Nunca sólo color. */
+
+.contenedor {
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.resumen {
+  font-size: 14px;
+  color: var(--color-tinta-suave);
+  margin: 0 0 12px;
+  max-width: 70ch;
+}
+
+.instruccion,
+.error {
+  color: var(--color-tinta-suave);
+  font-size: 14px;
+  max-width: 70ch;
+}
+
+.error {
+  color: var(--color-critico);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.tabla th {
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-tinta-suave);
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.tabla th:first-child {
+  text-align: left;
+}
+
+.tabla td {
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--color-borde);
+  text-align: right;
+}
+
+.tabla td:first-child {
+  text-align: left;
+  color: var(--color-tinta-suave);
+}
+
+.filaQuiebre {
+  background: var(--color-superficie-base);
+}
+
+.observada {
+  color: var(--color-tinta);
+}
+
+/* Valor estimado: color + forma (punto hueco) + texto — los tres portadores. */
+.corregida {
+  color: var(--color-estimado);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.puntoHueco {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: transparent;
+  flex-shrink: 0;
+}
+
+.igual {
+  color: var(--color-tinta-suave);
+}
+
+.detalleCorreccion {
+  display: block;
+  font-family: var(--tipografia-analisis);
+  font-size: 12px;
+  color: var(--color-estimado);
+  text-align: right;
+}
+
+.noEstimable {
+  color: var(--color-estimado);
+  font-family: var(--tipografia-analisis);
+  font-style: italic;
+  font-size: 12px;
+}
+
+.notas {
+  display: block;
+  font-family: var(--tipografia-analisis);
+  font-size: 12px;
+  color: var(--color-estimado);
+  text-align: left;
+  max-width: 44ch;
+}
+
+.tabla td:last-child {
+  text-align: left;
+}

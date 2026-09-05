@@ -266,5 +266,9 @@ components:
 
     Error:
       type: object
+      required: [codigo, mensaje]
       properties:
-        detalle: { type: string }
+        codigo: { type: string }
+        mensaje:
+          type: string
+          description: Redactado para el operador, con la acción correctiva. Nunca una traza técnica.

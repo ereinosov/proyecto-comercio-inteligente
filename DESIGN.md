@@ -246,6 +246,29 @@ sugerir suavidad. Los degradados y los fondos oscuros están prohibidos en todo 
   "Mover" ni "Reubicar" — el sistema no reubica nada por su cuenta (Principio V, consultiva por
   defecto); el texto del botón es, en sí, parte de la explicabilidad.
 
+### Serie y pronóstico de demanda (Análisis)
+
+- **Carácter:** la superficie donde el sistema muestra un dato observado y, junto a él, su versión
+  **estimada** — la demanda corregida por censura de quiebre, precio, promoción y sustitución, y el
+  pronóstico que se deriva de ella. Es el caso más exigente de la Regla de los Tres Portadores: en
+  la misma tabla conviven una columna de dato (demanda observada, tinta, cifras tabulares) y una de
+  estimación (demanda corregida y pronóstico, color **estimado #1F5673**, punto hueco, y una nota
+  de texto que dice qué corrección se aplicó).
+- **Cuatro vistas por producto**, seleccionables con un segmentado de texto sin fondo de color:
+  Pronóstico, Serie de demanda, Validación de la descensura, Sustitutos. Una decisión por vista.
+- **El pronóstico nunca aparece solo:** siempre junto a su línea base determinista y a un veredicto
+  explícito ("Pronóstico vigente: supera a la línea base" o "no supera su línea base — se recomienda
+  la línea base"). Un producto sin histórico suficiente muestra el texto "datos insuficientes",
+  nunca un número (misma regla que el resumen de valor de cliente).
+- **Validación sintética rotulada:** la vista que compara la descensura contra datos generados
+  lleva un rótulo inequívoco **"Datos sintéticos"** en color estimado con borde — no se puede
+  confundir con una vista de producción.
+- **Momento de revelación:** al terminar de calcularse un pronóstico, entra con una única
+  transición de opacidad y desplazamiento vertical corto (320ms) — el momento de animación
+  deliberado que el registro de Análisis admite, el mismo patrón que el detalle de cliente.
+- **Sin Verde Rasero:** esta pantalla no tiene ninguna acción que comprometa dinero (Regla del
+  Registro Sin Dinero); el pronóstico es consultivo y no dispara ninguna compra.
+
 ### Named Rules
 
 **La Regla de los Tres Portadores.** Ningún dato con antigüedad o incertidumbre se comunica solo

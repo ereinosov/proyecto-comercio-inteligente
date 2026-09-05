@@ -1,43 +1,59 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
-Cambio de versión: 2.2.2 → 2.2.3
-Tipo de cambio: PARCHE — corrige la propiedad de datos de
-`003-precios-margenes`, detectada al escribir su `data-model.md` en
-`/speckit-plan`. Mismo tipo de corrección que v2.1.1/v2.1.2 sobre 001: la
-tabla original era un supuesto anterior a la especificación real del módulo,
-y esta enmienda la reemplaza por lo que su spec y su diseño de datos
-realmente exigen. No cambia ningún principio.
+Cambio de versión: 2.2.3 → 2.2.4
+Tipo de cambio: PARCHE — añade `sustitucion_producto` a la lista de
+entidades propias de `004-pronostico-demanda`, detectado al escribir su
+`data-model.md` en `/speckit-plan`. Mismo tipo de corrección que v2.1.1 y
+v2.1.2 sobre 001 y v2.2.3 sobre 003: la lista original era un supuesto
+anterior a la especificación real del módulo, y esta enmienda la completa
+con lo que su spec y su diseño de datos realmente exigen. No cambia ningún
+principio.
+
+Secundariamente, corrige un desliz de sincronización de v2.2.3: el pie del
+documento quedó citando "Versión: 2.2.2" cuando v2.2.3 ya regía en el cuerpo
+y en el informe. Este cambio lleva el pie a 2.2.4.
 
 Principios modificados: ninguno.
 Secciones añadidas: ninguna.
 Secciones eliminadas: ninguna.
 
-Secciones modificadas:
-  - Propiedad de Datos y Nomenclatura, entrada de `003-precios-margenes`:
-      * Se retira `costo_producto` de la lista de entidades propias de 003.
-        Contradecía la frontera ya declarada dos líneas más abajo en la
-        misma sección ("el costo del producto es dato de compra y pertenece
-        a 001; el margen es cálculo derivado... y pertenece a 003") y el
-        patrón ya implementado en 002 (`margen_resolver.py` lee
-        `lote.costo_unitario` de 001 sin poseerlo, documentado en su
-        research.md #2). `003` consulta el costo vigente vía `lote` y
-        `existencia` de 001; no necesita ni debe mantener una tabla de costo
-        propia.
-      * Se añade `sugerencia_precio` a la lista de entidades propias de 003.
-        `003-precios-margenes/spec.md` (FR-008, FR-013, FR-014) exige
-        generar una sugerencia de precio con registro de los insumos que la
-        originaron y, al aplicarla, dejar registro de qué sugerencia creó o
-        modificó el override de precio por sucursal — lo mismo que la
-        entidad hermana `sugerencia_colocacion`, ya presente en la lista
-        original, hace para colocación. No estaba en la ratificación
-        original porque esa lista se escribió antes de que existiera el
-        spec de 003.
-    Lista resultante de 003: `margen_calculado`, `rol_producto`,
-    `sugerencia_precio`, `sugerencia_colocacion` (4 entidades, mismo conteo
-    que antes; cambia la composición, no el tamaño).
+Revisión de consistencia previa a la enmienda (exigida por la "Puerta de
+propiedad de datos"; el mismo tipo de revisión que en v2.2.3 detectó el
+error de `costo_producto` en 003): se contrastó la entrada COMPLETA de
+`004-pronostico-demanda` —`demanda_observada`, `demanda_corregida`,
+`pronostico`— contra las fronteras declaradas en la propia sección antes de
+escribir esta enmienda. A diferencia de 003, no se halló ninguna entrada que
+contradijera una frontera: las tres son artefactos analíticos derivados
+(serie observada anotada por período, serie corregida por censura/precio/
+promoción/sustitución, y proyección), coherentes con la misma lógica que
+sostiene `margen_calculado` para 003 —"el cálculo derivado con reglas de
+negocio pertenece al módulo que lo produce, no al dueño del dato de origen"—.
+La única omisión era `sustitucion_producto`.
 
-Decisiones de alcance vigentes (sin cambio en 2.2.3):
+Secciones modificadas:
+  - Propiedad de Datos y Nomenclatura, entrada de `004-pronostico-demanda`:
+      * Se añade `sustitucion_producto`: la relación declarada manualmente
+        entre un producto y otro que puede sustituirlo.
+        `004-pronostico-demanda/spec.md` la exige como tabla propia en
+        FR-032 y User Story 6, y —tras la sesión de `/speckit-clarify` del
+        2026-09-05— también en FR-009 (b), donde el ajuste cruzado de la
+        descensura por quiebre usa esa relación. No estaba en la
+        ratificación original porque esa lista se escribió antes de que
+        existiera el spec de 004. Es el mismo patrón que `rol_producto` de
+        003: una declaración de negocio sobre un producto que NO es un
+        atributo de `producto` (001) y que su módulo modela en tabla propia
+        con FK hacia `producto`, sin alterar el esquema ajeno.
+    Lista resultante de 004: `demanda_observada`, `demanda_corregida`,
+    `pronostico`, `sustitucion_producto` (4 entidades; antes 3).
+  - Fronteras entre funcionalidades adyacentes: nueva viñeta que separa la
+    demanda observada (dato de ventas de 001) de la serie corregida y el
+    pronóstico (cálculo derivado de 004), en paralelo a la viñeta
+    costo/margen de 001/003.
+  - Pie del documento: "Versión: 2.2.2" → "2.2.4"; "Última enmienda:
+    2026-09-04" → "2026-09-05".
+
+Decisiones de alcance vigentes (sin cambio en 2.2.4):
   - `sucursal` es entidad de primera clase con cardinalidad no acotada; el
     alcance del examen cubre exactamente dos sucursales (Quevedo Centro y
     Buena Fe, del juego de datos Despensa Los Ríos).
@@ -51,6 +67,8 @@ Decisiones de alcance vigentes (sin cambio en 2.2.3):
     por marca de tiempo.
   - Propiedad de datos de 001-core-ventas-inventario: 20 entidades vigentes
     desde v2.1.2.
+  - Propiedad de datos de 003-precios-margenes: 4 entidades vigentes desde
+    v2.2.3 (`costo_producto` retirado, `sugerencia_precio` añadida).
   - Puerta de sincronización de enmiendas (v2.2.0).
 
 Historial de versiones:
@@ -71,16 +89,24 @@ Historial de versiones:
   - 2.2.2 (2026-09-04) — los tres pasos reales de Impeccable (init / new-work /
     documenter) documentados por separado; tercera corrección consecutiva
     sobre el mecanismo de la misma herramienta.
-  - 2.2.3 (2026-09-05) — esta enmienda: propiedad de datos de
-    `003-precios-margenes` corregida a partir de su especificación real
-    (`costo_producto` retirado, `sugerencia_precio` añadida), detectada al
-    escribir `data-model.md` de 003 en `/speckit-plan`.
+  - 2.2.3 (2026-09-05) — propiedad de datos de `003-precios-margenes`
+    corregida a partir de su especificación real (`costo_producto` retirado,
+    `sugerencia_precio` añadida), detectada al escribir `data-model.md` de
+    003 en `/speckit-plan`.
+  - 2.2.4 (2026-09-05) — esta enmienda: `sustitucion_producto` añadida a
+    `004-pronostico-demanda` a partir de su especificación real (FR-032,
+    User Story 6, FR-009 b), detectada al escribir `data-model.md` de 004 en
+    `/speckit-plan`; nueva viñeta de frontera demanda-observada/pronóstico;
+    y corrección del pie del documento, que v2.2.3 dejó en 2.2.2.
 
-Artefactos de funcionalidad afectados: las citas de versión vigente en
-spec.md, plan.md y data-model.md de 001 y de 002 se sincronizan a v2.2.3 en
-este mismo cambio (puerta de sincronización de enmiendas, v2.2.0);
-`003-precios-margenes` nace directamente citando v2.2.3, no requiere
-sincronización retroactiva.
+Artefactos de funcionalidad afectados: las citas que reclaman una versión
+vigente de la constitución ("constitución vX.Y.Z", "verificación contra la
+constitución vX.Y.Z") en spec.md, plan.md y data-model.md de 001, 002 y 003
+se sincronizan a v2.2.4 en este mismo cambio (puerta de sincronización de
+enmiendas, v2.2.0). `004-pronostico-demanda` nace citando v2.2.4. Las citas
+históricas —"la enmienda v2.2.3 que añadió `sugerencia_precio`", "corregidas
+en v2.2.3"— describen qué enmienda introdujo qué regla y NO se barren
+(excepción explícita de la puerta).
 
 TODOs pendientes: ninguno.
 -->
@@ -312,7 +338,10 @@ una enmienda la corrija.
   `sugerencia_colocacion`. (`costo_producto` retirado y `sugerencia_precio` añadida por la
   enmienda **v2.2.3**, a raíz de la especificación real de 003 — ver frontera de "costo" más
   abajo.)
-- **004-pronostico-demanda**: `demanda_observada`, `demanda_corregida`, `pronostico`.
+- **004-pronostico-demanda**: `demanda_observada`, `demanda_corregida`, `pronostico`,
+  `sustitucion_producto`. (`sustitucion_producto` añadida por la enmienda **v2.2.4**, a raíz de la
+  especificación real de 004 — FR-032, User Story 6 y FR-009 b; ver frontera demanda/pronóstico más
+  abajo.)
 - **005-promociones-inteligentes**: `campania`, `envio_promocional`, `grupo_control`.
 - **006-caja-mermas-fraude**: `arqueo`, `merma`, `anomalia_caja`.
 - **007-pagos-seguridad**: `terminal_pago`, `medio_pago`, `cobertura_pago`,
@@ -330,6 +359,12 @@ Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de conf
   conteos.
 - La **detección** de riesgo de fuga pertenece a clientes (002); la **decisión** de ofrecer
   descuento de reactivación pertenece a promociones (005).
+- La **demanda observada** —las ventas ya registradas, agregadas a una serie— descansa sobre datos
+  de 001 (`venta`, `renglon_venta`, `movimiento_inventario`); la **serie de demanda corregida** por
+  censura de quiebre, precio y promoción, y el **pronóstico** que se deriva de ella, son cálculo
+  derivado con reglas de negocio y pertenecen a 004. La **relación de sustitución** entre dos
+  productos es una declaración de negocio propia de 004 (`sustitucion_producto`), no un atributo de
+  `producto` (001) — mismo patrón que `rol_producto` de 003.
 - `anomalia_caja` es propiedad de 006, pero se **calcula consultando** `movimiento_inventario`,
   `venta` y `anulacion_venta`, propiedad de 001. Eso es consulta entre funcionalidades, no
   redefinición, y no infringe la regla de propiedad. Es además la forma en que la Lectura Crítica
@@ -503,4 +538,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.2.2 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-04
+**Versión**: 2.2.4 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-05

@@ -78,3 +78,21 @@ class SugerenciaYaAplicada(ErrorDominio):
 
     def __init__(self):
         super().__init__("Esta sugerencia ya había sido aplicada.")
+
+
+class SerieSinteticaInvalida(ErrorDominio):
+    codigo = "serie_sintetica_invalida"
+    status_code = 400
+
+
+class RelacionSustitucionInvalida(ErrorDominio):
+    codigo = "relacion_sustitucion_invalida"
+    status_code = 400
+
+
+class RelacionSustitucionDuplicada(ErrorDominio):
+    codigo = "relacion_sustitucion_duplicada"
+    status_code = 409
+
+    def __init__(self):
+        super().__init__("Esa relación de sustitución (en esa dirección) ya estaba declarada.")

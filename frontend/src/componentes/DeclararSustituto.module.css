@@ -1,0 +1,83 @@
+/* Declarar sustitutos de un producto — registro de Análisis. Sin Verde Rasero (no compromete
+   dinero). */
+
+.contenedor {
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.explicacion {
+  font-size: 14px;
+  color: var(--color-tinta-suave);
+  max-width: 70ch;
+  margin: 0 0 14px;
+}
+
+.lista {
+  list-style: none;
+  margin: 0 0 14px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 8px 12px;
+  font-size: 14px;
+}
+
+.vacio {
+  font-size: 14px;
+  color: var(--color-tinta-suave);
+}
+
+.formulario {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.selector {
+  font-family: var(--tipografia-analisis);
+  font-size: 14px;
+  padding: 7px 10px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  background: var(--color-superficie-alta);
+  color: var(--color-tinta);
+}
+
+.boton {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  padding: 8px 14px;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  background: var(--color-superficie-alta);
+  color: var(--color-tinta);
+  cursor: pointer;
+}
+
+.botonQuitar {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  border: none;
+  background: transparent;
+  color: var(--color-tinta-suave);
+  cursor: pointer;
+}
+
+.error {
+  color: var(--color-critico);
+  font-size: 13px;
+  margin-top: 8px;
+}

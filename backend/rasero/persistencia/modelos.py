@@ -599,3 +599,145 @@ class SugerenciaColocacion(Base):
             name="ck_sugerencia_colocacion_rol_usado",
         ),
     )
+
+
+# --------------------------------------------------------------------------
+# Pronóstico de demanda (004-pronostico-demanda, data-model.md, constitución v2.2.4)
+# --------------------------------------------------------------------------
+
+
+class DemandaObservada(Base):
+    """Serie histórica de demanda tal como se registró, por producto, sucursal y día local de la
+    sucursal. Registro de hechos: no se modifica retroactivamente (FR-004). Se materializa por
+    upsert sobre la ventana de días pedida al leer (recompute-on-read, research.md #3), nunca por
+    disparador ni tarea de fondo. `demanda_latente_verdadera` se puebla SOLO en filas sintéticas
+    de períodos de quiebre (User Story 2, FR-013); es `NULL` en todo dato real.
+    """
+
+    __tablename__ = "demanda_observada"
+
+    id_producto: Mapped[int] = mapped_column(ForeignKey("producto.id_producto"), primary_key=True)
+    id_sucursal: Mapped[int] = mapped_column(ForeignKey("sucursal.id_sucursal"), primary_key=True)
+    periodo: Mapped[date] = mapped_column(Date, primary_key=True)
+    cantidad: Mapped[Decimal] = mapped_column(Numeric(14, 0), nullable=False)
+    dias_en_quiebre: Mapped[Decimal] = mapped_column(
+        Numeric(4, 3), nullable=False, default=Decimal(0)
+    )
+    precio_vigente_periodo: Mapped[Decimal | None] = mapped_column(Numeric(12, 4), nullable=True)
+    con_promocion: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    es_sintetico: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    demanda_latente_verdadera: Mapped[Decimal | None] = mapped_column(
+        Numeric(14, 4), nullable=True
+    )
+    # Conteo sintético de consultas no atendidas del período, contrapartida del
+    # `consulta_no_atendida.saldo_en_el_instante` de 001. Solo se puebla en filas sintéticas de
+    # períodos de quiebre que declaran ese escenario (FR-016): deja los datos listos para que la
+    # rama de evidencia real (FR-007 / T014, bloqueada por 001) se pueda validar cuando exista.
+    # NULL en todo dato real y en períodos sintéticos sin consultas declaradas.
+    consultas_no_atendidas_sinteticas: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    instante_materializacion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+
+class DemandaCorregida(Base):
+    """Serie derivada de `demanda_observada` tras aplicar, en orden fijo (research.md #3), las
+    correcciones por quiebre (User Story 1), precio (User Story 4), promoción (User Story 5) y la
+    señal de sustitución (User Story 6). `valor_observado` es un snapshot de partida, no una FK,
+    para que la serie corregida sea explicable aunque la observada se recompute (FR-010).
+
+    Con `censura_total = True` (FR-012), `valor` queda en 0 SOLO como marcador no expuesto: el
+    servicio lo devuelve como `null` con estado "no_estimable_censura_total", nunca ese 0.
+    """
+
+    __tablename__ = "demanda_corregida"
+
+    id_producto: Mapped[int] = mapped_column(ForeignKey("producto.id_producto"), primary_key=True)
+    id_sucursal: Mapped[int] = mapped_column(ForeignKey("sucursal.id_sucursal"), primary_key=True)
+    periodo: Mapped[date] = mapped_column(Date, primary_key=True)
+    valor_observado: Mapped[Decimal] = mapped_column(Numeric(14, 0), nullable=False)
+    valor: Mapped[Decimal] = mapped_column(Numeric(14, 4), nullable=False)
+    correccion_quiebre: Mapped[Decimal] = mapped_column(
+        Numeric(14, 4), nullable=False, default=Decimal(0)
+    )
+    respaldo_quiebre: Mapped[str] = mapped_column(String, nullable=False, default="no_aplica")
+    ajuste_cruzado_sustituto: Mapped[Decimal] = mapped_column(
+        Numeric(14, 4), nullable=False, default=Decimal(0)
+    )
+    correccion_precio: Mapped[Decimal] = mapped_column(
+        Numeric(14, 4), nullable=False, default=Decimal(0)
+    )
+    elasticidad_usada: Mapped[Decimal | None] = mapped_column(Numeric(4, 3), nullable=True)
+    excluido_por_promocion: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    censura_total: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    es_sintetico: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    instante_materializacion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "respaldo_quiebre IN ('no_aplica','metodo_base','consulta_no_atendida')",
+            name="ck_demanda_corregida_respaldo_quiebre",
+        ),
+    )
+
+
+class Pronostico(Base):
+    """Append-only (Principio IV): cada generación es una fila nueva con sus factores, su período
+    de datos y el valor de la línea base determinista (FR-021). Se deriva de `demanda_corregida`,
+    nunca de `demanda_observada` cruda (FR-018). Un producto sin histórico suficiente no recibe
+    números: `vigente = False`, `serie_pronosticada` vacía y `motivo_no_vigente` (FR-023).
+    """
+
+    __tablename__ = "pronostico"
+
+    id_pronostico: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_producto: Mapped[int] = mapped_column(ForeignKey("producto.id_producto"), nullable=False)
+    id_sucursal: Mapped[int] = mapped_column(ForeignKey("sucursal.id_sucursal"), nullable=False)
+    horizonte: Mapped[str] = mapped_column(String, nullable=False)
+    dias_horizonte: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    serie_pronosticada: Mapped[list] = mapped_column(JSONB, nullable=False)
+    nivel_suavizado: Mapped[Decimal] = mapped_column(Numeric(14, 4), nullable=False)
+    alfa_usado: Mapped[Decimal] = mapped_column(Numeric(4, 3), nullable=False)
+    multiplicadores_tramo: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    periodo_datos_desde: Mapped[date] = mapped_column(Date, nullable=False)
+    periodo_datos_hasta: Mapped[date] = mapped_column(Date, nullable=False)
+    valor_linea_base: Mapped[Decimal] = mapped_column(Numeric(14, 4), nullable=False)
+    error_retrospectivo: Mapped[Decimal | None] = mapped_column(Numeric(14, 4), nullable=True)
+    error_linea_base: Mapped[Decimal | None] = mapped_column(Numeric(14, 4), nullable=True)
+    vigente: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    motivo_no_vigente: Mapped[str | None] = mapped_column(String, nullable=True)
+    es_sintetico: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    instante_generacion: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint("horizonte IN ('corto','medio')", name="ck_pronostico_horizonte"),
+    )
+
+
+class SustitucionProducto(Base):
+    """Relación declarada MANUALMENTE entre un producto y otro que puede sustituirlo (FR-032). No
+    se infiere de correlación de ventas. Tabla propia de 004, no atributo de `producto` (001) —
+    mismo patrón que `rol_producto` de 003. La dirección importa: `id_producto` es el que, al
+    quedar en quiebre, empuja demanda hacia `id_producto_sustituto` (FR-033, FR-009 b). Una
+    relación mutua son dos filas; una circular está permitida.
+    """
+
+    __tablename__ = "sustitucion_producto"
+
+    id_sustitucion_producto: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_producto: Mapped[int] = mapped_column(ForeignKey("producto.id_producto"), nullable=False)
+    id_producto_sustituto: Mapped[int] = mapped_column(
+        ForeignKey("producto.id_producto"), nullable=False
+    )
+    instante_declaracion: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "id_producto <> id_producto_sustituto", name="ck_sustitucion_producto_distinto"
+        ),
+        UniqueConstraint(
+            "id_producto", "id_producto_sustituto", name="uq_sustitucion_producto_dirigida"
+        ),
+    )

@@ -1,0 +1,93 @@
+/* Vista de analista: validación de la descensura contra datos sintéticos. Registro de Análisis.
+   Rotulada de forma inequívoca como DATOS SINTÉTICOS — no se puede confundir con producción
+   (FR-017). Sin Verde Rasero (Regla del Registro Sin Dinero). */
+
+.contenedor {
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.rotulo {
+  display: inline-block;
+  font-family: var(--tipografia-operacion);
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-estimado);
+  border: 1px solid var(--color-estimado);
+  border-radius: var(--radio-analisis);
+  padding: 3px 8px;
+  margin-bottom: 14px;
+}
+
+.explicacion {
+  font-size: 14px;
+  color: var(--color-tinta-suave);
+  max-width: 70ch;
+  margin: 0 0 18px;
+}
+
+.instruccion,
+.error {
+  font-size: 14px;
+  color: var(--color-tinta-suave);
+  max-width: 70ch;
+}
+
+.error {
+  color: var(--color-critico);
+}
+
+.boton {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 8px 14px;
+  cursor: pointer;
+  margin-top: 8px;
+}
+
+.veredicto {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.veredictoOk {
+  color: var(--color-marca);
+}
+
+.veredictoMal {
+  color: var(--color-critico);
+}
+
+.tabla {
+  border-collapse: collapse;
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+  margin-top: 8px;
+}
+
+.tabla th,
+.tabla td {
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--color-borde);
+  text-align: right;
+}
+
+.tabla th:first-child,
+.tabla td:first-child {
+  text-align: left;
+  color: var(--color-tinta-suave);
+}
+
+.nota {
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+  max-width: 70ch;
+  margin-top: 14px;
+}

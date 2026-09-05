@@ -26,6 +26,10 @@ async function peticion<T>(ruta: string, opciones: RequestInit = {}): Promise<T>
     },
   });
 
+  if (respuesta.status === 204) {
+    return undefined as T;
+  }
+
   const cuerpo = await respuesta.json().catch(() => null);
 
   if (!respuesta.ok) {
@@ -43,4 +47,5 @@ export const clienteHttp = {
     peticion<T>(ruta, { method: "POST", body: JSON.stringify(cuerpo) }),
   put: <T>(ruta: string, cuerpo: unknown) =>
     peticion<T>(ruta, { method: "PUT", body: JSON.stringify(cuerpo) }),
+  del: <T>(ruta: string) => peticion<T>(ruta, { method: "DELETE" }),
 };

@@ -57,7 +57,7 @@ servidor de base de datos es suficiente.
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.2.3**.
+Verificación explícita contra la constitución **v2.2.4**.
 
 ### Principios
 

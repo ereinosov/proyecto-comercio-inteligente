@@ -1,0 +1,446 @@
+openapi: 3.1.0
+
+info:
+  title: Rasero — Pronóstico de Demanda
+  version: 0.1.0
+  description: |
+    Contrato del módulo 004-pronostico-demanda. Construye la serie de demanda observada y su serie
+    corregida de las cuatro contaminaciones (quiebre de stock, precio, promoción, sustitutos) y, a
+    partir de la corregida, un pronóstico de demanda de dos horizontes. Reglas transversales que
+    aplican a todo el contrato:
+
+    - Cantidades de demanda observada como cadena decimal entera (unidades o gramos). Valores
+      corregidos y pronosticados como cadena decimal con hasta 4 decimales. Nunca coma flotante.
+    - Todos los instantes en RFC 3339 con desplazamiento. El servidor los normaliza a UTC. Los
+      períodos de la serie son fechas (día local de la sucursal), formato `YYYY-MM-DD`.
+    - Este contrato NUNCA dispara una orden de compra ni un cambio de exhibición: el pronóstico es
+      consultivo (FR-024, Principio V). No hay ningún endpoint de "aplicar".
+    - Ninguna ruta de este contrato participa en `POST /ventas` de 001-core-ventas-inventario.
+    - Toda serie y todo pronóstico se identifica por `id_sucursal`; no hay respuesta que agregue
+      varias sucursales sin discriminar el origen (FR-037).
+    - Los datos sintéticos (User Story 2) nunca aparecen en `GET /demanda` ni en
+      `GET /productos/{id}/pronostico` de producción; sólo en las rutas `/demanda-sintetica/*`
+      (FR-017).
+
+    Estado de dependencia con 001: `consulta_no_atendida` (001 User Story 3) NO está implementada.
+    Hasta que lo esté, `respaldo_quiebre` nunca vale `consulta_no_atendida` — todo período de
+    quiebre se descensura por `metodo_base` (FR-008). El esquema incluye el valor desde ya.
+
+servers:
+  - url: http://localhost:8000
+    description: Desarrollo local. Mismo servidor y misma base que 001/002/003 (puerto 5442).
+
+tags:
+  - name: demanda
+  - name: pronostico
+  - name: sustituciones
+  - name: validacion-sintetica
+
+paths:
+
+  /demanda:
+    get:
+      tags: [demanda]
+      summary: Serie de demanda observada y corregida
+      description: |
+        FR-001 a FR-004, FR-005 a FR-012, FR-025 a FR-031. Devuelve, por período (día local de la
+        sucursal), la demanda observada y la corregida con las anotaciones que la explican. Si se
+        omite `id_producto`, devuelve la sucursal completa (una consulta de conjunto, no un bucle
+        por producto — research.md #3). La ventana se materializa al leer (recompute-on-read).
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: id_producto
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: desde
+          in: query
+          required: false
+          schema: { type: string, format: date }
+          description: Primer período (día local). Por defecto, hoy − 90 días.
+        - name: hasta
+          in: query
+          required: false
+          schema: { type: string, format: date }
+          description: Último período. Por defecto, hoy.
+      responses:
+        '200':
+          description: Serie por producto y período
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/PuntoSerie' }
+        '404':
+          description: La sucursal (o el producto indicado) no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /productos/{id_producto}/pronostico:
+    get:
+      tags: [pronostico]
+      summary: Generar (o consultar el último) pronóstico de demanda de un producto
+      description: |
+        FR-018 a FR-024. Cada llamada genera una fila nueva de historial (append-only) salvo
+        `solo_ultimo=true`. El pronóstico se deriva de la serie corregida, no de la observada
+        (FR-018). Incluye siempre sus factores, su período de datos y el valor de la línea base
+        determinista (FR-021). `vigente=false` cuando no supera la línea base (SC-004) o cuando el
+        histórico es insuficiente (FR-023, `motivo_no_vigente="datos insuficientes"`).
+      parameters:
+        - $ref: '#/components/parameters/IdProducto'
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: horizonte
+          in: query
+          required: false
+          schema: { type: string, enum: [corto, medio], default: corto }
+          description: |
+            `corto` = 7–14 días (reposición). `medio` = 30 días (estacionalidad intramensual
+            simple por promedios de tramo del mes). FR-019.
+        - name: solo_ultimo
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+          description: Si es true, devuelve el último pronóstico ya generado sin crear otro.
+      responses:
+        '200':
+          description: Pronóstico de demanda
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pronostico' }
+        '404':
+          description: El producto no existe, o solo_ultimo=true sin ninguno generado aún
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: |
+            Se pidió un pronóstico de producción sobre un producto que sólo tiene datos sintéticos
+            (FR-017), o cuya serie está en estado "no estimable por censura total" (FR-012).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /sustituciones:
+    get:
+      tags: [sustituciones]
+      summary: Listar relaciones de sustitución declaradas
+      parameters:
+        - name: id_producto
+          in: query
+          required: false
+          schema: { type: integer }
+          description: Filtra por el producto que puede quedar en quiebre (lado `id_producto`).
+      responses:
+        '200':
+          description: Relaciones declaradas
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Sustitucion' }
+    post:
+      tags: [sustituciones]
+      summary: Declarar una relación de sustitución
+      description: |
+        FR-032. Declaración manual, dirigida: `id_producto` es el que, al quedar en quiebre, puede
+        empujar demanda hacia `id_producto_sustituto`. No se infiere de datos. Una relación mutua
+        se declara con dos llamadas.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_producto, id_producto_sustituto]
+              properties:
+                id_producto: { type: integer }
+                id_producto_sustituto: { type: integer }
+      responses:
+        '201':
+          description: Relación declarada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Sustitucion' }
+        '400':
+          description: id_producto igual a id_producto_sustituto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: Alguno de los dos productos no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: La relación (dirigida) ya estaba declarada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /sustituciones/{id_sustitucion_producto}:
+    delete:
+      tags: [sustituciones]
+      summary: Retirar una relación de sustitución declarada por error
+      parameters:
+        - name: id_sustitucion_producto
+          in: path
+          required: true
+          schema: { type: integer, format: int64 }
+      responses:
+        '204':
+          description: Relación retirada
+        '404':
+          description: La relación no existe
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /demanda-sintetica:
+    post:
+      tags: [validacion-sintetica]
+      summary: Cargar una serie histórica sintética con demanda latente conocida
+      description: |
+        FR-013, FR-016. Inserta una serie sintética (marcada `es_sintetico=true`) con la demanda
+        latente verdadera de cada período de quiebre. Debe incluir períodos con y sin quiebre, y
+        —para ejercer ambos caminos de FR-007 y FR-008— al menos un escenario con
+        `consultas_no_atendidas_sinteticas` y uno sin ellas. Estos datos nunca se mezclan con
+        datos reales en una consulta de producción (FR-017).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CargaSintetica' }
+      responses:
+        '201':
+          description: Serie sintética cargada
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id_producto: { type: integer }
+                  id_sucursal: { type: integer }
+                  periodos_cargados: { type: integer }
+        '400':
+          description: La serie no cumple los requisitos de FR-016 (falta un escenario de quiebre con/sin consultas)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /demanda-sintetica/validacion:
+    get:
+      tags: [validacion-sintetica]
+      summary: Reporte de error de descensura sobre la serie sintética
+      description: |
+        FR-014, FR-015, SC-002. Compara, para los períodos de quiebre sintéticos, la demanda
+        corregida estimada contra la demanda latente verdadera, y contra la demanda observada sin
+        corregir. La descensura es válida si su error medio es MENOR que el de no corregir nada.
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: id_producto
+          in: query
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Reporte de error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ReporteValidacion' }
+        '404':
+          description: No hay serie sintética para ese producto y sucursal
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+
+  parameters:
+    IdProducto:
+      name: id_producto
+      in: path
+      required: true
+      schema: { type: integer }
+
+  schemas:
+
+    PuntoSerie:
+      type: object
+      description: Un período (día local) de la serie de un producto y sucursal.
+      properties:
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        periodo: { type: string, format: date }
+        demanda_observada:
+          type: string
+          description: "Decimal entero. Unidades o gramos según el producto"
+        demanda_corregida:
+          type: string
+          nullable: true
+          description: "Decimal con hasta 4 decimales. Nulo cuando el estado es no_estimable_censura_total (FR-012)"
+        estado:
+          type: string
+          enum: [ok, no_estimable_censura_total]
+        dias_en_quiebre:
+          type: string
+          description: "Fracción 0..1 del período en existencia <= 0 (FR-002)"
+        correccion_quiebre:
+          type: string
+          description: "Delta aplicado por descensura (FR-009). 0 si el período no tuvo quiebre"
+        respaldo_quiebre:
+          type: string
+          enum: [no_aplica, metodo_base, consulta_no_atendida]
+          description: "consulta_no_atendida sólo cuando 001 implemente su User Story 3 (FR-007); hoy, metodo_base (FR-008)"
+        ajuste_cruzado_sustituto:
+          type: string
+          description: "Porción del delta de quiebre atribuida al exceso de un sustituto declarado (FR-009 b)"
+        precio_vigente_periodo:
+          type: string
+          nullable: true
+          description: "Reconstruido de renglon_venta.precio_aplicado. Nulo = sin ventas, sin corrección de precio (FR-027)"
+        correccion_precio:
+          type: string
+          description: "Delta por normalización al precio de referencia actual (FR-025)"
+        elasticidad_usada:
+          type: string
+          nullable: true
+        con_promocion:
+          type: boolean
+          description: "Hoy siempre false (FR-030); lo poblará 005"
+        excluido_por_promocion:
+          type: boolean
+        senal_sustitucion:
+          type: object
+          nullable: true
+          description: "Presente si este producto es el SUSTITUTO y su demanda pudo inflarse por el quiebre de otro (FR-033)"
+          properties:
+            id_producto_en_quiebre: { type: integer }
+            id_sustitucion_producto: { type: integer, format: int64 }
+
+    Pronostico:
+      type: object
+      description: Incluye los factores que lo determinan y la línea base, para que sea explicable (FR-021).
+      properties:
+        id_pronostico: { type: integer, format: int64 }
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        horizonte: { type: string, enum: [corto, medio] }
+        dias_horizonte: { type: integer }
+        serie_pronosticada:
+          type: array
+          items:
+            type: object
+            properties:
+              periodo: { type: string, format: date }
+              valor: { type: string }
+        factores:
+          type: object
+          properties:
+            nivel_suavizado: { type: string }
+            alfa_usado: { type: string }
+            multiplicadores_tramo:
+              type: object
+              nullable: true
+              additionalProperties: { type: string }
+              description: "Sólo horizonte medio (FR-019, research.md #8d)"
+        periodo_datos_desde: { type: string, format: date }
+        periodo_datos_hasta: { type: string, format: date }
+        valor_linea_base:
+          type: string
+          description: "Promedio móvil de la demanda OBSERVADA sin corregir (FR-022)"
+        error_retrospectivo: { type: string, nullable: true }
+        error_linea_base: { type: string, nullable: true }
+        vigente:
+          type: boolean
+          description: "true sólo si error_retrospectivo < error_linea_base (SC-004)"
+        motivo_no_vigente:
+          type: string
+          nullable: true
+          description: '"no supera la linea base" | "datos insuficientes" (FR-023)'
+        instante_generacion: { type: string, format: date-time }
+
+    Sustitucion:
+      type: object
+      properties:
+        id_sustitucion_producto: { type: integer, format: int64 }
+        id_producto: { type: integer }
+        id_producto_sustituto: { type: integer }
+        instante_declaracion: { type: string, format: date-time }
+
+    CargaSintetica:
+      type: object
+      required: [id_producto, id_sucursal, periodos]
+      properties:
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        periodos:
+          type: array
+          items:
+            type: object
+            required: [periodo, demanda_observada, dias_en_quiebre]
+            properties:
+              periodo: { type: string, format: date }
+              demanda_observada: { type: string }
+              dias_en_quiebre: { type: string, description: "0..1" }
+              demanda_latente_verdadera:
+                type: string
+                nullable: true
+                description: "Obligatoria cuando dias_en_quiebre > 0 (FR-013)"
+        consultas_no_atendidas_sinteticas:
+          type: array
+          description: "Escenario de FR-007: conteos de demanda no atendida consistentes con la latente verdadera"
+          items:
+            type: object
+            properties:
+              periodo: { type: string, format: date }
+              conteo: { type: integer }
+
+    ReporteValidacion:
+      type: object
+      description: FR-014, FR-015, SC-002.
+      properties:
+        id_producto: { type: integer }
+        id_sucursal: { type: integer }
+        periodos_quiebre_evaluados: { type: integer }
+        error_medio_descensura:
+          type: string
+          description: "Media de |demanda_corregida − demanda_latente_verdadera| sobre los períodos de quiebre"
+        error_medio_sin_corregir:
+          type: string
+          description: "Media de |demanda_observada − demanda_latente_verdadera| sobre los mismos períodos"
+        descensura_mejora_sobre_no_corregir:
+          type: boolean
+          description: "true si error_medio_descensura < error_medio_sin_corregir (criterio de SC-002)"
+        detalle_por_camino:
+          type: object
+          properties:
+            con_consulta_no_atendida:
+              $ref: '#/components/schemas/ErrorPorCamino'
+            solo_metodo_base:
+              $ref: '#/components/schemas/ErrorPorCamino'
+
+    ErrorPorCamino:
+      type: object
+      properties:
+        periodos: { type: integer }
+        error_medio_descensura: { type: string }
+        error_medio_sin_corregir: { type: string }
+
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje:
+          type: string
+          description: Redactado para el operador, con la acción correctiva. Nunca una traza técnica.

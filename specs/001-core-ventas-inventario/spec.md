@@ -529,7 +529,7 @@ detectadas al escribir `data-model.md` — ver "Dependencias Constitucionales":
 
 ## Dependencias Constitucionales
 
-Esta especificación descansa sobre la constitución del proyecto (**v2.2.3**, versión vigente) y
+Esta especificación descansa sobre la constitución del proyecto (**v2.2.4**, versión vigente) y
 hereda de ella sin repetirlas: la precisión monetaria exacta, el tratamiento del tiempo por
 sucursal, la regla de reconciliación offline, la obligación de trazabilidad y la prohibición de
 decisiones automáticas de precio o reposición.

@@ -65,8 +65,9 @@ que las decisiones que un encargado revisa por semana, no por transacción).
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.2.3** — versión que esta misma funcionalidad
-motivó (ver "Nota sobre la enmienda v2.2.3" abajo).
+Verificación explícita contra la constitución **v2.2.4** (vigente). La enmienda que esta misma
+funcionalidad motivó fue la v2.2.3 (ver "Nota sobre la enmienda v2.2.3" abajo); v2.2.4 es una
+corrección posterior sobre la entrada de `004-pronostico-demanda`, sin efecto sobre este módulo.
 
 ### Principios
 
