@@ -74,6 +74,14 @@ export function AperturaTurno({ onTurnoAbierto }: Props) {
   }, []);
 
   const sucursalElegida = sucursales.find((s) => s.id_sucursal === idSucursal);
+  const operadorElegido = operadores.find((o) => o.id_operador === idOperador);
+  // User Story 10 (Principio VI): un cajero/encargado abre turno SIEMPRE en su sucursal fija —
+  // el selector no se le ofrece. Sólo el admin elige (su `id_sucursal` es dato de registro).
+  const sucursalFija = operadorElegido && operadorElegido.rol !== "admin";
+
+  useEffect(() => {
+    if (sucursalFija && operadorElegido) setIdSucursal(operadorElegido.id_sucursal);
+  }, [sucursalFija, operadorElegido]);
 
   useEffect(() => {
     setUltimaApertura(null);
@@ -126,23 +134,6 @@ export function AperturaTurno({ onTurnoAbierto }: Props) {
 
         <div className={estilos.campos}>
           <div className={estilos.campo}>
-            <label className={estilos.etiqueta} htmlFor="sucursal">
-              Sucursal
-            </label>
-            <Selector
-              id="sucursal"
-              value={idSucursal}
-              onChange={(e) => setIdSucursal(Number(e.target.value))}
-            >
-              {sucursales.map((s) => (
-                <option key={s.id_sucursal} value={s.id_sucursal}>
-                  {s.nombre}
-                </option>
-              ))}
-            </Selector>
-          </div>
-
-          <div className={estilos.campo}>
             <label className={estilos.etiqueta} htmlFor="operador">
               Operador
             </label>
@@ -158,6 +149,27 @@ export function AperturaTurno({ onTurnoAbierto }: Props) {
               ))}
             </Selector>
           </div>
+
+          {/* Selector de sucursal SÓLO para el admin; cajero/encargado abren turno en su
+              sucursal fija, ya mostrada en la cabecera de contexto (Principio VI). */}
+          {!sucursalFija && (
+            <div className={estilos.campo}>
+              <label className={estilos.etiqueta} htmlFor="sucursal">
+                Sucursal
+              </label>
+              <Selector
+                id="sucursal"
+                value={idSucursal}
+                onChange={(e) => setIdSucursal(Number(e.target.value))}
+              >
+                {sucursales.map((s) => (
+                  <option key={s.id_sucursal} value={s.id_sucursal}>
+                    {s.nombre}
+                  </option>
+                ))}
+              </Selector>
+            </div>
+          )}
 
           <div className={estilos.campo}>
             <label className={estilos.etiqueta} htmlFor="pin">

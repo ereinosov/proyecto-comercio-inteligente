@@ -8,9 +8,10 @@
  * lista paginada (Paginador.tsx) con "+ Nuevo …" que abre el ModalAdministrable único, y cada
  * fila con editar (mismo modal precargado) y desactivar.
  *
- * Permisos: crear / editar / desactivar cualquiera de estas cinco entidades requiere que el
- * operador del turno sea encargado (`es_encargado`). Si no lo es, la pantalla es de sólo
- * lectura y esas acciones no se ofrecen.
+ * Permisos (hook único `useRol`, Principio VI): crear / editar / desactivar cualquiera de estas
+ * cinco entidades requiere rol encargado o admin. Si no lo tiene, la pantalla es de sólo lectura
+ * y esas acciones no se ofrecen. La 6.ª pestaña "Operadores" aparece en el segmentado SÓLO si el
+ * operador activo es `admin` (para un encargado, ni se muestra).
  *
  * Listas vacías -> La Regla del Hueco que Enseña. Mientras cargan -> La Regla del Pulso.
  */
@@ -38,12 +39,16 @@ import {
 import { listarCategorias, type Categoria } from "../servicios/productos";
 import { listarSucursales, type Sucursal } from "../servicios/sucursales";
 import { etiquetaMedioPago, formatearMoneda } from "../utilidades/formato";
+import { useRol, type Rol } from "../hooks/useRol";
+import { GestionOperadores } from "./GestionOperadores";
 import estilos from "./Administracion.module.css";
 
 interface Props {
   idOperador: number;
-  esEncargado: boolean;
+  rol: Rol | null;
 }
+
+type Segmento = EntidadMaestra | "operadores";
 
 type TipoCampo = "texto" | "numero" | "bool" | "categoria" | "sucursal";
 
@@ -163,9 +168,13 @@ function payload(campos: Campo[], valores: ValoresForm, idOperador: number): Rec
   return cuerpo;
 }
 
-export function Administracion({ idOperador, esEncargado }: Props) {
-  const [entidad, setEntidad] = useState<EntidadMaestra>("sucursales");
-  const vista = VISTAS.find((v) => v.valor === entidad)!;
+export function Administracion({ idOperador, rol }: Props) {
+  const { esEncargadoOMas, esAdmin } = useRol(rol);
+  const esEncargado = esEncargadoOMas();
+
+  const [segmento, setSegmento] = useState<Segmento>("sucursales");
+  const entidad: EntidadMaestra = segmento === "operadores" ? "sucursales" : segmento;
+  const vista = VISTAS.find((v) => v.valor === entidad) ?? VISTAS[0];
 
   const [filas, setFilas] = useState<FilaMaestra[]>([]);
   const [total, setTotal] = useState(0);
@@ -328,14 +337,29 @@ export function Administracion({ idOperador, esEncargado }: Props) {
           {VISTAS.map((v) => (
             <button
               key={v.valor}
-              className={entidad === v.valor ? estilos.segActivo : estilos.segInactivo}
-              onClick={() => setEntidad(v.valor)}
+              className={segmento === v.valor ? estilos.segActivo : estilos.segInactivo}
+              onClick={() => setSegmento(v.valor)}
             >
               {v.etiqueta}
             </button>
           ))}
+          {/* 6.ª pestaña admin-only (Principio VI): ni siquiera aparece para un encargado. */}
+          {esAdmin() && (
+            <button
+              className={segmento === "operadores" ? estilos.segActivo : estilos.segInactivo}
+              onClick={() => setSegmento("operadores")}
+            >
+              Operadores
+            </button>
+          )}
         </nav>
       </div>
+
+      {segmento === "operadores" ? (
+        <GestionOperadores idOperador={idOperador} />
+      ) : (
+      <>
+      {/* --- vistas de datos maestros --- */}
 
       {conBuscador && (
         <div className={estilos.barraBuscador}>
@@ -532,6 +556,8 @@ export function Administracion({ idOperador, esEncargado }: Props) {
             </>
           )}
         </ModalAdministrable>
+      )}
+      </>
       )}
     </div>
   );

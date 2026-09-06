@@ -17,6 +17,7 @@ import { Pagos } from "./pantallas/Pagos";
 import { Administracion } from "./pantallas/Administracion";
 import { cerrarTurno, listarOperadores, type Turno } from "./servicios/turnos";
 import { listarSucursales } from "./servicios/sucursales";
+import { useRol, type Rol } from "./hooks/useRol";
 import marcaSistema from "./activos/marca/rasero-wordmark-512w.png";
 import iconoComercioPorDefecto from "./activos/marca/despensa-icon-verde-512.png";
 import estilos from "./App.module.css";
@@ -173,8 +174,11 @@ export function App() {
   const [turno, setTurno] = useState<Turno | null>(null);
   const [pantalla, setPantalla] = useState<Pantalla>("venta");
   const [nombreOperador, setNombreOperador] = useState<string>("");
-  const [esEncargado, setEsEncargado] = useState(false);
+  const [rol, setRol] = useState<Rol | null>(null);
   const [nombreSucursal, setNombreSucursal] = useState<string>("");
+  // Hook único de rol (User Story 10, Principio VI). Los componentes deciden qué OFRECER con
+  // `puedeVer` / `esAdmin` / `esEncargadoOMas`; nunca leen `rol` a mano.
+  const autoriz = useRol(rol);
 
   useEffect(() => {
     if (!turno) return;
@@ -182,7 +186,7 @@ export function App() {
       .then((lista) => {
         const op = lista.find((o) => o.id_operador === turno.id_operador);
         setNombreOperador(op?.nombre ?? `Operador ${turno.id_operador}`);
-        setEsEncargado(Boolean(op?.es_encargado));
+        setRol(op?.rol ?? null);
       })
       .catch(() => setNombreOperador(`Operador ${turno.id_operador}`));
     // Nombre de sucursal para el footer (Regla de la Marca Persistente). `incluir_inactivas`
@@ -246,27 +250,32 @@ export function App() {
           />
         ))}
 
-        <span className={estilos.separador} aria-hidden="true" />
-
-        <button
-          className={
-            pantalla === "administracion" ? estilos.pestanaActiva : estilos.pestanaInactiva
-          }
-          onClick={() => setPantalla("administracion")}
-        >
-          Administración
-        </button>
+        {/* "Ocultar, no deshabilitar" (Principio VI): Administración sólo se ofrece a
+            encargado o admin; un cajero no ve el ítem en absoluto. */}
+        {autoriz.esEncargadoOMas() && (
+          <>
+            <span className={estilos.separador} aria-hidden="true" />
+            <button
+              className={
+                pantalla === "administracion" ? estilos.pestanaActiva : estilos.pestanaInactiva
+              }
+              onClick={() => setPantalla("administracion")}
+            >
+              Administración
+            </button>
+          </>
+        )}
 
         {nombreOperador && (
           <span className={estilos.operador}>
             {nombreOperador}
-            {esEncargado ? " · encargado" : ""}
+            {rol ? ` · ${rol}` : ""}
           </span>
         )}
       </nav>
       <div className={estilos.contenido}>
         {pantalla === "venta" && (
-          <Venta turno={turno} onCerrarTurno={manejarCierre} esEncargado={esEncargado} />
+          <Venta turno={turno} onCerrarTurno={manejarCierre} rol={rol} />
         )}
         {pantalla === "conteo" && <ConteoFisico idSucursal={turno.id_sucursal} />}
         {pantalla === "entradas" && <EntradaInventario idSucursal={turno.id_sucursal} />}
@@ -289,8 +298,8 @@ export function App() {
         {pantalla === "pagos" && (
           <Pagos idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
         )}
-        {pantalla === "administracion" && (
-          <Administracion idOperador={turno.id_operador} esEncargado={esEncargado} />
+        {pantalla === "administracion" && autoriz.esEncargadoOMas() && (
+          <Administracion idOperador={turno.id_operador} rol={rol} />
         )}
       </div>
       {nombreSucursal && (

@@ -303,16 +303,16 @@ puede usar; `admin` gestiona operadores.
 
 ### Frontend — hook y ocultamiento
 
-- [ ] T113 [US10] `frontend/src/hooks/useRol.ts`: consume la fuente de verdad existente del operador del turno (hoy `App.tsx` estado `esEncargado`); expone `rol`, `puedeVer(rolMinimo)`, `esAdmin()`, `esEncargadoOMas()`. Migrar `App.tsx` para exponer `rol`/`id_sucursal` del operador en vez de `esEncargado` (FR-062)
-- [ ] T114 [US10] `frontend/src/servicios/operadores.ts`: tipo `Operador` con `rol`/`id_sucursal` (quitar `es_encargado`); funciones `crearOperador`, `actualizarOperador`, `fijarActivoOperador` (FR-059, FR-062)
-- [ ] T115 [P] [US10] Migrar toda lectura de `es_encargado` en `frontend/src/`: `App.tsx` (nav "Administración"), `pantallas/Administracion.tsx`, `componentes/CrearProductoModal.tsx` y el atajo "+ Crear producto" en `pantallas/Venta.tsx` → consumir `useRol` (`esEncargadoOMas()`) (FR-062, SC-013)
-- [ ] T116 [US10] Nav global: ítem "Administración" oculto si `!esEncargadoOMas()`; ningún ítem de encargado/admin renderizado para `cajero` (FR-062, SC-014)
-- [ ] T117 [US10] `frontend/src/pantallas/AperturaTurno.tsx`: selector de sucursal sólo visible si `esAdmin()`; para `cajero`/`encargado` la sucursal se fija a `operador.id_sucursal` (nombre mostrado como texto, no selector) (FR-060)
+- [X] T113 [US10] `frontend/src/hooks/useRol.ts`: consume la fuente de verdad existente del operador del turno (hoy `App.tsx` estado `esEncargado`); expone `rol`, `puedeVer(rolMinimo)`, `esAdmin()`, `esEncargadoOMas()`. Migrar `App.tsx` para exponer `rol`/`id_sucursal` del operador en vez de `esEncargado` (FR-062)
+- [X] T114 [US10] `frontend/src/servicios/operadores.ts`: tipo `Operador` con `rol`/`id_sucursal` (quitar `es_encargado`); funciones `crearOperador`, `actualizarOperador`, `fijarActivoOperador` (FR-059, FR-062)
+- [X] T115 [P] [US10] Migrar toda lectura de `es_encargado` en `frontend/src/`: `App.tsx` (nav "Administración"), `pantallas/Administracion.tsx`, `componentes/CrearProductoModal.tsx` y el atajo "+ Crear producto" en `pantallas/Venta.tsx` → consumir `useRol` (`esEncargadoOMas()`) (FR-062, SC-013)
+- [X] T116 [US10] Nav global: ítem "Administración" oculto si `!esEncargadoOMas()`; ningún ítem de encargado/admin renderizado para `cajero` (FR-062, SC-014)
+- [X] T117 [US10] `frontend/src/pantallas/AperturaTurno.tsx`: selector de sucursal sólo visible si `esAdmin()`; para `cajero`/`encargado` la sucursal se fija a `operador.id_sucursal` (nombre mostrado como texto, no selector) (FR-060)
 
 ### Frontend — 6.ª pestaña de Administración (admin-only)
 
-- [ ] T118 [US10] `frontend/src/pantallas/Administracion.tsx`: 6.ª pestaña segmentada "Operadores", presente en el segmentado **sólo si** `esAdmin()` (para `encargado` no aparece). Lista de operadores con rol y sucursal, acciones Editar/Desactivar (FR-059, FR-062)
-- [ ] T119 [US10] Alta/edición de operador con `frontend/src/componentes/ModalAdministrable.tsx` (componente existente, La Regla del Modal Administrable): campos nombre, selector de sucursal (obligatorio) y selector de rol `cajero`/`encargado`/`admin` (obligatorio) (FR-059)
+- [X] T118 [US10] `frontend/src/pantallas/Administracion.tsx`: 6.ª pestaña segmentada "Operadores", presente en el segmentado **sólo si** `esAdmin()` (para `encargado` no aparece). Lista de operadores con rol y sucursal, acciones Editar/Desactivar (FR-059, FR-062)
+- [X] T119 [US10] Alta/edición de operador con `frontend/src/componentes/ModalAdministrable.tsx` (componente existente, La Regla del Modal Administrable): campos nombre, selector de sucursal (obligatorio) y selector de rol `cajero`/`encargado`/`admin` (obligatorio) (FR-059)
 
 ### Semilla
 
@@ -320,8 +320,8 @@ puede usar; `admin` gestiona operadores.
 
 ### Cierre
 
-- [ ] T121 [US10] Volver a correr la suite completa; comparar con la línea base de T096. Todo lo que pasaba antes pasa después, o está documentado como test actualizado (T112) — ninguna regresión real sin corregir
-- [ ] T122 [US10] Grep final: `es_encargado` no aparece en ningún archivo de `backend/` ni `frontend/src/`; `_encargado_o_error` eliminada; `requiere_rol` es la única vía de verificación de rol en backend (SC-013)
+- [X] T121 [US10] Volver a correr la suite completa; comparar con la línea base de T096. Todo lo que pasaba antes pasa después, o está documentado como test actualizado (T112) — ninguna regresión real sin corregir
+- [X] T122 [US10] Grep final: `es_encargado` no aparece en ningún archivo de `backend/` ni `frontend/src/`; `_encargado_o_error` eliminada; `requiere_rol` es la única vía de verificación de rol en backend (SC-013)
 
 **Checkpoint**: User Story 10 funcional junto con las anteriores; US1 y el resto intactos; migración reversible verificada.
 

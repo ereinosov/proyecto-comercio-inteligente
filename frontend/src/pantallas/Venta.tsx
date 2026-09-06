@@ -15,6 +15,7 @@ import { IconoCategoria } from "../componentes/IconoCategoria";
 import { SelectorProducto } from "../componentes/SelectorProducto";
 import { CrearProductoModal } from "../componentes/CrearProductoModal";
 import { type Turno } from "../servicios/turnos";
+import { useRol, type Rol } from "../hooks/useRol";
 import {
   type RenglonVentaNuevo,
   type Venta as VentaConfirmada,
@@ -68,10 +69,13 @@ function IconoPapelera() {
 interface Props {
   turno: Turno;
   onCerrarTurno: () => void;
-  esEncargado: boolean;
+  rol: Rol | null;
 }
 
-export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
+export function Venta({ turno, onCerrarTurno, rol }: Props) {
+  // "Ocultar, no deshabilitar" (Principio VI): el atajo "+ Crear producto nuevo" sólo se
+  // ofrece a encargado o admin — el mismo patrón se generaliza a todo el sistema.
+  const { esEncargadoOMas } = useRol(rol);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [creandoProducto, setCreandoProducto] = useState(false);
@@ -440,7 +444,7 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
                         seleccionado={productoNuevo ?? null}
                         onSeleccionar={(p) => setIdProductoNuevo(p?.id_producto ?? "")}
                       />
-                      {esEncargado && (
+                      {esEncargadoOMas() && (
                         <button
                           type="button"
                           className={estilos.botonTexto}

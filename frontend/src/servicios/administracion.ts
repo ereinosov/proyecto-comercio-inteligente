@@ -2,8 +2,8 @@
  * Cliente HTTP de la administración de datos maestros (Parte 3): alta, edición y desactivación
  * de sucursal, producto, categoría, zona de exhibición y medio de pago.
  *
- * Escritura reservada al encargado (backend: `operador.es_encargado`). El `id_operador` viaja
- * en el cuerpo, igual que en `POST /pagos/terminales`.
+ * Escritura reservada a rol encargado o admin (backend: mecanismo central `requiere_rol`,
+ * Principio VI). El `id_operador` viaja en el cuerpo, igual que en `POST /pagos/terminales`.
  *
  * Listados paginados: el backend responde `{ items, total }` (schema RespuestaPaginada); ver
  * clienteHttp.getPagina.

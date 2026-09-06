@@ -3,7 +3,8 @@
  * "Atajo desde Venta"). Usa el MISMO componente `ModalAdministrable` que la pantalla de
  * Administración y los mismos campos del alta de producto — no un formulario distinto.
  *
- * Sólo debe montarse cuando el operador del turno es encargado (`es_encargado`): si no lo es,
+ * Sólo debe montarse cuando el operador del turno tiene rol encargado o admin (hook `useRol`,
+ * `esEncargadoOMas()`): si no lo tiene,
  * la opción "+ Crear producto nuevo" no se ofrece en absoluto (nunca lleva a un error de
  * permisos al guardar).
  */
