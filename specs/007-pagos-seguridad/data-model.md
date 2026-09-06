@@ -12,7 +12,7 @@ flotante aparece en este modelo.**
 
 ## Conformidad con la tabla de propiedad de la constitución
 
-Este modelo define exactamente las **cinco** entidades que la constitución (**v2.2.6**) asigna a
+Este modelo define exactamente las **cinco** entidades que la constitución (**v2.3.0**) asigna a
 `007-pagos-seguridad`: `medio_pago`, `terminal_pago`, `cobertura_pago`, `bitacora_auditoria`,
 `token_pago`. **Ninguna otra.**
 

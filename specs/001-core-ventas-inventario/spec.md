@@ -587,10 +587,18 @@ detectadas al escribir `data-model.md` — ver "Dependencias Constitucionales":
 
 ## Dependencias Constitucionales
 
-Esta especificación descansa sobre la constitución del proyecto (**v2.2.6**, versión vigente) y
+Esta especificación descansa sobre la constitución del proyecto (**v2.3.0**, versión vigente) y
 hereda de ella sin repetirlas: la precisión monetaria exacta, el tratamiento del tiempo por
 sucursal, la regla de reconciliación offline, la obligación de trazabilidad y la prohibición de
 decisiones automáticas de precio o reposición.
+
+La enmienda **v2.3.0** (Principio VI, "Autorización y Roles") cambia el **esquema** de la
+entidad `operador` de este módulo: gana `id_sucursal` (FK → `sucursal`, NOT NULL, uno-a-uno) y
+su columna booleana `es_encargado` se retira y se reemplaza por `rol` (ENUM cerrado
+`cajero` | `encargado` | `admin`). El conteo de entidades de 001 no cambia (sigue en 20). La
+capacidad de negocio que ejerce ese cambio —autorización centralizada, restricción de sucursal
+en apertura de turno, gestión de operadores admin-only— se especifica como **User Story 10** de
+este módulo (ver más abajo), ya que `operador` es entidad de 001.
 
 **No hay discrepancia pendiente con la tabla de propiedad de datos.** La redacción de esta
 especificación y de los artefactos de diseño derivados de ella (`data-model.md`,

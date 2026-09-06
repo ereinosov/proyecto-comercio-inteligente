@@ -20,7 +20,10 @@ propiedad, y ambas ya fueron incorporadas por enmienda:
   haría imposible responder a la presión competitiva local.
 
 **No hay discrepancia pendiente**: las 20 entidades de este documento coinciden con la tabla
-vigente (constitución v2.2.6; la entrada de 001 no cambió desde v2.1.2).
+vigente (constitución v2.3.0). La enmienda **v2.3.0** cambió el **esquema** de `operador` —gana
+`id_sucursal` (FK → `sucursal`, NOT NULL) y su booleano `es_encargado` se reemplaza por `rol`
+(ENUM `cajero` | `encargado` | `admin`)— sin alterar la lista ni el conteo (sigue en 20). Ver la
+sección `operador` más abajo y la User Story 10 de `spec.md`.
 
 `traspaso` deliberadamente **no** tiene tabla de renglones: sus líneas son los propios movimientos
 de inventario que lo referencian, lo que evita una segunda entidad nueva.
@@ -114,12 +117,28 @@ Catalogada aquí; usada por `003-precios-margenes` para sugerir colocación.
 | `id_operador` | `INTEGER` PK | |
 | `nombre` | `TEXT NOT NULL` | |
 | `pin_hash` | `TEXT NOT NULL` | Hash del PIN de 4 dígitos. **El PIN nunca se almacena en claro** |
-| `es_encargado` | `BOOLEAN NOT NULL DEFAULT FALSE` | Única distinción de capacidad; no es un sistema de roles |
+| `id_sucursal` | `INTEGER NOT NULL` FK → `sucursal` | Sucursal fija del operador (uno-a-uno). Dato de registro para todo rol; **restricción funcional** de apertura de turno para `cajero`/`encargado`. Enmienda v2.3.0 |
+| `rol` | `TEXT NOT NULL` `CHECK (rol IN ('cajero','encargado','admin'))` | Reemplaza a `es_encargado`. Jerarquía acumulativa `cajero` < `encargado` < `admin`. Enmienda v2.3.0 |
 | `activo` | `BOOLEAN NOT NULL DEFAULT TRUE` | |
 
-*Alcance*: sin recuperación de PIN por correo, sin expiración de sesión, sin control de acceso a
-pantallas por rol (FR-006). `es_encargado` existe solo para dos operaciones: reasignar un PIN y
-anular una venta de un turno cerrado (FR-049).
+*Autorización* (Principio VI, enmienda **v2.3.0**): la verificación de rol es un mecanismo
+central —`requiere_rol(sesion, id_operador, rol_minimo)` en `backend/rasero/seguridad.py` y su
+dependency de FastAPI—, nunca duplicada por servicio. `cajero` es el nivel base; `encargado`
+añade administración de maestros, terminales y cobertura de pago; `admin` añade, en exclusiva,
+la gestión de operadores (alta / edición de rol / desactivación / asignación de sucursal).
+Ningún `encargado` asciende a otro operador. La edición de `cliente` sigue sin restricción de
+rol.
+
+*Autenticación* (sin cambio, FR-006): sin recuperación de PIN por correo, sin expiración de
+sesión, `id_operador` viaja explícito; no hay JWT ni sesión de servidor. El control de acceso a
+pantallas SÍ existe ahora (enmienda v2.3.0): la navegación **oculta** —no deshabilita— lo que el
+rol activo no puede usar.
+
+*Migración de datos* (Alembic, con comentario explícito de la regla de conversión):
+`es_encargado = FALSE → rol = 'cajero'`, `es_encargado = TRUE → rol = 'encargado'`. Ningún
+operador se vuelve `admin` automáticamente. `id_sucursal` se asigna a partir del último turno
+del operador, o a la primera sucursal activa si no tiene turnos. Procedimiento de reversión
+documentado en la propia migración.
 
 ### `turno`
 
@@ -127,7 +146,7 @@ anular una venta de un turno cerrado (FR-049).
 |---|---|---|
 | `id_turno` | `INTEGER` PK | |
 | `id_operador` | `INTEGER` FK → `operador` | |
-| `id_sucursal` | `INTEGER` FK → `sucursal` | |
+| `id_sucursal` | `INTEGER` FK → `sucursal` | Para `cajero`/`encargado` se resuelve automáticamente a `operador.id_sucursal` (sin selector). Para `admin`, selector libre. El backend rechaza abrir turno en una sucursal distinta a la asignada para `cajero`/`encargado` (`{codigo: "turno_sucursal_no_asignada", mensaje: "Este operador está asignado a [sucursal], no puede abrir turno en otra sucursal."}`) |
 | `caja` | `TEXT NOT NULL` | Identificador de la caja física |
 | `instante_apertura` | `TIMESTAMPTZ NOT NULL` | |
 | `instante_cierre` | `TIMESTAMPTZ NULL` | Nulo ⇒ turno en curso |
@@ -262,7 +281,8 @@ sea estrictamente positiva. Es lo que hace imposible un renglón de peso cero o 
 | `motivo` | `TEXT NULL` | |
 
 *Regla de autorización* (FR-049): si la venta pertenece al turno en curso del propio operador, puede
-anularla él. Si el turno está cerrado, requiere `operador.es_encargado = TRUE`.
+anularla él. Si el turno está cerrado, requiere rol `encargado` o superior (`requiere_rol`,
+enmienda v2.3.0; antes era `operador.es_encargado = TRUE`).
 La venta anulada **permanece visible**, nunca se borra. Cada renglón genera un movimiento
 `entrada_anulacion` que repone la existencia en el mismo lote del que salió.
 

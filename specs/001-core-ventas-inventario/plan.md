@@ -64,7 +64,8 @@ servidor de base de datos es suficiente.
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.2.6**.
+Verificación explícita contra la constitución **v2.3.0** (la enmienda v2.3.0 añadió el Principio
+VI, "Autorización y Roles", y cambió el esquema de `operador` — ver User Story 10 de `spec.md`).
 
 ### Principios
 
@@ -75,6 +76,7 @@ Verificación explícita contra la constitución **v2.2.6**.
 | III. Pruebas Proporcionales al Riesgo | **Cumple** | Seis suites obligatorias sobre dinero, existencias y contratos (ver "Pruebas obligatorias"). Interfaz y maquetación sin pruebas, por decisión expresa. |
 | IV. Trazabilidad de Cada Transacción | **Cumple** | Todo movimiento referencia el hecho que lo originó y el lote del que se descontó. Traspaso con dos asientos enlazados por `id_traspaso` y mercancía en tránsito contabilizada. Ningún saldo se sobrescribe sin movimiento que lo origine. |
 | V. Inteligencia Explicable y Reversible | **Cumple (por omisión activa)** | Este módulo no contiene función predictiva alguna: registra hechos y no decide acciones. La parte aplicable del principio es la visible: la comparación de precios de competencia muestra la antigüedad con los tres portadores exigidos (color, forma y texto), y el capital inmovilizado se limita a mostrar. |
+| VI. Autorización y Roles (enmienda v2.3.0) | **Cumple** | User Story 10: `operador` gana `id_sucursal` (FK, uno-a-uno) y `rol` (ENUM `cajero`/`encargado`/`admin`) en reemplazo de `es_encargado`, con migración de datos documentada. La verificación de rol es un mecanismo central único —`requiere_rol` en `backend/rasero/seguridad.py` y su dependency de FastAPI— que reemplaza las tres funciones `_encargado_o_error` duplicadas. Apertura de turno restringida a `operador.id_sucursal` para `cajero`/`encargado`, libre para `admin`, con rechazo de backend `{codigo, mensaje}`. Frontend: hook único `useRol`; la navegación oculta —no deshabilita— lo que el rol no puede usar; gestión de operadores como 6.ª pestaña de Administración visible sólo para `admin`. Autenticación (PIN, FR-006) sin cambios. |
 
 **Nota sobre el Principio I y el lenguaje único**: el Principio I prohíbe introducir una segunda
 tecnología que cumpla la misma función que una ya presente, salvo justificación registrada. Se elige

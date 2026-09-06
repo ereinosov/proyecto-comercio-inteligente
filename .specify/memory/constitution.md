@@ -1,6 +1,104 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.2.9 → 2.3.0
+Tipo de cambio: MENOR — añade un principio nuevo (Principio VI, "Autorización y
+Roles"). Es territorio nuevo: la constitución no tenía hasta hoy ningún principio
+de roles o autorización, así que esta enmienda no resuelve una contradicción, la
+crea desde cero. A diferencia de v2.2.7 a v2.2.9 —que vivían enteramente en
+`DESIGN.md`—, esta enmienda toca un principio y la tabla de Propiedad de Datos, y
+por eso vuelve al formato de informe completo de v2.0.0 / v2.2.6.
+
+Motivo: hoy `operador` es global (sin sucursal asignada) y su única distinción de
+capacidad es el booleano `es_encargado`. El chequeo de "es encargado" está
+DUPLICADO en tres servicios (`servicios/administracion.py`,
+`servicios/cobertura_pago.py`, `servicios/terminales_pago.py`), cada uno con su
+propia función `_encargado_o_error` y su propio código de error. Esta enmienda:
+  (A) ata cada `operador` a una sucursal fija (`id_sucursal`, FK, NOT NULL,
+      relación uno-a-uno operador↔sucursal — NO una tabla de asociación: nadie
+      pidió operadores que roten de sucursal, y la constitución ya declara "N
+      sucursales sin cambios estructurales", así que una FK simple basta);
+  (B) reemplaza el booleano `es_encargado` por `rol`, ENUM cerrado
+      `cajero` | `encargado` | `admin`, con jerarquía acumulativa
+      cajero < encargado < admin;
+  (C) exige que la autorización se verifique en UN mecanismo central de backend
+      (`requiere_rol` en `seguridad.py`) y se exponga por UN hook de frontend;
+  (D) exige que la navegación oculte —no deshabilite— lo que el rol activo no
+      puede usar, generalizando el patrón que ya existía sólo para el atajo
+      "+ Crear producto nuevo" desde Venta.
+
+Autorización ≠ autenticación. El mecanismo de PIN + hash (FR-006, SHA-256+sal)
+NO cambia: sigue siendo identificación por PIN al abrir turno, con `id_operador`
+viajando explícito en cada petición. Esta enmienda gobierna sólo QUÉ puede hacer
+cada rol, no CÓMO se identifica el operador. No introduce JWT, sesión de
+servidor ni ningún mecanismo de autenticación nuevo.
+
+Principios modificados: ninguno redefinido.
+Secciones añadidas: Principio VI, "Autorización y Roles".
+Secciones eliminadas: ninguna.
+
+Cambio de esquema sobre una entidad ya certificada de 001 (documentado como tal):
+  - Propiedad de Datos y Nomenclatura, entrada de `001-core-ventas-inventario`:
+    `operador` gana la columna `id_sucursal` (FK → `sucursal`, NOT NULL) y su
+    columna booleana `es_encargado` se retira y se reemplaza por `rol`
+    (ENUM cerrado `cajero` | `encargado` | `admin`). El CONTEO de entidades de
+    001 no cambia (sigue en 20 desde v2.1.2): `operador` ya estaba listada; lo
+    que cambia es su esquema, no la lista.
+  - Migración de datos, OBLIGATORIA en el mismo script de Alembic, con la regla
+    de conversión escrita como comentario explícito:
+        es_encargado = FALSE  →  rol = 'cajero'
+        es_encargado = TRUE   →  rol = 'encargado'
+    NINGÚN operador existente pasa a 'admin' automáticamente. El rol 'admin' se
+    crea siempre de forma explícita (semilla o alta desde la interfaz por otro
+    admin). La migración lleva su procedimiento de reversión documentado
+    (Restricciones Técnicas, "Migraciones").
+  - `id_sucursal` de `operador` es un dato de registro para todos los roles y
+    además una RESTRICCIÓN FUNCIONAL para `cajero` y `encargado`: la apertura de
+    turno se resuelve a esa sucursal sin selector visible. Para `admin` es sólo
+    dato de registro: `admin` abre turno en cualquier sucursal (mantiene el
+    selector). Defensa en profundidad: el backend rechaza abrir turno en una
+    sucursal distinta a la asignada con {codigo, mensaje}, aunque el frontend ya
+    no lo permita para esos dos roles.
+  - Nueva frontera en "Fronteras entre funcionalidades adyacentes": autorización
+    (Principio VI, mecanismo central) vs. autenticación (PIN, FR-006, sin
+    cambios).
+
+Nueva sección/capacidad de interfaz (admin-only): gestión de `operador`
+—crear / editar rol / desactivar / asignar sucursal— como 6.ª pestaña del
+segmentado de Administración, visible SÓLO si el operador activo es `admin`.
+Ningún `encargado` puede ascender a otro operador a `encargado` o `admin`. Esto
+no crea ninguna entidad nueva ni cambia el conteo de 001.
+
+Puerta de sincronización de enmiendas (v2.2.0): esta enmienda SÍ cambia un
+principio y la tabla de Propiedad de Datos, así que las citas que reclaman una
+versión vigente de la constitución en los artefactos de funcionalidad
+(`spec.md`, `plan.md`, `data-model.md`) de 001–007 se sincronizan de v2.2.6 a
+**v2.3.0** en este mismo cambio. Las citas históricas —"la enmienda v2.2.6 que
+añadió `token_pago`", "de 3 a 6 entidades por v2.2.5"— NO se barren. `DESIGN.md`
+NO cambia: la navegación por rol aplica reglas ya existentes (La Regla del Grupo
+de Navegación, el patrón del atajo "+ Crear producto") sin añadir ni redefinir
+ninguna; el formulario de alta/edición de operador usa `ModalAdministrable`
+(La Regla del Modal Administrable, ya vigente).
+
+Historial de versiones (resumen; ver bloques siguientes para el detalle):
+  - 2.2.6 (2026-09-05) — `token_pago` añadida a 007.
+  - 2.2.7 (2026-09-06) — sistema de diseño ampliado (DESIGN.md v1.2.0).
+  - 2.2.8 (2026-09-06) — Regla de la Identidad del Comercio reescrita (v1.3.0).
+  - 2.2.9 (2026-09-07) — Regla de la Marca Persistente (DESIGN.md v1.3.1).
+  - 2.3.0 (2026-09-06) — esta enmienda: Principio VI, "Autorización y Roles";
+    `operador` (001) gana `id_sucursal` (FK) y cambia `es_encargado` (BOOLEAN)
+    por `rol` (ENUM cajero/encargado/admin), con migración de datos documentada
+    (false→cajero, true→encargado, ningún admin automático); autorización
+    centralizada en `requiere_rol` (backend) y un hook único (frontend);
+    navegación que oculta lo que el rol no puede usar; gestión de operadores
+    admin-only. Citas de versión vigente de 001–007 sincronizadas a v2.3.0.
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.2.8 → 2.2.9
 Tipo de cambio: MENOR — añade una regla al sistema de diseño. Como v2.2.7 y
 v2.2.8, la enmienda vive enteramente en `DESIGN.md`; no toca ningún principio,
@@ -432,6 +530,56 @@ dinámicos, detección de anomalías— están sujetas a restricciones adicional
 solo aporta valor si es auditable y se puede revertir, y una explicación que el operador no
 puede leer en pantalla no es una explicación.
 
+### VI. Autorización y Roles
+
+Quién puede hacer qué se decide en un solo lugar y se hace visible en la interfaz. Este
+principio gobierna la **autorización** (qué acciones permite un rol), no la **autenticación**
+(cómo se identifica el operador). La identificación por PIN + hash (FR-006) NO cambia con este
+principio: no hay JWT, ni sesión de servidor, ni token; el `id_operador` sigue viajando
+explícito en cada operación, y lo único nuevo es que ese identificador ahora resuelve a un rol
+de tres valores y a una sucursal fija, verificados de forma central.
+
+- **Un operador, una sucursal.** `operador` DEBE declarar `id_sucursal` (FK a `sucursal`, NOT
+  NULL): relación uno-a-uno, un operador pertenece a exactamente una sucursal. Una tabla de
+  asociación operador↔sucursal está PROHIBIDA salvo que exista un caso de uso demostrado de
+  rotación entre sucursales, justificado en el plan. Para `cajero` y `encargado` esa sucursal
+  es además una restricción funcional: la apertura de turno se resuelve a ella sin selector
+  visible, y el backend rechaza —con el formato `{codigo, mensaje}` de todo el sistema— abrir
+  turno en otra. Para `admin` es sólo dato de registro: `admin` no está atado operativamente a
+  una tienda y puede abrir turno en cualquier sucursal.
+
+- **Tres roles, jerarquía cerrada y acumulativa.** El rol de `operador` DEBE ser uno de un
+  ENUM cerrado: `cajero` < `encargado` < `admin`. Cada nivel puede todo lo del anterior más lo
+  suyo. `cajero` es el nivel base (operar caja, vender, identificar cliente, registrar
+  consultas no atendidas). `encargado` añade la administración de datos maestros, las
+  terminales de pago y la cobertura de medios de pago. `admin` añade, en exclusiva, la gestión
+  de operadores —alta, edición, desactivación— y la asignación de rol y de sucursal de otros
+  operadores. Ningún `encargado` puede ascender a otro operador a `encargado` ni a `admin`.
+  Introducir un cuarto rol, o un permiso suelto fuera de esta jerarquía, DEBE justificarse en
+  una enmienda.
+
+- **Autorización centralizada, nunca duplicada.** La verificación de rol DEBE vivir en UN
+  mecanismo de backend —una función y su dependency reutilizable— y exponerse al frontend por
+  UN hook. Replicar el chequeo de rol por servicio, por router o por pantalla está PROHIBIDO.
+  El código de error de un fallo de autorización reutiliza los tipos de error ya existentes del
+  sistema; no se inventa un tipo nuevo si uno cubre el caso.
+
+- **Ocultar, no deshabilitar.** La navegación y las acciones que el rol activo no puede usar
+  NO se muestran: no un botón deshabilitado, no una pantalla que da error al guardar, sino
+  ausencia. El patrón ya establecido para el atajo "+ Crear producto nuevo" desde Venta
+  —"nunca lleva a un error de permisos, simplemente no se ofrece"— es la regla para todo el
+  sistema. El backend valida igualmente (defensa en profundidad): que el frontend oculte una
+  opción no exime al servidor de rechazarla.
+
+- **Excepción explícita.** La edición de `cliente` NO tiene restricción de rol: cualquier
+  `cajero` puede editarla. Esta excepción ya está documentada y se mantiene.
+
+**Razón**: un chequeo de permiso duplicado en tres servicios diverge en tres comportamientos
+distintos en un mes, y el cuarto servicio que se añade se olvida de chequear. Un mecanismo
+único es la única forma de que "quién puede hacer esto" tenga una sola respuesta. Y una opción
+que aparece pero falla al usarse enseña al operador a desconfiar de la interfaz; una opción que
+no aparece no miente.
+
 ## Lecturas Críticas del Enunciado
 
 El caso de negocio provisto por el docente se implementa con criterio, no al pie de la letra.
@@ -491,7 +639,14 @@ una enmienda la corrija.
   `zona_exhibicion`, `lote`, `existencia`, `movimiento_inventario`, `traspaso`, `venta`,
   `renglon_venta`, `anulacion_venta`, `consulta_no_atendida`, `observacion_precio`,
   `canal_competencia`, `conteo_fisico`, `conteo_renglon`, `operador`, `turno`,
-  `operacion_pendiente`.
+  `operacion_pendiente`. (20 entidades, sin cambio de conteo desde v2.1.2. La enmienda
+  **v2.3.0** cambia el **esquema** de `operador`, no la lista: `operador` gana `id_sucursal`
+  (FK → `sucursal`, NOT NULL, uno-a-uno) y su columna booleana `es_encargado` se retira y se
+  reemplaza por `rol`, ENUM cerrado `cajero` | `encargado` | `admin`. Es un cambio de esquema
+  sobre una entidad ya certificada de 001: la migración de Alembic convierte los datos
+  existentes con la regla `es_encargado = FALSE → rol = 'cajero'` y `es_encargado = TRUE → rol
+  = 'encargado'`, sin volver `admin` a ningún operador automáticamente, y lleva su procedimiento
+  de reversión documentado. Ver Principio VI y la frontera de "autorización" más abajo.)
 - **002-clientes-fidelizacion**: `cliente`, `visita`, `intervalo_compra`, `senal_fuga`.
 - **003-precios-margenes**: `margen_calculado`, `rol_producto`, `sugerencia_precio`,
   `sugerencia_colocacion`. (`costo_producto` retirado y `sugerencia_precio` añadida por la
@@ -557,6 +712,17 @@ Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de conf
   La **cobertura de medios de pago aceptados por sucursal** —incluida la métrica de intención de
   compra no atendida cuando el cliente no puede pagar como quería (Lectura Crítica n.º 4)— es
   `cobertura_pago`, propiedad de 007, distinta de `consulta_no_atendida` de 001 ("no hay producto").
+
+- La **autorización** —qué puede hacer cada rol de `operador`— es un mecanismo central
+  (Principio VI): la función `requiere_rol` de `backend/rasero/seguridad.py` y su dependency de
+  FastAPI en el backend, y un hook único en el frontend. NO pertenece a ninguna funcionalidad
+  concreta: la consumen todos los routers que hoy chequeaban `es_encargado` por su cuenta
+  (`administracion`, `cobertura_pago`, `terminales_pago`) y cualquiera futuro. La
+  **autenticación** —identificar al operador por PIN + hash (FR-006)— es cosa distinta, vive en
+  `seguridad.py` desde 001 y no cambia con la enmienda v2.3.0. La `id_sucursal` de `operador`
+  es propiedad de 001 (columna de una entidad de 001); su uso como restricción de apertura de
+  turno para `cajero`/`encargado` lo implementa el servicio de turnos de 001, y `admin` queda
+  exento (abre turno en cualquier sucursal).
 
 **Convención de nomenclatura**: identificadores de datos en español, `snake_case`, sustantivo
 en singular, sin prefijo de número de módulo. La letra "ñ" está PROHIBIDA en identificadores
@@ -724,4 +890,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.2.9 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 2.3.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-06

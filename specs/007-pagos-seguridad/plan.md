@@ -119,10 +119,12 @@ comparando `terminal_pago.version_firmware` contra la configuración de `researc
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.2.6** (vigente) — versión que esta misma
-funcionalidad motivó (enmienda v2.2.6, ver "Nota sobre la propiedad de datos" abajo). **Resultado de
-la puerta: PASA en los cinco principios y en la Puerta de propiedad de datos** (una vez añadida
-`token_pago` por v2.2.6).
+Verificación explícita contra la constitución **v2.3.0** (vigente). La enmienda que esta misma
+funcionalidad motivó fue la v2.2.6 (ver "Nota sobre la propiedad de datos" abajo); la v2.3.0
+(Principio VI, "Autorización y Roles") es posterior y sólo obliga a este módulo a verificar el
+rol `encargado` por el mecanismo central `requiere_rol` en vez de leer `es_encargado` en cada
+servicio (ver backend de la User Story 10 de `001`). **Resultado de la puerta: PASA en los seis
+principios y en la Puerta de propiedad de datos** (una vez añadida `token_pago` por v2.2.6).
 
 ### Principios
 
@@ -133,6 +135,7 @@ la puerta: PASA en los cinco principios y en la Puerta de propiedad de datos** (
 | III. Pruebas Proporcionales al Riesgo | **Cumple** | Ver "Pruebas obligatorias": que el PAN **nunca** se persista ni aparezca en ningún campo, archivo de registro, bitácora o respuesta (SC-006); que un intento de persistir un PAN se rechace y se registre sin el número (SC-008); la idempotencia de la emisión de token (SC-009); que la `venta` de `001` se complete aunque la tokenización falle (SC-010); la frontera de solo lectura con `001` (SC-013); la bitácora de solo anexado (SC-012); que ninguna señal de firmware deshabilite una terminal (SC-005). Interfaz y maquetación de las pantallas quedan exentas. |
 | IV. Trazabilidad de Cada Transacción | **Cumple** | `bitacora_auditoria` es de solo anexado (FR-025): una entrada no se modifica ni se borra. Cada hecho de pago genera una entrada con tipo, instante en día local, sucursal, terminal cuando aplica, iniciador y resultado (FR-023, FR-024). **Ningún rastro contiene datos de pago completos, CVV, banda/chip ni datos personales más allá del identificador mínimo** (FR-026) — es el requisito literal del Principio IV. Todo lleva `id_sucursal`; `GET /pagos/bitacora`, `/pagos/cobertura` y `/pagos/terminales` filtran por sucursal y nunca agregan dos sin discriminar (FR-006). El estado de una terminal es reconstruible por su historia de ubicación y de firmware. |
 | V. Inteligencia Explicable y Reversible | **Cumple** | **Explicable**: cada señal de "desactualizada" indica la versión actual y la de referencia; cada "expuesta a clonación" enumera la referencia de la vulnerabilidad que la motiva (FR-011, SC-004). **Consultiva por defecto**: el módulo detecta y explica exposición; **nunca** deshabilita una terminal, bloquea un cobro ni sanciona (FR-012, FR-035). La acción correctiva (actualizar, aislar, reemplazar) la decide una persona. **Con línea base**: "desactualizada" se mide contra la última versión de referencia del modelo; si falta, la terminal se marca "versión de referencia desconocida", **nunca** "al día" (FR-010). **Acotada**: límites documentados — sin pasarela real (FR-036), lista de vulnerabilidad como configuración del negocio y no descubrimiento automático (`research.md #3`), el token sin estabilidad entre ventas para no reconstruir un identificador de tarjeta (`research.md #4`). **Visible**: registro mixto Operación/Análisis con los tres portadores para "expuesta", "desactualizada", "versión de referencia desconocida" y "sin tokenización" (`research.md #15`). |
+| VI. Autorización y Roles (enmienda v2.3.0) | **Cumple** | Las acciones de `007` reservadas al encargado (catálogo y cobertura de medios, registro y movimiento de terminales, listas de firmware) verifican rol `encargado` o superior por el mecanismo central `requiere_rol` y su dependency de FastAPI (implementados en la User Story 10 de `001`), reemplazando las funciones `_encargado_o_error` duplicadas en `servicios/cobertura_pago.py` y `servicios/terminales_pago.py`. `007` no gestiona operadores ni sucursales. Autenticación (PIN, FR-006) sin cambios. Esta fila se añade al sincronizar la enmienda v2.3.0. |
 
 **Nota sobre la propiedad de datos — la enmienda v2.2.6 que este módulo motiva**:
 
