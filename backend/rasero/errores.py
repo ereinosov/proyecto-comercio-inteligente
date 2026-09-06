@@ -155,3 +155,34 @@ class ExperimentoEnCurso(ErrorDominio):
 class CierreExperimentoNoAplicable(ErrorDominio):
     codigo = "cierre_experimento_no_aplicable"
     status_code = 409
+
+
+# --------------------------------------------------------------------------
+# 006-caja-mermas-fraude
+# --------------------------------------------------------------------------
+
+
+class ErrorCaja(ErrorDominio):
+    """Error de dominio de 006. Lleva su propio `codigo` y `status_code` por instancia —
+    los prefijos `caja_` mantienen los códigos del contrato agrupados y legibles.
+    """
+
+    def __init__(self, codigo: str, mensaje: str, *, status_code: int = 400):
+        self.codigo = codigo
+        self.status_code = status_code
+        super().__init__(mensaje)
+
+
+class CajaBloqueadoPor001(ErrorCaja):
+    """La función necesita `conteo_fisico`/`conteo_renglon` de 001 (User Story 5, T065-T071), que
+    tienen esquema pero no servicio. El `409` es comportamiento controlado y esperado, no un fallo
+    (research.md #10; tasks.md T023, T037).
+    """
+
+    def __init__(self):
+        super().__init__(
+            "caja_bloqueado_por_001",
+            "Esta función necesita el conteo físico de inventario, que todavía no está "
+            "disponible en el módulo de ventas e inventario. Vuelve a intentarlo cuando lo esté.",
+            status_code=409,
+        )

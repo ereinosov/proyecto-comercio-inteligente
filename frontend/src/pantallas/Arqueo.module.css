@@ -1,0 +1,184 @@
+/* Arqueo de caja — registro de OPERACIÓN: alta densidad, la tabla como elemento principal, sin
+   tarjetas, radio 2px, IBM Plex Sans con cifras tabulares, sin sombras (DESIGN.md). Sin Verde
+   Rasero: registra un conteo, no compromete dinero (La Regla del Registro Sin Dinero). */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+}
+
+.encabezado {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 24px 10px;
+}
+
+.titulo {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.resumen {
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+}
+
+.formulario {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 12px;
+  padding: 10px 24px 14px;
+  background: var(--color-superficie-alta);
+  border-top: 1px solid var(--color-borde);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.campo,
+.campoAncho {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+}
+
+.campo {
+  width: 140px;
+}
+
+.campoAncho {
+  flex: 1;
+  min-width: 220px;
+}
+
+.entrada {
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 14px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 7px 9px;
+}
+
+.entrada:focus {
+  outline: none;
+  border-color: var(--color-tinta);
+}
+
+.boton {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-operacion);
+  padding: 8px 14px;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  color: var(--color-tinta-suave);
+  border-color: var(--color-borde);
+  cursor: default;
+}
+
+.errorForm,
+.error {
+  color: var(--color-critico);
+  font-size: 13px;
+  margin: 4px 24px 0;
+}
+
+.instruccion {
+  color: var(--color-tinta-suave);
+  font-size: 14px;
+  padding: 16px 24px;
+}
+
+.tablaContenedor {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 24px 24px;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  font-size: 13px;
+}
+
+.tabla th,
+.tabla td {
+  text-align: left;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.tabla th {
+  color: var(--color-tinta-suave);
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  background: var(--color-superficie-alta);
+}
+
+.der {
+  text-align: right;
+}
+
+.cuadrado {
+  color: var(--color-tinta-suave);
+}
+
+/* Diferencia con motivo conocido: atención (dato en seguimiento). Sin motivo: crítico (genera una
+   anomalía sin explicación). Tres portadores: color + forma + texto (La Regla de los Tres
+   Portadores). */
+.difConMotivo,
+.difSinMotivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-variant-numeric: tabular-nums;
+}
+
+.difConMotivo {
+  color: var(--color-atencion);
+}
+
+.difSinMotivo {
+  color: var(--color-critico);
+}
+
+.puntoMedio {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: linear-gradient(90deg, currentColor 50%, transparent 50%);
+  flex-shrink: 0;
+}
+
+.puntoHueco {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  background: transparent;
+  flex-shrink: 0;
+}

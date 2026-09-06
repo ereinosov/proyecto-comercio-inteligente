@@ -20,7 +20,6 @@ from sqlalchemy import (
     UniqueConstraint,
     BigInteger,
     Boolean,
-    JSON,
 )
 from sqlalchemy.dialects.postgresql import JSONB, UUID as PGUUID
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
@@ -1026,5 +1025,176 @@ class RedencionPromocion(Base):
             " AND (tipo_origen = 'oferta_recompra') = (id_oferta_recompra IS NOT NULL)"
             " AND (tipo_origen = 'reactivacion') = (id_asignacion_experimento IS NOT NULL)",
             name="ck_redencion_promocion_origen_unico",
+        ),
+    )
+
+
+# --------------------------------------------------------------------------
+# 006-caja-mermas-fraude — arqueo, merma, anomalia_caja (data-model.md,
+# constitución v2.2.5). Tres fenómenos con lógica distinta (FR-037): NO una
+# entidad genérica de "descuadre". Append + máquina de estados, nunca se
+# recomputan al leer (research.md #13). Los indicadores por operador son
+# cálculo derivado sobre 001, NO tabla (research.md #2, #7).
+# --------------------------------------------------------------------------
+
+
+class Arqueo(Base):
+    """Fenómeno 2: cuadre de efectivo al cierre de un `turno` de 001 (FR-001 a FR-008).
+
+    `monto_esperado` = SUM(venta.total) del turno, **congelado** al cerrar el arqueo: anular una
+    venta después no lo cambia (research.md #4). `id_operador`/`id_sucursal`/`dia_local` se
+    denormalizan de `turno` (inmutables). Idempotencia por `UNIQUE (id_turno)` (FR-005). Una
+    diferencia sin `motivo_conocido` fuera de la tolerancia genera una `AnomaliaCaja` de origen
+    efectivo. El arqueo, por sí solo, NUNCA es señal del fraude de sub-registro (FR-008).
+    """
+
+    __tablename__ = "arqueo"
+
+    id_arqueo: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_turno: Mapped[int] = mapped_column(
+        ForeignKey("turno.id_turno"), unique=True, nullable=False
+    )
+    id_operador: Mapped[int] = mapped_column(
+        ForeignKey("operador.id_operador"), nullable=False
+    )
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    dia_local: Mapped[date] = mapped_column(Date, nullable=False)
+    monto_esperado: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    monto_contado: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    diferencia: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    motivo_conocido: Mapped[str | None] = mapped_column(String, nullable=True)
+    ajustes: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    instante_cierre_arqueo: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    marca_tiempo_origen: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    moneda: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+
+
+class Merma(Base):
+    """Fenómeno 1: pérdida de producto SIN venta asociada, clasificada por causa (FR-009 a FR-017).
+
+    `id_conteo_renglon` NULL = merma declarada fuera de conteo (FR-012); no nula = clasifica la
+    `diferencia` que 001 ya expone (rama **bloqueada** hasta 001 User Story 5 — research.md #10).
+    `cantidad_faltante` tiene la escala de `conteo_renglon.diferencia` de 001 (entero, gramos para
+    granel). `valoracion` = cantidad × costo del lote FEFO; NULL = "no calculable", NUNCA 0.00
+    (FR-010). Atribuida a sucursal y período entre conteos, **nunca a un operador** (FR-011).
+    """
+
+    __tablename__ = "merma"
+
+    id_merma: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_conteo_renglon: Mapped[int | None] = mapped_column(
+        ForeignKey("conteo_renglon.id_conteo_renglon"), nullable=True
+    )
+    id_producto: Mapped[int] = mapped_column(
+        ForeignKey("producto.id_producto"), nullable=False
+    )
+    id_lote: Mapped[int | None] = mapped_column(ForeignKey("lote.id_lote"), nullable=True)
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    cantidad_faltante: Mapped[Decimal] = mapped_column(Numeric(14, 0), nullable=False)
+    causa: Mapped[str] = mapped_column(String, nullable=False)
+    valoracion: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    moneda: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    periodo_desde: Mapped[date] = mapped_column(Date, nullable=False)
+    periodo_hasta: Mapped[date] = mapped_column(Date, nullable=False)
+    estado: Mapped[str] = mapped_column(
+        String, nullable=False, default="pendiente_clasificar"
+    )
+    conciliar_con_conteo: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False
+    )
+    id_operador_registro: Mapped[int] = mapped_column(
+        ForeignKey("operador.id_operador"), nullable=False
+    )
+    instante_registro: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    nota: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "causa IN ('vencimiento','dano','robo_externo','error_conteo','merma_granel',"
+            "'pendiente_clasificar')",
+            name="ck_merma_causa",
+        ),
+        CheckConstraint(
+            "estado IN ('pendiente_clasificar','clasificada')", name="ck_merma_estado"
+        ),
+        CheckConstraint("cantidad_faltante > 0", name="ck_merma_cantidad_positiva"),
+        CheckConstraint("periodo_hasta >= periodo_desde", name="ck_merma_periodo"),
+        CheckConstraint(
+            "valoracion IS NULL OR valoracion >= 0", name="ck_merma_valoracion_no_negativa"
+        ),
+    )
+
+
+class AnomaliaCaja(Base):
+    """Fenómeno 3 + residuo: una diferencia (de efectivo o de inventario) que ninguna causa
+    conocida explica (FR-018 a FR-031). UNA entidad con campo `origen` — no un cajón que fusione
+    los tres fenómenos: ambos orígenes comparten la misma máquina de estados y el mismo flujo de
+    revisión humana.
+
+    `sin_explicacion -> resuelta`, **sólo** por acción de una persona (FR-030). NO hay transición
+    automática por el paso del tiempo (FR-029). `indicador_snapshot` (JSONB) congela los
+    indicadores por operador cuando se genera una anomalía de inventario (research.md #2, #6).
+    `historial` (JSONB) guarda cada cambio de estado. `resolucion` es texto libre, no un ENUM
+    cerrado (research.md #18).
+    """
+
+    __tablename__ = "anomalia_caja"
+
+    id_anomalia_caja: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    origen: Mapped[str] = mapped_column(String, nullable=False)
+    estado: Mapped[str] = mapped_column(String, nullable=False, default="sin_explicacion")
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    id_arqueo: Mapped[int | None] = mapped_column(ForeignKey("arqueo.id_arqueo"), nullable=True)
+    id_turno: Mapped[int | None] = mapped_column(ForeignKey("turno.id_turno"), nullable=True)
+    id_operador: Mapped[int | None] = mapped_column(
+        ForeignKey("operador.id_operador"), nullable=True
+    )
+    id_producto: Mapped[int | None] = mapped_column(
+        ForeignKey("producto.id_producto"), nullable=True
+    )
+    id_conteo_fisico: Mapped[int | None] = mapped_column(
+        ForeignKey("conteo_fisico.id_conteo_fisico"), nullable=True
+    )
+    monto: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    magnitud: Mapped[Decimal | None] = mapped_column(Numeric(14, 0), nullable=True)
+    valor_estimado: Mapped[Decimal | None] = mapped_column(Numeric(12, 2), nullable=True)
+    periodo_desde: Mapped[date | None] = mapped_column(Date, nullable=True)
+    periodo_hasta: Mapped[date | None] = mapped_column(Date, nullable=True)
+    dia_local: Mapped[date] = mapped_column(Date, nullable=False)
+    indicador_snapshot: Mapped[dict | None] = mapped_column(JSONB, nullable=True)
+    historial: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    resolucion: Mapped[str | None] = mapped_column(String, nullable=True)
+    id_operador_resolucion: Mapped[int | None] = mapped_column(
+        ForeignKey("operador.id_operador"), nullable=True
+    )
+    instante_resolucion: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    instante_deteccion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+    moneda: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+
+    __table_args__ = (
+        CheckConstraint("origen IN ('efectivo','inventario')", name="ck_anomalia_caja_origen"),
+        CheckConstraint(
+            "estado IN ('sin_explicacion','resuelta')", name="ck_anomalia_caja_estado"
+        ),
+        CheckConstraint(
+            "(id_operador_resolucion IS NOT NULL) = (estado = 'resuelta')"
+            " AND (instante_resolucion IS NOT NULL) = (estado = 'resuelta')",
+            name="ck_anomalia_caja_resolucion_coherente",
         ),
     )

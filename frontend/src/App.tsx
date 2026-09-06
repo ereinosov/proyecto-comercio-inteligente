@@ -5,12 +5,21 @@ import { Clientes } from "./pantallas/Clientes";
 import { Precios } from "./pantallas/Precios";
 import { Pronostico } from "./pantallas/Pronostico";
 import { Promociones } from "./pantallas/Promociones";
+import { Arqueo } from "./pantallas/Arqueo";
+import { CajaFraude } from "./pantallas/CajaFraude";
 import { cerrarTurno, type Turno } from "./servicios/turnos";
 import marcaSistema from "./activos/marca/rasero-wordmark-512w.png";
 import marcaNegocio from "./activos/marca/despensa-icon-verde-512.png";
 import estilos from "./App.module.css";
 
-type Pantalla = "venta" | "clientes" | "precios" | "pronostico" | "promociones";
+type Pantalla =
+  | "venta"
+  | "clientes"
+  | "precios"
+  | "pronostico"
+  | "promociones"
+  | "arqueo"
+  | "cajafraude";
 
 export function App() {
   const [turno, setTurno] = useState<Turno | null>(null);
@@ -69,6 +78,18 @@ export function App() {
         >
           Promociones
         </button>
+        <button
+          className={pantalla === "arqueo" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          onClick={() => setPantalla("arqueo")}
+        >
+          Arqueo
+        </button>
+        <button
+          className={pantalla === "cajafraude" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          onClick={() => setPantalla("cajafraude")}
+        >
+          Caja y fraude
+        </button>
         <img
           className={estilos.marcaNegocio}
           src={marcaNegocio}
@@ -84,6 +105,8 @@ export function App() {
         {pantalla === "precios" && <Precios idSucursal={turno.id_sucursal} />}
         {pantalla === "pronostico" && <Pronostico idSucursal={turno.id_sucursal} />}
         {pantalla === "promociones" && <Promociones idSucursal={turno.id_sucursal} />}
+        {pantalla === "arqueo" && <Arqueo idSucursal={turno.id_sucursal} />}
+        {pantalla === "cajafraude" && <CajaFraude idSucursal={turno.id_sucursal} />}
       </div>
     </div>
   );
