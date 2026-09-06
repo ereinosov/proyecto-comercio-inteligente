@@ -2,6 +2,8 @@ import { useState } from "react";
 import { AperturaTurno } from "./componentes/AperturaTurno";
 import { Venta } from "./pantallas/Venta";
 import { ConteoFisico } from "./pantallas/ConteoFisico";
+import { EntradaInventario } from "./pantallas/EntradaInventario";
+import { CapitalInmovilizado } from "./pantallas/CapitalInmovilizado";
 import { Clientes } from "./pantallas/Clientes";
 import { Precios } from "./pantallas/Precios";
 import { Pronostico } from "./pantallas/Pronostico";
@@ -18,6 +20,8 @@ import estilos from "./App.module.css";
 type Pantalla =
   | "venta"
   | "conteo"
+  | "entradas"
+  | "capital"
   | "clientes"
   | "precios"
   | "pronostico"
@@ -65,6 +69,18 @@ export function App() {
           onClick={() => setPantalla("conteo")}
         >
           Conteo
+        </button>
+        <button
+          className={pantalla === "entradas" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          onClick={() => setPantalla("entradas")}
+        >
+          Entradas
+        </button>
+        <button
+          className={pantalla === "capital" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          onClick={() => setPantalla("capital")}
+        >
+          Capital
         </button>
         <button
           className={pantalla === "clientes" ? estilos.pestanaActiva : estilos.pestanaInactiva}
@@ -126,6 +142,8 @@ export function App() {
       <div className={estilos.contenido}>
         {pantalla === "venta" && <Venta turno={turno} onCerrarTurno={manejarCierre} />}
         {pantalla === "conteo" && <ConteoFisico idSucursal={turno.id_sucursal} />}
+        {pantalla === "entradas" && <EntradaInventario idSucursal={turno.id_sucursal} />}
+        {pantalla === "capital" && <CapitalInmovilizado idSucursal={turno.id_sucursal} />}
         {pantalla === "clientes" && <Clientes />}
         {pantalla === "precios" && <Precios idSucursal={turno.id_sucursal} />}
         {pantalla === "pronostico" && <Pronostico idSucursal={turno.id_sucursal} />}
