@@ -162,6 +162,38 @@ justificación de por qué esa zona.
 
 ---
 
+### User Story 5 - Visualizar el margen real por producto (Priority: P5)
+
+El encargado abre la pantalla de Precios y, antes de bajar al detalle producto por producto, ve
+de un vistazo un gráfico de barras horizontales con el margen real de los productos ordenados de
+mayor a menor, de modo que las pérdidas y los márgenes bajos saltan a la vista sin leer toda la
+tabla.
+
+**Why this priority**: es una mejora puramente de lectura sobre datos que User Story 1 ya
+calcula (`margen_calculado`). No escribe ningún dato nuevo ni cambia ningún contrato; es aditiva
+y no reabre el checkpoint de las historias 1–4. Se prioriza al final porque depende de que el
+margen real ya exista y sea confiable.
+
+**Independent Test**: con un conjunto de productos cuyos márgenes ya están calculados (incluido
+al menos uno con pérdida y uno con margen bajo), se abre Precios y se verifica que el gráfico
+muestra las barras ordenadas de mayor a menor margen, que la barra de una pérdida se distingue de
+la de un margen sano, y que la tabla completa de detalle sigue disponible debajo sin cambios.
+
+**Acceptance Scenarios**:
+
+1. **Given** varios productos con margen real calculado, **When** el encargado abre Precios,
+   **Then** ve un gráfico de barras horizontales con el margen (%) de cada producto ordenado
+   descendente, y la tabla de detalle completa sigue debajo.
+2. **Given** un producto con margen negativo (pérdida) y otro con margen bajo, **When** se
+   renderiza el gráfico, **Then** la barra de la pérdida usa el color Crítico y la del margen
+   bajo el color Atención —los mismos umbrales y colores que ya usa la lista de Precios—, no una
+   paleta decorativa.
+3. **Given** una sucursal sin ningún producto con margen calculable todavía, **When** el
+   encargado abre Precios, **Then** el gráfico muestra el estado vacío que explica qué aparecerá
+   ahí, nunca un lienzo en blanco ni un cero inventado.
+
+---
+
 ### Edge Cases
 
 - ¿Qué pasa si se pide una sugerencia de precio o colocación para un producto sin `rol_producto`
@@ -265,6 +297,20 @@ justificación de por qué esa zona.
   trabajo de implementación de `003` (afecta un archivo propiedad de `002`) y queda pendiente como
   tarea explícita al planificar esta funcionalidad — ver Assumptions para el riesgo de acoplamiento
   aceptado.
+
+**Visualización del margen (User Story 5)**
+
+- **FR-023**: El sistema DEBE ofrecer, en la pantalla de Precios, un resumen visual del margen
+  real por producto como gráfico de barras horizontales ordenado de mayor a menor margen, sin
+  reemplazar la tabla de detalle, que sigue siendo la fuente completa.
+- **FR-024**: El gráfico DEBE distinguir la barra de un margen negativo (pérdida) con el color
+  Crítico y la de un margen bajo con el color Atención, usando exactamente el mismo umbral de
+  "margen bajo" que la lista de Precios ya aplica; cualquier otro margen usa el color de serie
+  neutro. NO DEBE usar el color de marca ni una paleta decorativa de colores por barra.
+- **FR-025**: El gráfico es puramente de lectura: NO calcula ni escribe ningún dato nuevo,
+  reutiliza el `margen_calculado` que FR-001 ya produce. Cuando ningún producto de la sucursal
+  tiene margen calculable, el gráfico DEBE mostrar un estado vacío explicativo, nunca un lienzo
+  en blanco ni un valor cero fabricado.
 
 ### Key Entities *(include if feature involves data)*
 

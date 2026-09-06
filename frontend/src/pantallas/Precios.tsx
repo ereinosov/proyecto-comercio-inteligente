@@ -23,6 +23,7 @@ import { IconoCategoria } from "../componentes/IconoCategoria";
 import { EstadoVacio } from "../componentes/EstadoVacio";
 import { EsqueletoLista } from "../componentes/Esqueleto";
 import { Buscador } from "../componentes/Buscador";
+import { MargenPorProductoGrafico } from "../componentes/graficos/MargenPorProductoGrafico";
 import estilos from "./Precios.module.css";
 
 // Umbral de margen saludable (fracción). Por debajo, el margen pide atención (ámbar); por
@@ -122,6 +123,16 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
       <div className={estilos.encabezado}>
         <h1 className={estilos.titulo}>Precios y Márgenes</h1>
       </div>
+
+      {!error && (
+        <div className={estilos.zonaGrafico}>
+          <MargenPorProductoGrafico
+            productos={productos}
+            margenes={margenes}
+            cargando={cargando}
+          />
+        </div>
+      )}
 
       <div className={estilos.cuerpo}>
         {error && <p className={estilos.error}>{error}</p>}

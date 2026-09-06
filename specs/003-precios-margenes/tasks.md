@@ -173,6 +173,27 @@ description: "Task list template for feature implementation"
 
 ---
 
+## Phase 7: User Story 5 - Visualizar el margen real por producto (Priority: P5)
+
+**Propósito**: resumen visual del margen (FR-023..FR-025). Mejora aditiva sobre US1; no reabre
+el checkpoint de US1–US4. Añadida 2026-09-07. **Puerta de propiedad de datos**: no introduce ni
+modifica ninguna entidad — reutiliza `margen_calculado` de US1; no requiere enmienda
+constitucional (verificado contra la tabla de Propiedad de Datos, entrada de 003).
+
+- [X] T052 [US5] Decisión de fuente de datos documentada: `GET /margenes` ya devuelve el margen
+  por producto de una sucursal (US1, sin N+1); `Precios.tsx` ya lo cruza en memoria con
+  `GET /productos` para la tabla. El gráfico reutiliza ese estado ya cargado, ordena descendente
+  por margen y toma el top 15 en el componente — es presentación pura (un `sort`+`slice` de
+  decenas de filas ya agregadas por el backend), NO agregación de datos crudos, y evita tocar el
+  contrato ni las pruebas certificadas de 003 (decisión conservadora).
+- [X] T053 [P] [US5] `frontend/src/componentes/graficos/MargenPorProductoGrafico.tsx`: `<BarChart layout="vertical">` de Recharts sobre `GraficoContenedor` (borde 2px, registro Análisis), color por barra según umbral de margen (Crítico si `< 0`, Atención si `< MARGEN_SALUDABLE`, serie neutra en otro caso — el mismo `MARGEN_SALUDABLE = 0.15` de `Precios.tsx`), `TooltipPropio`, sin leyenda (una sola serie), estados cargando/vacío del contenedor.
+- [X] T054 [US5] Integrar el gráfico en `frontend/src/pantallas/Precios.tsx` encima de la lista/detalle, alimentado por el `productos` + `margenes` ya en estado; la tabla de detalle no cambia.
+- [X] T055 [US5] Verificación `tsc -b`, `eslint`, `vite build` sin errores.
+
+**Checkpoint US5**: Precios muestra el gráfico de margen; la tabla de detalle sigue igual.
+
+---
+
 ## Phase Final: Polish & Cross-Cutting Concerns
 
 **Propósito**: validación de extremo a extremo y cumplimiento transversal.

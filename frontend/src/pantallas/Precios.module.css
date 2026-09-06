@@ -23,6 +23,13 @@
   margin: 0;
 }
 
+/* US5: el gráfico de margen vive sobre la lista/detalle, es un resumen — la tabla sigue siendo
+   el detalle. No scrollea con el cuerpo. */
+.zonaGrafico {
+  flex-shrink: 0;
+  padding: 0 32px 16px;
+}
+
 .cuerpo {
   flex: 1;
   min-height: 0;
