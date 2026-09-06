@@ -10,6 +10,13 @@ Módulo base de Rasero: registra los hechos de venta e inventario de los que dep
 módulos. Se construye como servicio web con backend Python/FastAPI sobre PostgreSQL 16 y frontend
 React/Vite sin librería de componentes de terceros.
 
+**User Story 9 (P9, corregir el carrito antes de cobrar)** — añadida por auditoría de uso tras la
+certificación de US1. Es puramente de frontend: el carrito de `Venta.tsx` vive en `useState`
+(`renglones`) y no se persiste hasta "Cobrar" (verificado en el código). US9 solo añade lógica de
+UI —eliminar renglón, editar cantidad/peso inline, recálculo del total— sin endpoint nuevo, sin
+migración y sin tocar el contrato de `POST /ventas`. No reabre el checkpoint de US1. Ver
+`tasks.md` Fase 11 (T093–T095) y FR-051 a FR-053.
+
 El eje técnico es que **el inventario es un libro de movimientos, no un contador**. Toda existencia
 se deriva de `movimiento_inventario`; el saldo consultable es una agregación derivada que se
 mantiene en la misma transacción que el movimiento y que una prueba obligatoria verifica contra la

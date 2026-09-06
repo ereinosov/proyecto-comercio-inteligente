@@ -233,6 +233,29 @@ description: "Task list template for feature implementation"
 
 ---
 
+## Phase 11: User Story 9 - Corregir el carrito antes de cobrar (Priority: P9)
+
+**Goal**: que el cajero edite la cantidad/peso de un renglón del carrito o lo elimine, antes de
+"Cobrar", con recálculo inmediato del total y sin endpoint nuevo.
+
+**Independent Test**: con un carrito de varios renglones sin cobrar, editar la cantidad de uno y
+eliminar otro; el total refleja de inmediato ambos cambios y la venta cobrada contiene exactamente
+lo que quedó en pantalla.
+
+> Añadida por auditoría de uso posterior a la certificación de US1. Es estrictamente anterior a la
+> confirmación del cobro: el carrito, hasta "Cobrar", es estado local de `Venta.tsx`
+> (`renglones` en `useState`), verificado — no se persiste nada en backend antes de confirmar. Por
+> eso US9 **no toca backend**, no reabre el checkpoint de US1 y no tiene pruebas de `tests/`
+> (la interfaz está exenta por el Principio III, igual que el resto del frontend de 001).
+
+- [X] T093 [US9] Control de eliminar por renglón (ícono papelera SVG de línea, Regla del Ícono) al final de cada fila del carrito, sin confirmación, en `frontend/src/pantallas/Venta.tsx` (FR-051; depende de T043)
+- [X] T094 [US9] Edición inline de cantidad/peso de un renglón del carrito reusando el mismo patrón de input que al agregar el producto (`RenglonGranel` para granel), con recálculo del importe del renglón y del total al vuelo, en `frontend/src/pantallas/Venta.tsx` (FR-052; depende de T093)
+- [X] T095 [US9] Verificar que "Cobrar" queda deshabilitado cuando el carrito queda vacío o sin renglón válido tras editar, y que la venta enviada usa los renglones/cantidades resultantes (FR-053), en `frontend/src/pantallas/Venta.tsx`
+
+**Checkpoint**: User Story 9 funcional junto con las anteriores; US1 intacta.
+
+---
+
 ## Phase Final: Polish & Cross-Cutting Concerns
 
 **Propósito**: validación de extremo a extremo y cumplimiento transversal.

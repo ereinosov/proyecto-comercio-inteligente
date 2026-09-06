@@ -276,6 +276,37 @@ suben en orden de marca de tiempo de origen y que ninguna se pierde.
 
 ---
 
+### User Story 9 - Corregir el carrito antes de cobrar (Priority: P9)
+
+El cajero agregó un renglón con la cantidad equivocada, o el cliente cambió de opinión sobre un
+producto antes de pagar. El cajero corrige la cantidad de ese renglón o lo quita del carrito sin
+tener que empezar la venta de cero, y el total se actualiza al instante.
+
+**Why this priority**: es una historia aditiva descubierta en auditoría de uso, estrictamente
+**anterior** a confirmar el cobro. No cambia nada de lo ya certificado en US1 (idempotencia,
+saldo negativo visible, FEFO): el carrito, hasta el momento de "Cobrar", es un borrador que solo
+vive en la pantalla. Se numera P9 porque depende de que exista el flujo de venta de US1.
+
+**Independent Test**: con un carrito de varios renglones sin cobrar, editar la cantidad de uno y
+eliminar otro; verificar que el total refleja de inmediato ambos cambios y que al cobrar la venta
+registrada contiene exactamente los renglones y cantidades resultantes.
+
+**Acceptance Scenarios**:
+
+1. **Given** un carrito con dos o más renglones sin cobrar, **When** el cajero pulsa el control de
+   eliminar de un renglón, **Then** ese renglón desaparece del carrito y el total se recalcula sin
+   pedir confirmación adicional.
+2. **Given** un renglón en el carrito, **When** el cajero cambia su cantidad o peso en el propio
+   renglón, **Then** el importe del renglón y el total del carrito se actualizan de inmediato sin
+   volver a elegir el producto.
+3. **Given** un carrito editado (renglones eliminados y cantidades cambiadas), **When** el cajero
+   confirma el cobro, **Then** la venta registrada contiene exactamente los renglones y cantidades
+   que quedaban en pantalla.
+4. **Given** un carrito con un solo renglón, **When** el cajero lo elimina, **Then** el carrito
+   queda vacío y la acción de cobrar no está disponible hasta que se agregue al menos un renglón.
+
+---
+
 ### Edge Cases
 
 - **Peso cero o negativo en báscula**: un renglón de granel con cantidad menor o igual a cero se
@@ -306,6 +337,11 @@ suben en orden de marca de tiempo de origen y que ninguna se pierde.
   momento de registrarla; cerrar turno y abrir otro no reatribuye ventas ya registradas.
 - **Consulta no atendida sobre un producto con saldo positivo**: se permite registrarla; el saldo
   del instante queda guardado para distinguir agotamiento de producto no localizado.
+- **Cantidad de un renglón editada a cero o vacía**: el renglón no se elimina solo; queda con el
+  importe en cero y el cajero decide si lo quita o corrige. Cobrar con un renglón en cero se trata
+  igual que hoy trata US1 una cantidad no válida.
+- **Editar el único renglón del carrito hasta dejarlo inválido**: no se borra el carrito; la acción
+  de cobrar simplemente no está disponible mientras no haya un renglón válido.
 
 ## Requirements *(mandatory)*
 
@@ -461,6 +497,21 @@ suben en orden de marca de tiempo de origen y que ninguna se pierde.
 - **FR-046**: El sistema DEBE admitir un número no acotado de sucursales; codificar en cualquier
   parte que las sucursales son dos está PROHIBIDO.
 
+**Corrección del carrito antes de cobrar (User Story 9)**
+
+- **FR-051**: Antes de confirmar el cobro, cada renglón del carrito DEBE ofrecer un control visible
+  para eliminarlo del carrito. Eliminar un renglón individual NO DEBE pedir confirmación adicional
+  (es una acción de bajo riesgo, reversible agregando el producto de nuevo); esto NO altera el
+  flujo de confirmación de anular una venta ya cobrada (FR-009), que se conserva.
+- **FR-052**: Antes de confirmar el cobro, cada renglón DEBE permitir cambiar su cantidad (o su
+  peso, si es granel) sin eliminar y volver a agregar el producto. El importe del renglón y el
+  total del carrito DEBEN recalcularse de inmediato al editar o eliminar.
+- **FR-053**: La corrección del carrito es estado local de la pantalla hasta el momento de
+  "Cobrar"; NO DEBE introducir ningún endpoint nuevo ni persistir el carrito parcialmente. La venta
+  registrada al cobrar DEBE contener exactamente los renglones y cantidades resultantes de la
+  edición, sin efecto sobre FEFO (FR-048), el saldo negativo visible (FR-047) ni ningún otro
+  requisito de US1.
+
 ### Key Entities
 
 Entidades ya asignadas a este módulo por la constitución vigente:
@@ -530,6 +581,9 @@ detectadas al escribir `data-model.md` — ver "Dependencias Constitucionales":
   inmovilizado, con su valor, en la siguiente consulta que se haga tras cruzarlo.
 - **SC-010**: Un evaluador que desconoce el sistema completa el ciclo entrada → venta → conteo →
   diferencia sin asistencia, usando solo lo que la interfaz le muestra.
+- **SC-011**: Un cajero que agregó un renglón equivocado corrige la cantidad o lo quita del carrito
+  en menos de 10 segundos y sin reiniciar la venta; el total mostrado refleja el cambio de
+  inmediato, y la venta cobrada coincide exactamente con lo que quedó en pantalla.
 
 ## Dependencias Constitucionales
 

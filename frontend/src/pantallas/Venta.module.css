@@ -133,6 +133,56 @@
   text-align: right;
 }
 
+/* US9 — edición inline de la cantidad/peso de un renglón del carrito. */
+.cantidadEditable {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  color: var(--color-tinta-suave);
+  font-size: 12px;
+}
+
+.inputCantidadLinea {
+  font-family: var(--tipografia-operacion);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 4px 6px;
+  width: 72px;
+  text-align: right;
+}
+
+.inputCantidadLinea:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}
+
+/* US9 — quitar un renglón del carrito. Ícono de línea, sin fondo; nunca Verde Rasero. */
+.quitarRenglon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  color: var(--color-tinta-suave);
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: var(--radio-operacion);
+}
+
+.quitarRenglon:hover {
+  color: var(--color-critico);
+  background: var(--color-superficie-base);
+}
+
+.quitarRenglon:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}
+
 .botonSecundario {
   font-family: var(--tipografia-operacion);
   font-size: 13px;

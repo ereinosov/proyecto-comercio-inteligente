@@ -48,6 +48,23 @@ function importeEstimado(precioEfectivo: string, cantidad: number): string {
   return (precio * cantidad).toFixed(2);
 }
 
+// Papelera: SVG de línea propio (La Regla del Ícono: SVG siempre, nunca emoji), outline sin
+// relleno. Quita un renglón del carrito (US9).
+function IconoPapelera() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M3 4.5h10M6.5 4.5V3h3v1.5M4.5 4.5l.6 8.2a1 1 0 0 0 1 .8h3.8a1 1 0 0 0 1-.8l.6-8.2M7 7v4M9 7v4"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 interface Props {
   turno: Turno;
   onCerrarTurno: () => void;
@@ -146,8 +163,44 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
     setAgregando(false);
   }
 
+  // US9 (FR-051): quitar un renglón del carrito. Acción de bajo riesgo, sin confirmación —
+  // distinta de anular una venta ya cobrada, que conserva su flujo de confirmación.
+  function eliminarRenglon(idLocal: string) {
+    setRenglones((prev) => prev.filter((r) => r.idLocal !== idLocal));
+  }
+
+  // US9 (FR-052): editar la cantidad/peso de un renglón sin re-agregar el producto. El importe
+  // del renglón y el total se recalculan al vuelo. Un valor no válido deja el renglón en 0
+  // (no lo elimina: eso lo decide el cajero) — igual que US1 trata una cantidad no válida.
+  function editarCantidadRenglon(idLocal: string, valorCrudo: string) {
+    setRenglones((prev) =>
+      prev.map((r) => {
+        if (r.idLocal !== idLocal) return r;
+        if (r.cantidadGramos !== undefined) {
+          const gramos = gramosDesdeKg(valorCrudo) ?? 0;
+          return {
+            ...r,
+            cantidadGramos: gramos,
+            importeEstimado: importeEstimado(r.producto.precio_efectivo, gramos / 1000),
+          };
+        }
+        const n = Number(valorCrudo);
+        const cantidad = Number.isFinite(n) && n > 0 ? Math.trunc(n) : 0;
+        return {
+          ...r,
+          cantidadUnidades: cantidad,
+          importeEstimado: importeEstimado(r.producto.precio_efectivo, cantidad),
+        };
+      }),
+    );
+  }
+
+  const hayRenglonValido = renglones.some(
+    (r) => (r.cantidadGramos ?? 0) > 0 || (r.cantidadUnidades ?? 0) > 0,
+  );
+
   async function cobrar() {
-    if (renglones.length === 0) return;
+    if (!hayRenglonValido) return;
     setCobrando(true);
     setError(null);
     try {
@@ -330,6 +383,7 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
               <th className={estilos.num}>Cantidad</th>
               <th className={estilos.num}>Precio</th>
               <th className={estilos.num}>Importe</th>
+              <th aria-label="Quitar" />
             </tr>
           </thead>
           <tbody>
@@ -342,18 +396,41 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
                   </span>
                 </td>
                 <td className={estilos.num}>
-                  {r.cantidadGramos !== undefined
-                    ? `${(r.cantidadGramos / 1000).toFixed(3)} kg`
-                    : `${r.cantidadUnidades} u`}
+                  <span className={estilos.cantidadEditable}>
+                    <input
+                      className={estilos.inputCantidadLinea}
+                      type="number"
+                      min={0}
+                      step={r.cantidadGramos !== undefined ? 0.001 : 1}
+                      value={
+                        r.cantidadGramos !== undefined
+                          ? r.cantidadGramos / 1000
+                          : r.cantidadUnidades ?? 0
+                      }
+                      onChange={(e) => editarCantidadRenglon(r.idLocal, e.target.value)}
+                      aria-label={`Cantidad de ${r.producto.nombre}`}
+                    />
+                    {r.cantidadGramos !== undefined ? "kg" : "u"}
+                  </span>
                 </td>
                 <td className={estilos.num}>{formatearMoneda(r.producto.precio_efectivo)}</td>
                 <td className={estilos.num}>{formatearMoneda(r.importeEstimado)}</td>
+                <td className={estilos.num}>
+                  <button
+                    type="button"
+                    className={estilos.quitarRenglon}
+                    onClick={() => eliminarRenglon(r.idLocal)}
+                    aria-label={`Quitar ${r.producto.nombre} del carrito`}
+                  >
+                    <IconoPapelera />
+                  </button>
+                </td>
               </tr>
             ))}
 
             {agregando ? (
               <tr className={estilos.filaExpandida}>
-                <td colSpan={4}>
+                <td colSpan={5}>
                   <div className={estilos.formularioFila}>
                     <div className={estilos.campoFila}>
                       <label>Producto</label>
@@ -401,7 +478,7 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
               </tr>
             ) : (
               <tr className={estilos.filaAgregar} onClick={iniciarAgregarFila}>
-                <td colSpan={4}>+ Agregar producto</td>
+                <td colSpan={5}>+ Agregar producto</td>
               </tr>
             )}
           </tbody>
@@ -426,7 +503,7 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
         <button
           className={`${estilos.botonCobrar} ${confirmado ? estilos.confirmado : ""}`}
           onClick={cobrar}
-          disabled={cobrando || confirmado || renglones.length === 0}
+          disabled={cobrando || confirmado || !hayRenglonValido}
         >
           {cobrando ? "Cobrando…" : confirmado ? "¡Cobrado!" : "Cobrar"}
         </button>
