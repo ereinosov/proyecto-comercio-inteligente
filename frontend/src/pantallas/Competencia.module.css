@@ -1,0 +1,167 @@
+/* Comparación y captura de precios de competencia — registro de Análisis (DESIGN.md): una
+   decisión por bloque, aire visual, líneas bajo 80 caracteres, radio 6px, Source Serif 4.
+   Sin Verde Rasero: nada aquí compromete dinero — el sistema no ajusta ningún precio (FR-028). */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 32px;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.instruccion {
+  color: var(--color-tinta-suave);
+  font-size: 15px;
+  max-width: 70ch;
+  margin: 0;
+}
+
+.error {
+  color: var(--color-critico);
+  font-size: 14px;
+}
+
+.ok {
+  color: var(--color-tinta-suave);
+  font-size: 14px;
+}
+
+.formulario {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  align-items: flex-end;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 20px 24px;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.campo label {
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+}
+
+.entrada,
+.seleccion {
+  font-family: var(--tipografia-analisis);
+  font-size: 15px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-base);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 8px 10px;
+}
+
+.entrada:focus-visible,
+.seleccion:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}
+
+.boton {
+  font-family: var(--tipografia-analisis);
+  font-size: 14px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-base);
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-analisis);
+  padding: 9px 18px;
+  cursor: pointer;
+}
+
+.boton:disabled {
+  border-color: var(--color-borde);
+  color: var(--color-tinta-suave);
+  cursor: not-allowed;
+}
+
+/* Un bloque = una observación: el canal, su precio normalizado y su antigüedad con los tres
+   portadores. No una fila densa de tabla (eso es Operación). */
+.comparacion {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.precioPropio {
+  font-size: 17px;
+}
+
+.precioPropio strong {
+  font-variant-numeric: tabular-nums;
+}
+
+.bloqueObs {
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.bloqueObs .canal {
+  font-weight: 600;
+}
+
+.bloqueObs .cifras {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta-suave);
+  font-size: 14px;
+}
+
+.noComparable {
+  color: var(--color-tinta-suave);
+  font-style: italic;
+  font-size: 14px;
+}
+
+.contenedorSubvistas {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.subnav {
+  flex-shrink: 0;
+  display: flex;
+  gap: 8px;
+  padding: 12px 32px 0;
+  background: var(--color-superficie-base);
+}
+
+.subtab,
+.subtabActiva {
+  font-family: var(--tipografia-analisis);
+  font-size: 14px;
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 6px 14px;
+  cursor: pointer;
+  color: var(--color-tinta-suave);
+}
+
+.subtabActiva {
+  color: var(--color-tinta);
+  border-color: var(--color-tinta);
+}

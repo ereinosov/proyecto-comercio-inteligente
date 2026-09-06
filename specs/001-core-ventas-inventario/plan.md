@@ -85,7 +85,7 @@ justificación queda registrada aquí, como exige el principio.
 | UTC almacenado, día local de sucursal para agregar | Todos los instantes en `TIMESTAMPTZ`; `sucursal.zona_horaria` en identificador IANA; agregación por `(instante AT TIME ZONE zona_horaria)::date`. |
 | Nomenclatura: español, `snake_case`, singular, sin "ñ", claves foráneas `id_` + tabla | Aplicada en todo `data-model.md`. `campania` y `senal_fuga` ya respetaban la regla; aquí aplica a `anulacion_venta`, `operacion_pendiente` y `conteo_fisico`. |
 | Propiedad de datos: las 20 entidades de 001 | `data-model.md` define exactamente esas 20 y ninguna ajena. `terminal_pago` se guarda como referencia opaca sin definir la entidad, que es propiedad de 007. |
-| Sistema de diseño: registro de Operación | Tokens como variables CSS propias desde el inicio; tabla como elemento principal, sin tarjetas, radio 2px, animación solo como confirmación de acción. IBM Plex Sans con cifras tabulares. Inter PROHIBIDA. |
+| Sistema de diseño: registro por pantalla (DESIGN.md) | Tokens como variables CSS propias desde el inicio. Operación (mayoría de 001): tabla como elemento principal, sin tarjetas, radio 2px, IBM Plex Sans con cifras tabulares, animación solo como confirmación de acción. Análisis (comparación de precios de US4): radio 6px, Source Serif 4, un bloque por decisión. Inter PROHIBIDA. |
 | Migraciones versionadas y reversibles | Alembic, una migración por cambio de esquema, con `downgrade` implementado. |
 
 **Resultado de la puerta**: PASA. Una desviación registrada en Complexity Tracking.
@@ -174,16 +174,22 @@ no pendiente.
 
 ## Sistema de diseño en el frontend
 
-El módulo 001 es registro de **Operación**. Los tokens de la constitución se implementan como
-variables CSS propias en `frontend/src/estilos/tokens.css` desde la primera pantalla, nunca como
-valores incrustados en componentes:
+El módulo 001 es **mayoritariamente** registro de **Operación** (punto de venta, entradas,
+traspasos, conteo, capital inmovilizado). La **comparación de precios de competencia (US4) es
+registro de Análisis**: es una consulta que sustenta una decisión —mover o no el precio—, no una
+transacción del punto de venta, el mismo criterio con el que `003-precios-margenes` sitúa sus
+pantallas de márgenes en Análisis (DESIGN.md, "Registro por pantalla, no por módulo"; ver
+`tasks.md` T064). Los tokens de la constitución se implementan como variables CSS propias en
+`frontend/src/estilos/tokens.css` desde la primera pantalla, nunca como valores incrustados en
+componentes:
 
 - Superficies `#F1F4F1` y `#FFFFFF`; tinta `#1B2621` y `#5A6862`; marca `#0F5132`; borde `#D5DCD6`.
 - Semánticos reservados a su significado: atención `#9A5B08`, crítico `#8E2A2A`, estimado `#1F5673`.
-- Radio de borde 2px (Operación). El radio 6px de Análisis se define en el mismo archivo aunque este
-  módulo no lo use, para que los módulos 003 a 005 hereden la escala completa.
-- IBM Plex Sans con cifras tabulares reales, de modo que las columnas de dinero y de peso alineen
-  por dígito. Source Serif 4 declarada para Análisis. **Inter PROHIBIDA.**
+- Radio de borde **2px en Operación** y **6px en Análisis** (este último lo usa la comparación de
+  precios de US4); ambos se definen en `tokens.css` y los módulos 003 a 005 heredan la escala.
+- IBM Plex Sans con cifras tabulares reales en Operación, de modo que las columnas de dinero y de
+  peso alineen por dígito. **Source Serif 4 en Análisis** (la comparación de precios de US4).
+  **Inter PROHIBIDA.**
 - Tabla como elemento principal, alta densidad, sin tarjetas. Animación permitida solo como
   confirmación de una acción del usuario; nada disparado por scroll ni por hover pasivo.
 - Antigüedad e incertidumbre siempre con tres portadores simultáneos: color, forma y texto.

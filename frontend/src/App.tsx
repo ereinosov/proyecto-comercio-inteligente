@@ -5,6 +5,7 @@ import { ConteoFisico } from "./pantallas/ConteoFisico";
 import { EntradaInventario } from "./pantallas/EntradaInventario";
 import { DespachoTraspaso } from "./pantallas/DespachoTraspaso";
 import { CapitalInmovilizado } from "./pantallas/CapitalInmovilizado";
+import { Competencia } from "./pantallas/Competencia";
 import { Clientes } from "./pantallas/Clientes";
 import { Precios } from "./pantallas/Precios";
 import { Pronostico } from "./pantallas/Pronostico";
@@ -24,6 +25,7 @@ type Pantalla =
   | "entradas"
   | "traspasos"
   | "capital"
+  | "competencia"
   | "clientes"
   | "precios"
   | "pronostico"
@@ -91,6 +93,12 @@ export function App() {
           Capital
         </button>
         <button
+          className={pantalla === "competencia" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          onClick={() => setPantalla("competencia")}
+        >
+          Competencia
+        </button>
+        <button
           className={pantalla === "clientes" ? estilos.pestanaActiva : estilos.pestanaInactiva}
           onClick={() => setPantalla("clientes")}
         >
@@ -153,6 +161,9 @@ export function App() {
         {pantalla === "entradas" && <EntradaInventario idSucursal={turno.id_sucursal} />}
         {pantalla === "traspasos" && <DespachoTraspaso idSucursal={turno.id_sucursal} />}
         {pantalla === "capital" && <CapitalInmovilizado idSucursal={turno.id_sucursal} />}
+        {pantalla === "competencia" && (
+          <Competencia idSucursal={turno.id_sucursal} idTurno={turno.id_turno} />
+        )}
         {pantalla === "clientes" && <Clientes />}
         {pantalla === "precios" && <Precios idSucursal={turno.id_sucursal} />}
         {pantalla === "pronostico" && <Pronostico idSucursal={turno.id_sucursal} />}

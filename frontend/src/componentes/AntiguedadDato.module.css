@@ -1,0 +1,47 @@
+/* Antigüedad de un dato con TRES portadores simultáneos: color semántico, forma (punto
+   lleno / medio / hueco) y texto explícito. Ninguna antigüedad se comunica solo por color
+   (constitución, DESIGN.md — regla de los tres portadores). */
+
+.antiguedad {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.reciente {
+  color: var(--color-tinta-suave);
+}
+
+.media {
+  color: var(--color-atencion);
+}
+
+.vieja {
+  color: var(--color-critico);
+}
+
+.punto {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  flex-shrink: 0;
+}
+
+/* lleno: relleno sólido */
+.lleno {
+  background: currentColor;
+}
+
+/* medio: semirrelleno con un degradado duro, no un emoji (La Regla del Ícono) */
+.medio {
+  background: linear-gradient(90deg, currentColor 0 50%, transparent 50% 100%);
+}
+
+/* hueco: solo el borde */
+.hueco {
+  background: transparent;
+}
