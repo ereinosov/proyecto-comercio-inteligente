@@ -269,7 +269,6 @@ def consultar_pago_de_venta(
 
 @router.get("/bitacora")
 def consultar_bitacora(
-    response: Response,
     id_sucursal: int | None = None,
     id_terminal_pago: int | None = None,
     tipo_evento: str | None = None,
@@ -278,7 +277,7 @@ def consultar_bitacora(
     pagina: int | None = None,
     tamano_pagina: int | None = None,
     sesion: Session = Depends(obtener_sesion),
-) -> list[dict]:
+) -> dict:
     entradas = servicio_bitacora.consultar_bitacora(
         sesion,
         id_sucursal=id_sucursal,
@@ -288,4 +287,4 @@ def consultar_bitacora(
         hasta=hasta,
     )
     respuestas = [servicio_bitacora.entrada_a_respuesta(e) for e in entradas]
-    return paginar(respuestas, pagina=pagina, tamano_pagina=tamano_pagina, response=response)
+    return paginar(respuestas, pagina=pagina, tamano_pagina=tamano_pagina)

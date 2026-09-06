@@ -115,14 +115,29 @@ paths:
           required: false
           schema: { type: boolean, default: false }
           description: Si es true, sólo los `generado` cuya fecha actual cae en su ventana de validez.
+        - name: pagina
+          in: query
+          required: false
+          description: Página 1-indexada. Si se omite, `items` trae todos los cupones.
+          schema: { type: integer, minimum: 1 }
+        - name: tamano_pagina
+          in: query
+          required: false
+          description: Elementos por página (por defecto 20, igual que el componente Paginador).
+          schema: { type: integer, minimum: 1, default: 20 }
       responses:
         '200':
-          description: Cupones
+          description: Cupones (listado paginado — La Regla del Filtro y la Página, DESIGN.md v1.2.0)
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: '#/components/schemas/Cupon' }
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaPaginada'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/Cupon' }
 
   /promociones/ofertas-recompra/deteccion:
     post:
@@ -425,6 +440,23 @@ components:
       schema: { type: integer, format: int64 }
 
   schemas:
+
+    RespuestaPaginada:
+      description: |
+        Envoltura común de todo listado paginable del sistema (La Regla del Filtro y la Página,
+        DESIGN.md v1.2.0). Cada endpoint la estrecha con `allOf` fijando el tipo de `items`.
+        Misma estructura en `GET /clientes` (002), `GET /promociones/cupones` (005),
+        `GET /pagos/bitacora` (007) y los cinco listados de `GET /administracion/{entidad}` (001):
+        cuentan como un único contrato de paginación.
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items: {}
+        total:
+          type: integer
+          description: Total de registros que cumplen el filtro (no el de la página).
 
     Cupon:
       type: object

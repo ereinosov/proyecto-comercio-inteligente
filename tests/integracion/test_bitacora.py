@@ -157,7 +157,7 @@ def test_cada_hecho_de_pago_genera_una_entrada_sin_datos_sensibles(sesion, firmw
         },
     )
 
-    entradas = cliente.get(f"/pagos/bitacora?id_sucursal={sucursal.id_sucursal}").json()
+    entradas = cliente.get(f"/pagos/bitacora?id_sucursal={sucursal.id_sucursal}").json()["items"]
     tipos = {e["tipo_evento"] for e in entradas}
     assert {
         "token_emitido",
@@ -180,11 +180,11 @@ def test_cada_hecho_de_pago_genera_una_entrada_sin_datos_sensibles(sesion, firmw
     # filtros
     solo_token = cliente.get(
         f"/pagos/bitacora?id_sucursal={sucursal.id_sucursal}&tipo_evento=token_emitido"
-    ).json()
+    ).json()["items"]
     assert solo_token and all(e["tipo_evento"] == "token_emitido" for e in solo_token)
     por_terminal = cliente.get(
         f"/pagos/bitacora?id_sucursal={sucursal.id_sucursal}&id_terminal_pago={terminal.id_terminal_pago}"
-    ).json()
+    ).json()["items"]
     assert por_terminal and all(e["id_terminal_pago"] == terminal.id_terminal_pago for e in por_terminal)
 
 

@@ -121,10 +121,11 @@ def test_get_clientes_devuelve_lista_con_las_claves_del_contrato():
     respuesta = cliente_http.get("/clientes")
     assert respuesta.status_code == 200
     cuerpo = respuesta.json()
-    assert isinstance(cuerpo, list)
-    assert len(cuerpo) >= 1
+    # Listado paginado: { items, total } (schema RespuestaPaginada).
+    assert isinstance(cuerpo["items"], list)
+    assert cuerpo["total"] >= 1 and len(cuerpo["items"]) >= 1
     for clave in ("id_cliente", "nombre", "valor", "monto_total"):
-        assert clave in cuerpo[0], f"falta '{clave}' en la respuesta de GET /clientes"
+        assert clave in cuerpo["items"][0], f"falta '{clave}' en la respuesta de GET /clientes"
 
 
 def test_get_cliente_por_id_devuelve_detalle_con_desglose():

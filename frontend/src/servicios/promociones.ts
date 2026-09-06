@@ -67,13 +67,31 @@ export function listarCupones(opciones?: {
   idCliente?: number;
   estado?: EstadoCupon;
   vigentes?: boolean;
+  pagina?: number;
+  tamanoPagina?: number;
 }): Promise<Cupon[]> {
+  return listarCuponesPagina(opciones).then((p) => p.items);
+}
+
+/** `GET /promociones/cupones` con su envoltura de paginación `{ items, total }`
+ * (schema `RespuestaPaginada`). `listarCupones` devuelve sólo `items` para los consumos
+ * que aún no pintan un Paginador. */
+export function listarCuponesPagina(opciones?: {
+  idCliente?: number;
+  estado?: EstadoCupon;
+  vigentes?: boolean;
+  pagina?: number;
+  tamanoPagina?: number;
+}) {
   const params = new URLSearchParams();
   if (opciones?.idCliente !== undefined) params.set("id_cliente", String(opciones.idCliente));
   if (opciones?.estado) params.set("estado", opciones.estado);
   if (opciones?.vigentes) params.set("vigentes", "true");
+  if (opciones?.pagina !== undefined) params.set("pagina", String(opciones.pagina));
+  if (opciones?.tamanoPagina !== undefined)
+    params.set("tamano_pagina", String(opciones.tamanoPagina));
   const q = params.toString();
-  return clienteHttp.get<Cupon[]>(`/promociones/cupones${q ? `?${q}` : ""}`);
+  return clienteHttp.getPagina<Cupon>(`/promociones/cupones${q ? `?${q}` : ""}`);
 }
 
 export interface RedencionNueva {

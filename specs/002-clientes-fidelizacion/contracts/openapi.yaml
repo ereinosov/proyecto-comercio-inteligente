@@ -56,14 +56,27 @@ paths:
         - name: orden
           in: query
           schema: { type: string, enum: [valor, monto_total], default: valor }
+        - name: pagina
+          in: query
+          description: Página 1-indexada. Si se omite, `items` trae todos los registros.
+          schema: { type: integer, minimum: 1 }
+        - name: tamano_pagina
+          in: query
+          description: Elementos por página (por defecto 20, igual que el componente Paginador).
+          schema: { type: integer, minimum: 1, default: 20 }
       responses:
         '200':
-          description: Listado
+          description: Listado paginado (La Regla del Filtro y la Página, DESIGN.md v1.2.0)
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: '#/components/schemas/ClienteResumenValor' }
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaPaginada'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/ClienteResumenValor' }
 
   /clientes/busqueda:
     get:
@@ -185,6 +198,23 @@ components:
       schema: { type: integer }
 
   schemas:
+
+    RespuestaPaginada:
+      description: |
+        Envoltura común de todo listado paginable del sistema (La Regla del Filtro y la Página,
+        DESIGN.md v1.2.0). Cada endpoint la estrecha con `allOf` fijando el tipo de `items`.
+        Misma estructura en `GET /clientes` (002), `GET /promociones/cupones` (005),
+        `GET /pagos/bitacora` (007) y los cinco listados de `GET /administracion/{entidad}` (001):
+        cuentan como un único contrato de paginación.
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items: {}
+        total:
+          type: integer
+          description: Total de registros que cumplen el filtro (no el de la página).
 
     ClienteNuevo:
       type: object

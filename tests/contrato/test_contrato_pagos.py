@@ -320,7 +320,8 @@ def test_contrato_bitacora(sesion):
     sucursal = crear_sucursal(sesion)
     sesion.commit()
     r = cliente.get(f"/pagos/bitacora?id_sucursal={sucursal.id_sucursal}")
-    assert r.status_code == 200 and isinstance(r.json(), list)
+    # Listado paginado: { items, total } (schema RespuestaPaginada).
+    assert r.status_code == 200 and isinstance(r.json()["items"], list)
     assert (
         _error(
             cliente.get(

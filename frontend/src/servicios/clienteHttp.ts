@@ -17,10 +17,7 @@ export class ErrorApi extends Error {
   }
 }
 
-async function peticionCompleta<T>(
-  ruta: string,
-  opciones: RequestInit = {},
-): Promise<{ datos: T; total: number | null }> {
+async function peticion<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
   const respuesta = await fetch(`${URL_BASE}${ruta}`, {
     ...opciones,
     headers: {
@@ -30,7 +27,7 @@ async function peticionCompleta<T>(
   });
 
   if (respuesta.status === 204) {
-    return { datos: undefined as T, total: null };
+    return undefined as T;
   }
 
   const cuerpo = await respuesta.json().catch(() => null);
@@ -41,27 +38,24 @@ async function peticionCompleta<T>(
     throw new ErrorApi(codigo, mensaje, respuesta.status);
   }
 
-  const cabecera = respuesta.headers.get("X-Total-Count");
-  return { datos: cuerpo as T, total: cabecera === null ? null : Number(cabecera) };
+  return cuerpo as T;
 }
 
-async function peticion<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
-  return (await peticionCompleta<T>(ruta, opciones)).datos;
-}
-
-/** Página de un listado: los elementos más el total de registros de la cabecera `X-Total-Count`
- * (La Regla del Filtro y la Página, DESIGN.md v1.2.0). `total` es `null` si el backend no la
- * envió. */
+/**
+ * Página de un listado (La Regla del Filtro y la Página, DESIGN.md v1.2.0). El backend responde
+ * con un objeto `{ items, total }` (schema `RespuestaPaginada`); `total` es el número total de
+ * registros que cumplen el filtro, no el de la página.
+ */
 export interface Pagina<T> {
   items: T[];
-  total: number | null;
+  total: number;
 }
 
 export const clienteHttp = {
   get: <T>(ruta: string) => peticion<T>(ruta, { method: "GET" }),
   getPagina: async <T>(ruta: string): Promise<Pagina<T>> => {
-    const { datos, total } = await peticionCompleta<T[]>(ruta, { method: "GET" });
-    return { items: datos, total };
+    const cuerpo = await peticion<{ items: T[]; total: number }>(ruta, { method: "GET" });
+    return { items: cuerpo.items ?? [], total: cuerpo.total ?? 0 };
   },
   post: <T>(ruta: string, cuerpo: unknown) =>
     peticion<T>(ruta, { method: "POST", body: JSON.stringify(cuerpo) }),

@@ -456,14 +456,31 @@ paths:
           schema: { $ref: '#/components/schemas/TipoEventoBitacora' }
         - { name: desde, in: query, required: false, schema: { type: string, format: date } }
         - { name: hasta, in: query, required: false, schema: { type: string, format: date } }
+        - name: pagina
+          in: query
+          required: false
+          description: Página 1-indexada. Si se omite, `items` trae todas las entradas del filtro.
+          schema: { type: integer, minimum: 1 }
+        - name: tamano_pagina
+          in: query
+          required: false
+          description: Elementos por página (por defecto 20, igual que el componente Paginador).
+          schema: { type: integer, minimum: 1, default: 20 }
       responses:
         '200':
-          description: Entradas de bitácora, más recientes primero
+          description: |
+            Entradas de bitácora, más recientes primero, en un listado paginado
+            (La Regla del Filtro y la Página, DESIGN.md v1.2.0).
           content:
             application/json:
               schema:
-                type: array
-                items: { $ref: '#/components/schemas/EntradaBitacora' }
+                allOf:
+                  - $ref: '#/components/schemas/RespuestaPaginada'
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: '#/components/schemas/EntradaBitacora' }
         '400':
           description: '`pagos_sucursal_requerida`, `pagos_rango_invalido`'
           content:
@@ -472,6 +489,23 @@ paths:
 
 components:
   schemas:
+
+    RespuestaPaginada:
+      description: |
+        Envoltura común de todo listado paginable del sistema (La Regla del Filtro y la Página,
+        DESIGN.md v1.2.0). Cada endpoint la estrecha con `allOf` fijando el tipo de `items`.
+        Misma estructura en `GET /clientes` (002), `GET /promociones/cupones` (005),
+        `GET /pagos/bitacora` (007) y los cinco listados de `GET /administracion/{entidad}` (001):
+        cuentan como un único contrato de paginación.
+      type: object
+      required: [items, total]
+      properties:
+        items:
+          type: array
+          items: {}
+        total:
+          type: integer
+          description: Total de registros que cumplen el filtro (no el de la página).
 
     Error:
       type: object

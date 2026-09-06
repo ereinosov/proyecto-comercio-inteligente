@@ -16,9 +16,27 @@ router = APIRouter(tags=["catalogo"])
 
 
 @router.get("/sucursales")
-def listar_sucursales(sesion: Session = Depends(obtener_sesion)) -> list[dict]:
-    sucursales = sesion.execute(select(Sucursal).order_by(Sucursal.id_sucursal)).scalars().all()
+def listar_sucursales(
+    incluir_inactivas: bool = False, sesion: Session = Depends(obtener_sesion)
+) -> list[dict]:
+    """Por defecto excluye las sucursales con `activo = false` — igual que `listar_catalogo`
+    con los productos: esta lista alimenta los selectores de "elegir sucursal para una acción
+    nueva" (abrir turno, crear registros), y una sucursal desactivada no debe poder elegirse.
+
+    `incluir_inactivas=true` devuelve todas: lo usan las pantallas de reporte / historial, que
+    siguen viendo sus datos ya existentes (un turno cerrado contra una sucursal desactivada no
+    se rompe ni desaparece — el filtro sólo aplica a los selectores de acción nueva).
+    """
+    consulta = select(Sucursal).order_by(Sucursal.id_sucursal)
+    if not incluir_inactivas:
+        consulta = consulta.where(Sucursal.activo.is_(True))
+    sucursales = sesion.execute(consulta).scalars().all()
     return [
-        {"id_sucursal": s.id_sucursal, "nombre": s.nombre, "zona_horaria": s.zona_horaria}
+        {
+            "id_sucursal": s.id_sucursal,
+            "nombre": s.nombre,
+            "zona_horaria": s.zona_horaria,
+            "activo": s.activo,
+        }
         for s in sucursales
     ]

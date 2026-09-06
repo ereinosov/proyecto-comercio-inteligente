@@ -1,24 +1,20 @@
 """Paginación de listados (La Regla del Filtro y la Página, DESIGN.md v1.2.0).
 
-Convención del proyecto — resuelta como ambigüedad menor de implementación (ver resumen de la
-tarea de administración de datos maestros):
+Convención del proyecto:
 
-- El cuerpo de la respuesta sigue siendo un array JSON, igual que antes. No se envuelve en un
-  objeto `{items, total}`: eso rompería el contrato de `GET /clientes`, `GET /promociones/cupones`
-  y `GET /pagos/bitacora`, ya consumidos por pruebas y frontend.
-- El total de registros se devuelve en la cabecera `X-Total-Count` (patrón REST habitual), para
-  que el frontend calcule el total de páginas.
+- La respuesta de todo endpoint de listado paginable es un objeto `{"items": [...], "total": N}`
+  (schema `RespuestaPaginada` en cada `contracts/openapi.yaml`). `total` es el número total de
+  registros que cumplen el filtro, no el de la página; el frontend calcula el total de páginas
+  a partir de él.
 - Los parámetros opcionales son `pagina` (1-indexado) y `tamano_pagina`, mismo estilo de
   parámetro opcional que `id_sucursal` en el resto de la API.
-- Si `pagina` no se indica, se devuelven todos los registros (comportamiento actual intacto);
-  `X-Total-Count` se envía igualmente.
+- Si `pagina` no se indica, `items` trae todos los registros (comportamiento útil para consumos
+  que no pintan un `Paginador`); `total` es igual a `len(items)`.
 
 `TAMANO_PAGINA_DEFECTO = 20` coincide con el del componente `Paginador.tsx`.
 """
 
 from typing import Sequence, TypeVar
-
-from fastapi import Response
 
 TAMANO_PAGINA_DEFECTO = 20
 
@@ -30,16 +26,14 @@ def paginar(
     *,
     pagina: int | None,
     tamano_pagina: int | None,
-    response: Response,
-) -> list[_T]:
+) -> dict:
+    """Devuelve `{"items": [...], "total": N}`. `total` siempre cuenta la colección completa."""
     total = len(items)
-    response.headers["X-Total-Count"] = str(total)
-    response.headers["Access-Control-Expose-Headers"] = "X-Total-Count"
     if pagina is None:
-        return list(items)
+        return {"items": list(items), "total": total}
     pagina = max(1, pagina)
     tamano = (
         tamano_pagina if tamano_pagina and tamano_pagina > 0 else TAMANO_PAGINA_DEFECTO
     )
     inicio = (pagina - 1) * tamano
-    return list(items[inicio : inicio + tamano])
+    return {"items": list(items[inicio : inicio + tamano]), "total": total}

@@ -192,12 +192,34 @@ export function consultarBitacora(
     tipoEvento?: TipoEventoBitacora;
     desde?: string;
     hasta?: string;
+    pagina?: number;
+    tamanoPagina?: number;
   } = {}
 ): Promise<EntradaBitacora[]> {
+  return consultarBitacoraPagina(idSucursal, opciones).then((p) => p.items);
+}
+
+/** `GET /pagos/bitacora` con su envoltura de paginación `{ items, total }`
+ * (schema `RespuestaPaginada`). `consultarBitacora` devuelve sólo `items` para los consumos
+ * que aún no pintan un Paginador. */
+export function consultarBitacoraPagina(
+  idSucursal: number,
+  opciones: {
+    idTerminalPago?: number;
+    tipoEvento?: TipoEventoBitacora;
+    desde?: string;
+    hasta?: string;
+    pagina?: number;
+    tamanoPagina?: number;
+  } = {}
+) {
   const params = new URLSearchParams({ id_sucursal: String(idSucursal) });
   if (opciones.idTerminalPago) params.set("id_terminal_pago", String(opciones.idTerminalPago));
   if (opciones.tipoEvento) params.set("tipo_evento", opciones.tipoEvento);
   if (opciones.desde) params.set("desde", opciones.desde);
   if (opciones.hasta) params.set("hasta", opciones.hasta);
-  return clienteHttp.get<EntradaBitacora[]>(`/pagos/bitacora?${params}`);
+  if (opciones.pagina !== undefined) params.set("pagina", String(opciones.pagina));
+  if (opciones.tamanoPagina !== undefined)
+    params.set("tamano_pagina", String(opciones.tamanoPagina));
+  return clienteHttp.getPagina<EntradaBitacora>(`/pagos/bitacora?${params}`);
 }

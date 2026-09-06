@@ -127,7 +127,7 @@ def test_rechazo_de_pan_en_un_campo_indebido_sin_registrar_el_numero(sesion):
 
     entradas = cliente.get(
         f"/pagos/bitacora?id_sucursal={terminal.id_sucursal}&tipo_evento=pan_rechazado"
-    ).json()
+    ).json()["items"]
     assert len(entradas) == 1
     assert not _tiene_pan(entradas[0]["resultado"])
     assert not _tiene_pan(entradas[0]["referencia_recurso_id"])
@@ -185,7 +185,7 @@ def test_idempotencia_tres_casos(sesion):
     assert rb.status_code == 200 and rb.json()["token"] == token
     divergentes = cliente.get(
         f"/pagos/bitacora?id_sucursal={terminal.id_sucursal}&tipo_evento=token_idempotencia_divergente"
-    ).json()
+    ).json()["items"]
     assert len(divergentes) == 1
 
     # (c) clave reusada + otra id_venta -> 409

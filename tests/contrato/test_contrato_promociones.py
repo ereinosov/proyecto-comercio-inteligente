@@ -138,9 +138,11 @@ def test_generacion_de_cupones_forma_feliz_e_idempotencia():
 
     listado = cliente.get("/promociones/cupones", params={"vigentes": True})
     assert listado.status_code == 200
-    assert isinstance(listado.json(), list) and listado.json()
+    # Listado paginado: { items, total } (schema RespuestaPaginada).
+    items = listado.json()["items"]
+    assert isinstance(items, list) and items
     for clave in CLAVES_CUPON:
-        assert clave in listado.json()[0], f"falta '{clave}' en Cupon"
+        assert clave in items[0], f"falta '{clave}' en Cupon"
 
 
 def test_generacion_con_rango_invalido_es_400_con_error():

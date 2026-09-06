@@ -18,7 +18,7 @@ Paginación de los listados: array en el cuerpo + total en `X-Total-Count` (ver
 
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
@@ -84,16 +84,15 @@ class Desactivacion(BaseModel):
 @router.get("/{entidad}")
 def listar(
     entidad: str,
-    response: Response,
     incluir_inactivos: bool = False,
     pagina: int | None = None,
     tamano_pagina: int | None = None,
     sesion: Session = Depends(obtener_sesion),
-) -> list[dict]:
+) -> dict:
     filas = servicio.listar(
         sesion, entidad=entidad, incluir_inactivos=incluir_inactivos
     )
-    return paginar(filas, pagina=pagina, tamano_pagina=tamano_pagina, response=response)
+    return paginar(filas, pagina=pagina, tamano_pagina=tamano_pagina)
 
 
 @router.get("/{entidad}/{id_entidad:int}/dependencias")

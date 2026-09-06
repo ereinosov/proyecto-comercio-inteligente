@@ -78,7 +78,9 @@ export function registrarVisita(idCliente: number, idVenta: number): Promise<Vis
 }
 
 export function listarClientes(orden: "valor" | "monto_total" = "valor"): Promise<ClienteResumen[]> {
-  return clienteHttp.get<ClienteResumen[]>(`/clientes?orden=${orden}`);
+  // `GET /clientes` responde `{ items, total }` (schema RespuestaPaginada); sin `pagina`,
+  // `items` trae todos los clientes.
+  return clienteHttp.getPagina<ClienteResumen>(`/clientes?orden=${orden}`).then((p) => p.items);
 }
 
 export function listarClientesPagina(

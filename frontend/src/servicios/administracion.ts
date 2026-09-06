@@ -5,7 +5,8 @@
  * Escritura reservada al encargado (backend: `operador.es_encargado`). El `id_operador` viaja
  * en el cuerpo, igual que en `POST /pagos/terminales`.
  *
- * Listados paginados: cuerpo = array, total en `X-Total-Count` (ver clienteHttp.getPagina).
+ * Listados paginados: el backend responde `{ items, total }` (schema RespuestaPaginada); ver
+ * clienteHttp.getPagina.
  */
 
 import { clienteHttp, type Pagina } from "./clienteHttp";

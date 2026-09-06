@@ -7,7 +7,7 @@ Contra PostgreSQL real, puerto 5442.
 - editar un cliente NO requiere `es_encargado`.
 - el borrado nunca es físico: "desactivar" pone `activo = false` y la fila sigue existiendo.
 - `contar_dependencias` informa con conteos reales y NUNCA bloquea la desactivación.
-- los listados aceptan `pagina`/`tamano_pagina` y devuelven el total en `X-Total-Count`.
+- los listados aceptan `pagina`/`tamano_pagina` y responden `{items, total}` (RespuestaPaginada).
 """
 
 import uuid
@@ -62,11 +62,11 @@ def test_alta_edicion_y_desactivacion_de_sucursal_por_encargado(sesion):
     # No se borró: sigue en la base, sólo oculta de los listados por defecto.
     sesion.expire_all()
     assert sesion.get(Sucursal, id_suc) is not None
-    visibles = cliente.get("/administracion/sucursales").json()
+    visibles = cliente.get("/administracion/sucursales").json()["items"]
     assert id_suc not in [s["id_sucursal"] for s in visibles]
     con_inactivas = cliente.get(
         "/administracion/sucursales?incluir_inactivos=true"
-    ).json()
+    ).json()["items"]
     assert id_suc in [s["id_sucursal"] for s in con_inactivas]
 
 
@@ -156,7 +156,7 @@ def test_editar_cliente_no_requiere_encargado(sesion):
     assert edit.json()["contacto"] == "0999999999"
 
 
-def test_listado_paginado_devuelve_total_en_cabecera(sesion):
+def test_listado_paginado_devuelve_items_y_total_en_el_body(sesion):
     encargado = crear_operador(sesion, es_encargado=True)
     sesion.commit()
     for _ in range(3):
@@ -167,8 +167,9 @@ def test_listado_paginado_devuelve_total_en_cabecera(sesion):
 
     r = cliente.get("/administracion/medios?pagina=1&tamano_pagina=2")
     assert r.status_code == 200
-    assert len(r.json()) == 2
-    assert int(r.headers["X-Total-Count"]) >= 3
+    cuerpo = r.json()
+    assert len(cuerpo["items"]) == 2
+    assert cuerpo["total"] >= 3
 
 
 def test_ultimo_turno_de_sucursal_para_la_pantalla_de_apertura(sesion):
@@ -181,7 +182,9 @@ def test_ultimo_turno_de_sucursal_para_la_pantalla_de_apertura(sesion):
     assert vacio.status_code == 200
     assert vacio.json() is None
 
-    crear_turno(sesion, id_operador=encargado.id_operador, id_sucursal=sucursal.id_sucursal)
+    crear_turno(
+        sesion, id_operador=encargado.id_operador, id_sucursal=sucursal.id_sucursal
+    )
     sesion.commit()
 
     con = cliente.get(f"/turnos/ultimo?id_sucursal={sucursal.id_sucursal}")
