@@ -1,20 +1,30 @@
 /**
- * Identificación opcional de cliente en el punto de venta (T014, FR-003). Vive en el
- * encabezado de Venta.tsx, nunca en el flujo de cobro: el cajero puede ignorarlo por completo
- * y la venta se completa exactamente igual (Principio II — ver spec.md, Clarifications).
+ * Identificación opcional de cliente en el punto de venta (FR-003). Vive en el encabezado de
+ * Venta.tsx, nunca en el flujo de cobro: el cajero puede ignorarlo por completo y la venta se
+ * completa exactamente igual (Principio II).
  *
- * Registro de Operación: sin Verde Rasero (reservado al botón de cobro, DESIGN.md, La Regla
- * de la Sola Voz), sin animación de revelación — esta pantalla no muestra ningún valor de
- * cliente todavía, eso lo añade User Story 2.
+ * Registro de Operación: sin Verde Rasero (reservado al botón de cobro, La Regla de la Sola
+ * Voz), sin animación de revelación.
+ *
+ * - Colapsado: enlace de texto en Tinta Suave.
+ * - Buscar: panel flotante en Superficie Alta, filo de Operación (DESIGN.md, "Identificar
+ *   cliente").
+ * - Registrar / editar un cliente: `ModalAdministrable` (La Regla del Modal Administrable) —
+ *   el alta y la edición de un cliente son un formulario de dato maestro, mismo componente que
+ *   Administración y que la edición desde Clientes.tsx. Aquí se captura además "Cédula o RUC
+ *   (opcional)" (FR-017); si el backend responde 422/409, el mensaje devuelto se muestra en el
+ *   propio modal, nunca como alerta genérica.
  */
 
 import { useEffect, useState } from "react";
+import { ErrorApi } from "../servicios/clienteHttp";
 import {
   buscarClientes,
   registrarCliente,
   type Cliente,
   type ClienteResumen,
 } from "../servicios/clientes";
+import { ModalAdministrable } from "./ModalAdministrable";
 import estilos from "./IdentificarCliente.module.css";
 
 export interface ClienteSeleccionado {
@@ -35,17 +45,17 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
   const [busqueda, setBusqueda] = useState("");
   const [resultados, setResultados] = useState<ClienteResumen[]>([]);
   const [creandoNuevo, setCreandoNuevo] = useState(false);
-  const [nombreNuevo, setNombreNuevo] = useState("");
-  const [fechaNacimientoNueva, setFechaNacimientoNueva] = useState("");
+  const [form, setForm] = useState({ nombre: "", fecha_nacimiento: "", identificador: "" });
   const [guardando, setGuardando] = useState(false);
+  const [errorAlta, setErrorAlta] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!abierto) return;
+    if (!abierto || creandoNuevo) return;
     const temporizador = setTimeout(() => {
       buscarClientes(busqueda).then(setResultados);
     }, 200);
     return () => clearTimeout(temporizador);
-  }, [busqueda, abierto]);
+  }, [busqueda, abierto, creandoNuevo]);
 
   function elegir(cliente: ClienteResumen) {
     if (cliente.nombre === null) return; // cliente anonimizado; no debería aparecer en la búsqueda
@@ -58,21 +68,29 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
     setBusqueda("");
     setResultados([]);
     setCreandoNuevo(false);
-    setNombreNuevo("");
-    setFechaNacimientoNueva("");
+    setForm({ nombre: "", fecha_nacimiento: "", identificador: "" });
+    setErrorAlta(null);
   }
 
   async function guardarNuevo() {
-    if (!nombreNuevo.trim() || !fechaNacimientoNueva) return;
+    if (!form.nombre.trim()) return;
     setGuardando(true);
+    setErrorAlta(null);
     try {
       const cliente: Cliente = await registrarCliente({
-        nombre: nombreNuevo.trim(),
-        fecha_nacimiento: fechaNacimientoNueva,
+        nombre: form.nombre.trim(),
+        fecha_nacimiento: form.fecha_nacimiento || undefined,
+        identificador: form.identificador.trim() || undefined,
       });
       // Cliente recién creado: cero visitas, sin historial suficiente todavía (FR-007).
-      onSeleccionar({ id_cliente: cliente.id_cliente, nombre: cliente.nombre ?? nombreNuevo, valor: null });
+      onSeleccionar({
+        id_cliente: cliente.id_cliente,
+        nombre: cliente.nombre ?? form.nombre,
+        valor: null,
+      });
       cerrar();
+    } catch (e) {
+      setErrorAlta(e instanceof ErrorApi ? e.message : "No se pudo registrar el cliente.");
     } finally {
       setGuardando(false);
     }
@@ -94,18 +112,14 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
     );
   }
 
-  if (!abierto) {
-    return (
-      <button type="button" className={estilos.abrir} onClick={() => setAbierto(true)}>
-        + Identificar cliente
-      </button>
-    );
-  }
-
   return (
-    <div className={estilos.panel}>
-      {!creandoNuevo ? (
-        <>
+    <>
+      {!abierto ? (
+        <button type="button" className={estilos.abrir} onClick={() => setAbierto(true)}>
+          + Identificar cliente
+        </button>
+      ) : (
+        <div className={estilos.panel}>
           <input
             className={estilos.input}
             type="text"
@@ -124,45 +138,62 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
             ))}
           </ul>
           <div className={estilos.acciones}>
-            <button type="button" className={estilos.enlace} onClick={() => setCreandoNuevo(true)}>
+            <button
+              type="button"
+              className={estilos.enlace}
+              onClick={() => {
+                setErrorAlta(null);
+                setForm((f) => ({ ...f, nombre: busqueda.trim() }));
+                setCreandoNuevo(true);
+              }}
+            >
               + Registrar cliente nuevo
             </button>
             <button type="button" className={estilos.enlace} onClick={cerrar}>
               Cancelar
             </button>
           </div>
-        </>
-      ) : (
-        <>
-          <input
-            className={estilos.input}
-            type="text"
-            placeholder="Nombre"
-            value={nombreNuevo}
-            onChange={(e) => setNombreNuevo(e.target.value)}
-            autoFocus
-          />
-          <input
-            className={estilos.input}
-            type="date"
-            value={fechaNacimientoNueva}
-            onChange={(e) => setFechaNacimientoNueva(e.target.value)}
-          />
-          <div className={estilos.acciones}>
-            <button
-              type="button"
-              className={estilos.enlace}
-              onClick={guardarNuevo}
-              disabled={guardando || !nombreNuevo.trim() || !fechaNacimientoNueva}
-            >
-              {guardando ? "Guardando…" : "Guardar"}
-            </button>
-            <button type="button" className={estilos.enlace} onClick={cerrar}>
-              Cancelar
-            </button>
-          </div>
-        </>
+        </div>
       )}
-    </div>
+
+      {creandoNuevo && (
+        <ModalAdministrable
+          titulo="Registrar cliente"
+          onCerrar={() => setCreandoNuevo(false)}
+          onGuardar={guardarNuevo}
+          guardando={guardando}
+          error={errorAlta}
+          primariaHabilitada={form.nombre.trim() !== ""}
+        >
+          <label className={estilos.campoModal}>
+            <span>Nombre</span>
+            <input
+              value={form.nombre}
+              onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+              autoFocus
+            />
+          </label>
+          <label className={estilos.campoModal}>
+            <span>Fecha de nacimiento (opcional)</span>
+            <input
+              type="date"
+              value={form.fecha_nacimiento}
+              onChange={(e) => setForm((f) => ({ ...f, fecha_nacimiento: e.target.value }))}
+            />
+          </label>
+          <label className={estilos.campoModal}>
+            <span>Cédula o RUC (opcional)</span>
+            <input
+              inputMode="numeric"
+              maxLength={13}
+              value={form.identificador}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, identificador: e.target.value.replace(/\D/g, "") }))
+              }
+            />
+          </label>
+        </ModalAdministrable>
+      )}
+    </>
   );
 }

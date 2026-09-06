@@ -203,6 +203,18 @@
   }
 }
 
+.identificador {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  margin: 10px 0 0;
+}
+
+.identificador span {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+}
+
 .nombreDetalle {
   font-size: 20px;
   font-weight: 600;

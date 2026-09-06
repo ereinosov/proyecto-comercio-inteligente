@@ -34,16 +34,25 @@ frontera "costo pertenece a 001, margen pertenece a 003" de la propia tabla de p
 | `nombre` | `TEXT NULL` | Obligatorio al registrar (regla de aplicación, FR-001); se vacía a `NULL` al anonimizar (FR-016) |
 | `fecha_nacimiento` | `DATE NULL` | Obligatoria al registrar (FR-001, única base del cupón de `005`); se vacía al anonimizar |
 | `contacto` | `TEXT NULL` | Siempre opcional; se vacía al anonimizar si existía |
+| `identificador` | `TEXT NULL` | Cédula (10 díg.) o RUC de persona natural (13 díg.) ecuatorianos (FR-017). Opcional; validación del dígito verificador en el dominio (`identidad_cliente.py`), no en el esquema. Único entre clientes activos vía índice parcial `uq_cliente_identificador` (migración 0009); se vacía al anonimizar |
 | `fecha_alta` | `TIMESTAMPTZ NOT NULL` | |
 | `anonimizado` | `BOOLEAN NOT NULL DEFAULT FALSE` | |
 | `instante_anonimizacion` | `TIMESTAMPTZ NULL` | Puesto por la tarea de fondo (FR-015) |
 
-*Nota de esquema*: `nombre` y `fecha_nacimiento` son `NULL`-ables a nivel de columna únicamente
-para admitir el estado post-anonimización; la API rechaza un registro que no los incluya (FR-001).
-Es el mismo patrón que `001` ya usa para reglas que no son restricciones de esquema (por ejemplo,
-el PIN de operador nunca se valida en la base de datos, se valida en el servicio).
+*Nota de esquema*: `nombre` y `fecha_nacimiento` son `NULL`-ables a nivel de columna y también
+opcionales en la API (corrección del 2026-09-06, FR-001): un cliente puede registrarse sólo por su
+`identificador`, o sin ningún dato personal. La validación de negocio que sí existe —el dígito
+verificador de la cédula/RUC— vive en el servicio/dominio, no en el esquema, mismo patrón que el
+PIN de operador de `001`.
 
-*Tras la anonimización* (FR-016): `nombre`, `fecha_nacimiento` y `contacto` quedan en `NULL`;
+*Índice `uq_cliente_identificador`* (migración 0009): `CREATE UNIQUE INDEX ... ON cliente
+(identificador) WHERE identificador IS NOT NULL AND anonimizado = false`. El predicado
+`IS NOT NULL` deja que muchos clientes sin identificador coexistan; `AND anonimizado = false`
+excluye a los anonimizados para que una cédula quede libre tras la anonimización de su titular
+(FR-016) —decisión documentada en la migración—. La anonimización además pone `identificador =
+NULL`, así que el segundo predicado es defensa en profundidad.
+
+*Tras la anonimización* (FR-016): `nombre`, `fecha_nacimiento`, `contacto` e `identificador` quedan en `NULL`;
 `id_cliente` y las filas de `intervalo_compra`/`senal_fuga` asociadas se conservan intactas, porque
 son las métricas agregadas que FR-016 exige preservar y no contienen ningún dato que reidentifique
 a la persona.

@@ -135,6 +135,23 @@ description: "Task list template for feature implementation"
 
 ---
 
+## Phase US4: Identificar cliente por cédula o RUC (Priority: P4)
+
+**Propósito**: mejora aditiva sobre US1 (FR-017). El checkpoint MVP de US1–US3 (51/51) queda
+cerrado; esto no lo reabre. Añadida el 2026-09-06.
+
+- [X] T043 [US4] Migración Alembic `backend/migraciones/versions/0009_cliente_identificador.py`: `cliente.identificador TEXT NULL` + índice único parcial `uq_cliente_identificador` (`WHERE identificador IS NOT NULL AND anonimizado = false`); actualizar el modelo ORM `Cliente` (depende de T001)
+- [X] T044 [P] [US4] Dominio puro `backend/rasero/dominio/identidad_cliente.py`: `validar_cedula_ecuatoriana` (módulo 10, provincias 01–24 y 30, tercer dígito 0–5) y `validar_identificador` (10 díg. -> cédula, o 13 díg. terminados en `001` con cédula válida). Sin infraestructura, estilo `censura.py` / `fuga_cliente.py`
+- [X] T045 [US4] `POST /clientes` y `PUT /clientes/{id_cliente}`: campo `identificador` opcional; 422 `identificador_invalido` si mal formado, 409 `identificador_duplicado` si ya existe en otro cliente activo, nunca fusión automática; `nombre` y `fecha_nacimiento` pasan a opcionales (corrección FR-001). En `backend/rasero/api/clientes.py`, `backend/rasero/servicios/clientes.py`, `backend/rasero/errores.py` (depende de T043, T044)
+- [X] T046 [US4] `anonimizar_clientes_vencidos()`: vaciar también `identificador` (FR-016), en `backend/rasero/servicios/anonimizacion.py` (depende de T043)
+- [X] T047 [P] [US4] Contrato: añadir `identificador` al schema `Cliente` y `ClienteNuevo` de `specs/002-clientes-fidelizacion/contracts/openapi.yaml`; documentar 409 y que la validación del dígito verificador vive en el dominio
+- [X] T048 [P] [US4] Pruebas: `tests/unidad/test_identidad_cliente.py` (algoritmo) y `tests/integracion/test_cliente_identificador.py` (cédula/RUC aceptados, 422, 409, reasignación tras anonimizar, cliente sin identificador, anonimizar borra el identificador); ajustar `tests/contrato/test_contrato_clientes.py` al nuevo contrato (depende de T045, T046)
+- [X] T049 [US4] Frontend: migrar el alta de cliente de `IdentificarCliente.tsx` a `ModalAdministrable` con el campo "Cédula o RUC (opcional)" (`inputMode="numeric"`, `maxLength=13`) mostrando el mensaje 422/409 del backend en el modal; añadir el mismo campo al modal de edición de `Clientes.tsx` y mostrar el identificador en el detalle sólo si existe (Regla del Hueco que Enseña); tipos en `frontend/src/servicios/clientes.ts` (depende de T045)
+
+**Checkpoint US4**: un cliente se identifica por cédula/RUC sin poder duplicarlo; sin identificador, todo funciona igual.
+
+---
+
 ## Phase Final: Polish & Cross-Cutting Concerns
 
 **Propósito**: validación de extremo a extremo y cumplimiento transversal.

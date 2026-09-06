@@ -40,6 +40,9 @@ def anonimizar_clientes_vencidos(sesion: Session) -> int:
         cliente.nombre = None
         cliente.fecha_nacimiento = None
         cliente.contacto = None
+        # El identificador (cédula/RUC) es dato personal reidentificante: se vacía igual que el
+        # contacto (FR-016). Además libera esa cédula para que pueda reasignarse a otra persona.
+        cliente.identificador = None
         cliente.anonimizado = True
         cliente.instante_anonimizacion = ahora
         anonimizados += 1

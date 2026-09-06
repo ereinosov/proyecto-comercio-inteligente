@@ -10,29 +10,77 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from rasero.dominio.fuga_cliente import evaluar_estado_fuga
+from rasero.dominio.identidad_cliente import validar_identificador
 from rasero.dominio.valor_cliente import (
     AgregadoCliente,
     ValorCliente,
     calcular_intervalo_esperado,
     calcular_percentiles_y_compuesto,
 )
-from rasero.errores import RecursoNoEncontrado, VentaYaVinculada
+from rasero.errores import (
+    IdentificadorDuplicado,
+    IdentificadorInvalido,
+    RecursoNoEncontrado,
+    VentaYaVinculada,
+)
 from rasero.persistencia.modelos import Cliente, IntervaloCompra, SenalFuga, Venta, Visita
 from rasero.servicios import margen_resolver
 
 ESTADOS_SENAL_ABIERTA = ("activa", "confirmada")
 
 
-def registrar_cliente(
-    sesion: Session, *, nombre: str, fecha_nacimiento: date, contacto: str | None = None
-) -> Cliente:
-    """Nombre y fecha de nacimiento obligatorios (FR-001); ya los exige el esquema de la
-    petición (Pydantic, no Optional) antes de llegar aquí.
+def _normalizar_identificador(identificador: str | None) -> str | None:
+    """Cadena vacía o sólo espacios -> `None` (sin identificador). Un identificador con valor se
+    valida contra el dominio (FR-017) y se rechaza 422 si está mal formado — nunca bloquea la
+    venta porque nunca es obligatorio, pero si se provee tiene que ser correcto.
     """
+    if identificador is None:
+        return None
+    limpio = identificador.strip()
+    if limpio == "":
+        return None
+    if not validar_identificador(limpio):
+        raise IdentificadorInvalido()
+    return limpio
+
+
+def _verificar_identificador_libre(
+    sesion: Session, *, identificador: str, excluir_id_cliente: int | None = None
+) -> None:
+    """409 si `identificador` ya pertenece a otro cliente ACTIVO (no anonimizado). Nunca fusiona
+    registros: el cajero debe buscar al cliente existente en vez de crear uno nuevo.
+    """
+    consulta = select(Cliente.id_cliente).where(
+        Cliente.identificador == identificador, Cliente.anonimizado.is_(False)
+    )
+    if excluir_id_cliente is not None:
+        consulta = consulta.where(Cliente.id_cliente != excluir_id_cliente)
+    if sesion.execute(consulta).first() is not None:
+        raise IdentificadorDuplicado()
+
+
+def registrar_cliente(
+    sesion: Session,
+    *,
+    nombre: str | None = None,
+    fecha_nacimiento: date | None = None,
+    contacto: str | None = None,
+    identificador: str | None = None,
+) -> Cliente:
+    """`nombre` y `fecha_nacimiento` son opcionales: un cliente puede quedar registrado sólo por
+    su identificador (o incluso sin nada, si el cajero sólo quiere anotarlo), igual que el modelo
+    ORM los tiene NULL-ables. Sin `fecha_nacimiento` el cliente simplemente no será elegible para
+    el cupón de cumpleaños de 005. El `identificador`, si se provee, se valida (422) y se
+    comprueba que no exista ya en otro cliente activo (409); nunca es obligatorio (FR-003).
+    """
+    identificador = _normalizar_identificador(identificador)
+    if identificador is not None:
+        _verificar_identificador_libre(sesion, identificador=identificador)
     cliente = Cliente(
         nombre=nombre,
         fecha_nacimiento=fecha_nacimiento,
         contacto=contacto,
+        identificador=identificador,
         fecha_alta=datetime.now(timezone.utc),
     )
     sesion.add(cliente)
@@ -44,13 +92,15 @@ def actualizar_cliente(
     sesion: Session,
     *,
     id_cliente: int,
-    nombre: str,
-    fecha_nacimiento: date,
+    nombre: str | None = None,
+    fecha_nacimiento: date | None = None,
     contacto: str | None = None,
+    identificador: str | None = None,
 ) -> Cliente:
-    """Edición de un cliente ya registrado (Parte 3). NO requiere `es_encargado`: cualquier
-    cajero puede editar un cliente, igual que ya puede crearlo desde la venta. Un cliente
-    anonimizado (FR-015/FR-016 de 002) no se edita: sus datos personales ya no existen.
+    """Edición de un cliente ya registrado. NO requiere `es_encargado`: cualquier cajero puede
+    editar un cliente, igual que ya puede crearlo desde la venta. Un cliente anonimizado
+    (FR-015/FR-016 de 002) no se edita: sus datos personales ya no existen. El `identificador`,
+    si se provee, se valida (422) y se comprueba unicidad contra otros clientes activos (409).
     """
     cliente = sesion.get(Cliente, id_cliente)
     if cliente is None:
@@ -59,9 +109,15 @@ def actualizar_cliente(
         raise RecursoNoEncontrado(
             "Este cliente fue anonimizado y sus datos personales ya no pueden editarse."
         )
+    identificador = _normalizar_identificador(identificador)
+    if identificador is not None:
+        _verificar_identificador_libre(
+            sesion, identificador=identificador, excluir_id_cliente=id_cliente
+        )
     cliente.nombre = nombre
     cliente.fecha_nacimiento = fecha_nacimiento
     cliente.contacto = contacto
+    cliente.identificador = identificador
     sesion.commit()
     return cliente
 

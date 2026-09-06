@@ -87,6 +87,28 @@ class VentaYaVinculada(ErrorDominio):
         super().__init__("Esta venta ya está vinculada a otro cliente.")
 
 
+class IdentificadorInvalido(ErrorDominio):
+    codigo = "identificador_invalido"
+    status_code = 422
+
+    def __init__(self):
+        super().__init__(
+            "Identificador inválido: debe ser una cédula (10 dígitos) o RUC de persona natural "
+            "(13 dígitos) válidos."
+        )
+
+
+class IdentificadorDuplicado(ErrorDominio):
+    codigo = "identificador_duplicado"
+    status_code = 409
+
+    def __init__(self):
+        super().__init__(
+            "Ya hay otro cliente registrado con esa cédula o RUC. Búscalo en vez de crear uno "
+            "nuevo; el sistema nunca fusiona clientes automáticamente."
+        )
+
+
 class SugerenciaYaAplicada(ErrorDominio):
     codigo = "sugerencia_ya_aplicada"
     status_code = 409

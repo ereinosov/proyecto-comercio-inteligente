@@ -90,7 +90,12 @@ export function Clientes() {
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [editando, setEditando] = useState(false);
-  const [form, setForm] = useState({ nombre: "", fecha_nacimiento: "", contacto: "" });
+  const [form, setForm] = useState({
+    nombre: "",
+    fecha_nacimiento: "",
+    contacto: "",
+    identificador: "",
+  });
   const [guardando, setGuardando] = useState(false);
   const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
 
@@ -119,6 +124,7 @@ export function Clientes() {
         nombre: form.nombre.trim(),
         fecha_nacimiento: form.fecha_nacimiento,
         contacto: form.contacto.trim() || null,
+        identificador: form.identificador.trim() || null,
       });
       setEditando(false);
       const fresco = await obtenerCliente(detalle.id_cliente);
@@ -221,6 +227,7 @@ export function Clientes() {
                         nombre: detalle.nombre ?? "",
                         fecha_nacimiento: detalle.fecha_nacimiento ?? "",
                         contacto: detalle.contacto ?? "",
+                        identificador: detalle.identificador ?? "",
                       });
                       setErrorEdicion(null);
                       setEditando(true);
@@ -232,6 +239,14 @@ export function Clientes() {
               </div>
 
               <InsigniaFuga detalle={detalle} />
+
+              {/* Regla del Hueco que Enseña: sólo si el cliente tiene identificador; nunca
+                  "N/A" ni un placeholder para un dato ausente. */}
+              {detalle.identificador && (
+                <p className={estilos.identificador}>
+                  Cédula / RUC: <span>{detalle.identificador}</span>
+                </p>
+              )}
 
               {detalle.valor === null ? (
                 <p className={estilos.avisoInsuficiente}>
@@ -293,6 +308,17 @@ export function Clientes() {
             <input
               value={form.contacto}
               onChange={(e) => setForm((f) => ({ ...f, contacto: e.target.value }))}
+            />
+          </label>
+          <label className={estilos.campoModal}>
+            <span>Cédula o RUC (opcional)</span>
+            <input
+              inputMode="numeric"
+              maxLength={13}
+              value={form.identificador}
+              onChange={(e) =>
+                setForm((f) => ({ ...f, identificador: e.target.value.replace(/\D/g, "") }))
+              }
             />
           </label>
         </ModalAdministrable>

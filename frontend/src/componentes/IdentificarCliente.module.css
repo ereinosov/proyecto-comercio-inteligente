@@ -105,3 +105,32 @@
   color: var(--color-borde);
   cursor: not-allowed;
 }
+
+/* Campos dentro del ModalAdministrable de alta de cliente (registro de Análisis, radio 6px —
+   La Regla del Modal Administrable). */
+.campoModal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-family: var(--tipografia-analisis);
+  font-size: 13px;
+}
+
+.campoModal span {
+  color: var(--color-tinta-suave);
+}
+
+.campoModal input {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 7px 9px;
+}
+
+.campoModal input:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}

@@ -22,15 +22,38 @@ def test_post_clientes_devuelve_201_con_las_claves_del_contrato():
     )
     assert respuesta.status_code == 201
     cuerpo = respuesta.json()
-    for clave in ("id_cliente", "nombre", "fecha_nacimiento", "contacto", "fecha_alta", "anonimizado"):
+    for clave in (
+        "id_cliente",
+        "nombre",
+        "fecha_nacimiento",
+        "contacto",
+        "identificador",
+        "fecha_alta",
+        "anonimizado",
+    ):
         assert clave in cuerpo, f"falta '{clave}' en la respuesta de POST /clientes"
     assert cuerpo["nombre"] == "María Torres"
     assert cuerpo["anonimizado"] is False
 
 
-def test_post_clientes_sin_fecha_nacimiento_devuelve_422():
-    respuesta = cliente_http.post("/clientes", json={"nombre": "Sin fecha"})
+def test_post_clientes_sin_datos_personales_se_acepta():
+    """`nombre` y `fecha_nacimiento` son opcionales (contrato v1.1): un cliente puede quedar
+    registrado sólo por su identificador, o sin ningún dato ("consumidor final" anotado).
+    """
+    respuesta = cliente_http.post("/clientes", json={})
+    assert respuesta.status_code == 201
+    cuerpo = respuesta.json()
+    assert cuerpo["nombre"] is None
+    assert cuerpo["fecha_nacimiento"] is None
+    assert cuerpo["identificador"] is None
+
+
+def test_post_clientes_con_identificador_invalido_devuelve_422():
+    respuesta = cliente_http.post(
+        "/clientes", json={"nombre": "Cédula mala", "identificador": "1714035200"}
+    )
     assert respuesta.status_code == 422
+    assert respuesta.json()["codigo"] == "identificador_invalido"
 
 
 def test_post_visitas_devuelve_201_y_luego_200_con_las_claves_del_contrato():

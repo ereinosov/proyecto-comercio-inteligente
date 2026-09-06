@@ -11,7 +11,7 @@ capturados por esa ruta dinámica sin importar el orden de declaración — un l
 from datetime import date
 
 from fastapi import APIRouter, Depends, Response, status
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from rasero.api.paginacion import paginar
@@ -23,10 +23,17 @@ from rasero.servicios import clientes as servicio_clientes
 router = APIRouter(tags=["clientes"])
 
 
+# `nombre` y `fecha_nacimiento` son OPCIONALES: un cliente puede quedar registrado sólo por su
+# identificador (o sin ningún dato personal), como el modelo ORM ya los admite NULL. Forzarlos
+# aquí contradecía el caso del cliente que sólo se anota para no duplicarlo entre visitas y el
+# de "consumidor final". El `identificador` (cédula o RUC de persona natural) también es
+# opcional (FR-003/FR-017): la validación del dígito verificador vive en el dominio
+# (`identidad_cliente.py`), no en Pydantic — aquí sólo se acota la longitud.
 class ClienteNuevo(BaseModel):
-    nombre: str
-    fecha_nacimiento: date
+    nombre: str | None = None
+    fecha_nacimiento: date | None = None
     contacto: str | None = None
+    identificador: str | None = Field(default=None, max_length=13)
 
 
 class VisitaNueva(BaseModel):
@@ -34,9 +41,10 @@ class VisitaNueva(BaseModel):
 
 
 class ClienteEditado(BaseModel):
-    nombre: str
-    fecha_nacimiento: date
+    nombre: str | None = None
+    fecha_nacimiento: date | None = None
     contacto: str | None = None
+    identificador: str | None = Field(default=None, max_length=13)
 
 
 def _cliente_a_respuesta(cliente) -> dict:
@@ -45,6 +53,7 @@ def _cliente_a_respuesta(cliente) -> dict:
         "nombre": cliente.nombre,
         "fecha_nacimiento": cliente.fecha_nacimiento,
         "contacto": cliente.contacto,
+        "identificador": cliente.identificador,
         "fecha_alta": cliente.fecha_alta,
         "anonimizado": cliente.anonimizado,
     }
@@ -78,6 +87,7 @@ def registrar_cliente(cuerpo: ClienteNuevo, sesion: Session = Depends(obtener_se
         nombre=cuerpo.nombre,
         fecha_nacimiento=cuerpo.fecha_nacimiento,
         contacto=cuerpo.contacto,
+        identificador=cuerpo.identificador,
     )
     return _cliente_a_respuesta(cliente)
 
@@ -137,6 +147,7 @@ def editar_cliente(
         nombre=cuerpo.nombre,
         fecha_nacimiento=cuerpo.fecha_nacimiento,
         contacto=cuerpo.contacto,
+        identificador=cuerpo.identificador,
     )
     return _cliente_a_respuesta(cliente)
 

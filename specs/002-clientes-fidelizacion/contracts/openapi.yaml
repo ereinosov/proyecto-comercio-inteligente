@@ -41,7 +41,17 @@ paths:
             application/json:
               schema: { $ref: '#/components/schemas/Cliente' }
         '422':
-          description: Falta nombre o fecha de nacimiento (FR-001)
+          description: |
+            Identificador mal formado (FR-017): no es una cédula (10 díg.) ni un RUC de persona
+            natural (13 díg.) con dígito verificador válido. `nombre` y `fecha_nacimiento` NO son
+            obligatorios (FR-001).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: |
+            El identificador ya pertenece a otro cliente activo (FR-017). El sistema no fusiona
+            clientes automáticamente: hay que buscar el existente.
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
@@ -218,11 +228,23 @@ components:
 
     ClienteNuevo:
       type: object
-      required: [nombre, fecha_nacimiento]
+      description: |
+        `nombre` y `fecha_nacimiento` son opcionales (FR-001, corrección 2026-09-06): un cliente
+        puede registrarse sólo por su `identificador` o sin ningún dato personal.
       properties:
-        nombre: { type: string }
-        fecha_nacimiento: { type: string, format: date }
+        nombre: { type: string, nullable: true }
+        fecha_nacimiento: { type: string, format: date, nullable: true }
         contacto: { type: string, nullable: true }
+        identificador:
+          type: string
+          nullable: true
+          maxLength: 13
+          description: |
+            Cédula ecuatoriana de persona natural (10 díg.) o RUC de persona natural (13 díg. =
+            cédula válida + sufijo `001`). Opcional (FR-017); nunca bloquea una venta. La
+            validación completa del dígito verificador (algoritmo módulo 10) vive en el dominio
+            (`identidad_cliente.py`), no en este contrato: aquí sólo se acota la longitud. El RUC
+            de sociedad (módulo 11) está fuera de alcance.
 
     Cliente:
       type: object
@@ -231,6 +253,10 @@ components:
         nombre: { type: string, nullable: true }
         fecha_nacimiento: { type: string, format: date, nullable: true }
         contacto: { type: string, nullable: true }
+        identificador:
+          type: string
+          nullable: true
+          description: Cédula o RUC de persona natural (FR-017). `null` si el cajero no lo registró o si el cliente fue anonimizado.
         fecha_alta: { type: string, format: date-time }
         anonimizado: { type: boolean }
 

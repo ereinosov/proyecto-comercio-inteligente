@@ -18,6 +18,9 @@ export interface Cliente {
   nombre: string | null;
   fecha_nacimiento: string | null;
   contacto: string | null;
+  /** Cédula (10 díg.) o RUC de persona natural (13). Opcional — sólo para no duplicar al
+   * cliente entre visitas (FR-017). `null` si el cajero no lo registró. */
+  identificador: string | null;
   fecha_alta: string;
   anonimizado: boolean;
 }
@@ -59,16 +62,22 @@ export function buscarClientes(q: string): Promise<ClienteResumen[]> {
 }
 
 export function registrarCliente(datos: {
-  nombre: string;
-  fecha_nacimiento: string;
+  nombre?: string;
+  fecha_nacimiento?: string;
   contacto?: string;
+  identificador?: string;
 }): Promise<Cliente> {
   return clienteHttp.post<Cliente>("/clientes", datos);
 }
 
 export function actualizarCliente(
   idCliente: number,
-  datos: { nombre: string; fecha_nacimiento: string; contacto?: string | null },
+  datos: {
+    nombre: string;
+    fecha_nacimiento: string;
+    contacto?: string | null;
+    identificador?: string | null;
+  },
 ): Promise<Cliente> {
   return clienteHttp.put<Cliente>(`/clientes/${idCliente}`, datos);
 }

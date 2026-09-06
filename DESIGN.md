@@ -252,7 +252,11 @@ sugerir suavidad. Los degradados y los fondos oscuros están prohibidos en todo 
 - **Colapsado:** enlace de texto subrayado en Tinta Suave, sin fondo ni borde — no compite con
   la tabla.
 - **Expandido:** panel flotante en Superficie Alta, borde de 1px en Borde, filo de Operación
-  (2px), tipografía IBM Plex Sans; ofrece buscar o registrar un cliente nuevo en el mismo panel.
+  (2px), tipografía IBM Plex Sans; **la búsqueda** vive en este panel flotante. **El alta o la
+  edición** de un cliente (nombre, fecha de nacimiento, cédula/RUC) abre `ModalAdministrable` —
+  registrar un cliente es un formulario de dato maestro y le aplica La Regla del Modal
+  Administrable, igual que la edición de Cliente desde `Clientes.tsx`; no un segundo formulario
+  suelto dentro del panel (v1.2.1).
 - **Seleccionado:** se colapsa a un chip de texto ("Cliente: Nombre") con un botón de quitar
   (✕) en Tinta Suave — reversible en un toque, porque identificar al cliente fue siempre una
   decisión del cajero, no un compromiso.
@@ -537,4 +541,10 @@ una aclaración sin cambio de significado.
   aditivas: no elimina ni redefine ninguna regla previa. Sincronizada con la enmienda **v2.2.7**
   de la constitución.
 
-**Versión**: 1.2.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-06
+- **1.2.1** (2026-09-06) — PARCHE: aclara en "Identificar cliente (Operación)" que el alta y la
+  edición de un cliente usan `ModalAdministrable` (ya cubierto por La Regla del Modal
+  Administrable, que nombra "la edición de Cliente"); el panel flotante conserva sólo la
+  búsqueda. No cambia ninguna regla; reconcilia dos partes del mismo documento al construir la
+  User Story 4 de `002` (identificador de cliente por cédula/RUC).
+
+**Versión**: 1.2.1 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-06

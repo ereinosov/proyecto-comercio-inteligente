@@ -138,6 +138,40 @@ otros clientes.
 
 ---
 
+### User Story 4 - Identificar cliente por cédula o RUC para evitar duplicados (Priority: P4)
+
+El cajero, cuando el cliente le da su cédula o su RUC de persona natural, la anota junto al
+cliente. Así, la próxima vez que ese cliente vuelve, el cajero lo reconoce por su identificador y
+registra la visita sobre el mismo cliente en vez de crear uno nuevo, y el historial no se parte en
+dos personas distintas.
+
+**Why this priority**: Es una mejora aditiva sobre User Story 1 (el catálogo de clientes ya
+existe y funciona). No es base de ninguna otra historia; sube la calidad de los datos sobre los
+que User Story 2 y 3 ya calculan, reduciendo el mismo cliente contado dos veces.
+
+**Independent Test**: Se registra un cliente con una cédula válida; un segundo intento de
+registrar otro cliente con la misma cédula (mientras el primero sigue activo) se rechaza con un
+mensaje explícito; un cliente sin cédula se registra igual, sin fricción.
+
+**Acceptance Scenarios**:
+
+1. **Given** un cajero registrando un cliente, **When** ingresa una cédula ecuatoriana o un RUC
+   de persona natural válidos, **Then** el cliente queda registrado con ese identificador.
+2. **Given** una cédula o RUC ya asociados a un cliente activo, **When** el cajero intenta
+   registrar otro cliente con el mismo identificador, **Then** el sistema lo rechaza con un
+   mensaje que indica que ese cliente ya existe y NO fusiona los registros automáticamente.
+3. **Given** un identificador con dígito verificador incorrecto o mal formado, **When** se envía,
+   **Then** el sistema lo rechaza indicando que debe ser una cédula o un RUC de persona natural
+   válidos.
+4. **Given** un cliente que no da su identificador (o un cajero que no lo pide para no demorar el
+   cobro), **When** se registra o se completa la venta, **Then** el flujo se completa exactamente
+   igual: el identificador nunca es obligatorio ni bloqueante (FR-003, Principio II).
+5. **Given** un cliente con identificador cuya fuga se confirma y sus datos personales se
+   anonimizan (FR-015/FR-016), **When** ocurre la anonimización, **Then** el identificador se
+   borra junto con el resto de datos personales y esa cédula queda libre para otra persona.
+
+---
+
 ### Edge Cases
 
 - ¿Qué pasa con un cliente cuyo historial de visitas todavía es demasiado corto para calcular un
@@ -166,8 +200,13 @@ otros clientes.
 
 ### Functional Requirements
 
-- **FR-001**: El sistema DEBE permitir registrar un cliente con al menos nombre y fecha de
-  nacimiento; los datos de contacto (teléfono o correo) son opcionales.
+- **FR-001**: El sistema DEBE permitir registrar un cliente con nombre y fecha de nacimiento. El
+  nombre y la fecha de nacimiento se solicitan pero NO son obligatorios a nivel de esquema ni de
+  API: un cliente puede quedar registrado sólo por su identificador (FR-017) o incluso sin ningún
+  dato personal —el cajero que sólo quiere anotarlo para no volver a crearlo—, igual que el modelo
+  ya los admite `NULL` para el estado post-anonimización. Sin fecha de nacimiento el cliente
+  simplemente no será elegible para el cupón de cumpleaños de `005`. Los datos de contacto
+  (teléfono o correo) y el identificador son siempre opcionales.
 - **FR-002**: El sistema DEBE conservar los datos personales del cliente (fecha de nacimiento y
   contacto, cuando exista) exclusivamente con la finalidad de calcular su valor y detectar su fuga
   en esta funcionalidad, y por el periodo variable que define FR-014 y FR-015 — nunca por un plazo
@@ -244,12 +283,28 @@ otros clientes.
   únicamente las métricas agregadas de valor y de fuga ya calculadas, sin ningún dato que permita
   reidentificar a la persona.
 
+- **FR-017**: El sistema DEBE permitir asociar a un cliente un identificador opcional —una cédula
+  ecuatoriana de persona natural (10 dígitos) o un RUC de persona natural (13 dígitos: los mismos
+  10 dígitos de una cédula válida + el sufijo `001`)—. Si se provee, el sistema DEBE validar su
+  dígito verificador (algoritmo módulo 10 de la cédula) y rechazarlo con un mensaje explícito si
+  está mal formado. Si el identificador ya pertenece a otro cliente activo (no anonimizado), el
+  sistema DEBE rechazar el registro con un mensaje explícito y NO fusionar registros
+  automáticamente. El identificador NUNCA es obligatorio ni bloqueante para completar una venta
+  (FR-003, Principio II). El RUC de sociedad (algoritmo módulo 11, tercer dígito 6 o 9) está
+  fuera de alcance: un cliente individual de un minimarket no lo usa. Al anonimizar un cliente
+  (FR-015/FR-016) el identificador se borra como cualquier otro dato personal, liberando esa
+  cédula para otra persona.
+
 ### Key Entities *(include if feature involves data)*
 
 - **Cliente**: persona identificada del comercio; nombre, fecha de nacimiento (única base del
-  cupón de cumpleaños que decide y emite `005`), datos de contacto opcionales, fecha de alta. Tras
-  la anonimización de FR-015/FR-016, conserva solo un identificador técnico y sus métricas
-  agregadas, sin nombre, fecha de nacimiento ni contacto. Propiedad de esta funcionalidad.
+  cupón de cumpleaños que decide y emite `005`), datos de contacto opcionales, identificador
+  opcional (cédula o RUC de persona natural ecuatorianos, FR-017; único entre clientes activos),
+  fecha de alta. Tras la anonimización de FR-015/FR-016, conserva solo un identificador técnico
+  (`id_cliente`) y sus métricas agregadas, sin nombre, fecha de nacimiento, contacto ni cédula/RUC.
+  Añadir el campo `identificador` no cambia la propiedad de la entidad —`cliente` ya es de esta
+  funcionalidad (constitución, tabla de Propiedad de Datos)—, así que no requiere enmienda de la
+  constitución. Propiedad de esta funcionalidad.
 - **Visita**: registro de que un cliente identificado realizó una compra; referencia a la venta de
   origen (propiedad de `001-core-ventas-inventario`), fecha, monto total y margen total de esa
   compra (margen consultado en `003-precios-margenes` al momento de la visita, no recalculado
@@ -306,9 +361,18 @@ otros clientes.
 - El número mínimo de visitas necesario para considerar confiable el intervalo de compra de un
   cliente es un parámetro que se decide en `plan.md`, no en esta especificación; hasta alcanzarlo,
   el cliente permanece en el estado "datos insuficientes" (ver FR-007).
-- La fecha de nacimiento es obligatoria al registrar un cliente, porque es la única base de datos
-  que necesita el cupón de cumpleaños de `005`; sin ella, el cliente simplemente no será elegible
-  para ese cupón cuando `005` lo evalúe.
+- La fecha de nacimiento se solicita al registrar un cliente porque es la única base de datos que
+  necesita el cupón de cumpleaños de `005`, pero no es obligatoria (FR-001): sin ella el cliente
+  simplemente no será elegible para ese cupón cuando `005` lo evalúe. (Corrección 2026-09-06: la
+  versión anterior de esta Assumption y de FR-001 decía "obligatoria", lo que contradecía el caso
+  ya aprobado en la Clarification del 2026-09-04 de un cliente que no se identifica / no da datos.
+  El modelo ORM ya tenía `nombre` y `fecha_nacimiento` NULL-ables; era la capa de API la que
+  imponía una restricción de más.)
+- El identificador de cliente (FR-017) es opcional y no es base de ningún cálculo de valor ni de
+  fuga; sólo sirve para no duplicar al mismo cliente entre visitas. Se acepta la cédula de persona
+  natural (10 díg., provincias 01–24 y 30) y el RUC de persona natural (13 díg.); el RUC de
+  sociedad queda fuera de alcance. La unicidad aplica sólo entre clientes activos: un cliente
+  anonimizado libera su cédula.
 - El teléfono y el correo del cliente son opcionales y no son la base de ningún cálculo de valor ni
   de fuga en esta funcionalidad.
 - Una venta puede completarse sin identificar cliente (cliente no registrado o que no desea

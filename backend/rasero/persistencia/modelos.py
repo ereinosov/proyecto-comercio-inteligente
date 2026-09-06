@@ -425,6 +425,10 @@ class Cliente(Base):
     nombre: Mapped[str | None] = mapped_column(String, nullable=True)
     fecha_nacimiento: Mapped[date | None] = mapped_column(Date, nullable=True)
     contacto: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Cédula (10 díg.) o RUC de persona natural (13). Opcional (FR-003/FR-017): sólo sirve para
+    # no duplicar al mismo cliente entre visitas. Índice único parcial en 0009 (WHERE NOT NULL
+    # AND anonimizado = false); se vacía a NULL al anonimizar, igual que `contacto`.
+    identificador: Mapped[str | None] = mapped_column(String, nullable=True)
     fecha_alta: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     anonimizado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     instante_anonimizacion: Mapped[datetime | None] = mapped_column(
