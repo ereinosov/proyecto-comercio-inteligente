@@ -306,6 +306,39 @@ sugerir suavidad. Los degradados y los fondos oscuros están prohibidos en todo 
   redención se registra **después** de que la venta se confirmó y **nunca** la bloquea (Principio
   II) — mismo patrón exacto que la visita de cliente de 002.
 
+### Pagos y seguridad (registro mixto: Operación y Análisis)
+
+- **Registro por pantalla, no por módulo.** `TerminalesPago` y `BitacoraPagos` son **Operación**
+  (2px, IBM Plex Sans con cifras tabulares, la tabla como elemento principal, sin tarjetas, sin
+  animación salvo la confirmación de registrar una terminal o una actualización): un registro de
+  datáfonos y un libro de rastro son de la misma familia que el inventario. `CoberturaPago` es
+  **Análisis** (6px, Source Serif 4, una decisión por bloque, líneas bajo 80 caracteres): decidir
+  si habilitar un medio de pago nuevo en una sucursal es una decisión gerencial.
+- **Las señales de firmware usan los tres portadores, y ninguna deshabilita nada.** *Expuesta a
+  clonación* = crítico **#8E2A2A** + punto lleno + la referencia de la vulnerabilidad enumerada;
+  *desactualizada* = atención **#9A5B08** + punto medio + las dos versiones; *versión de referencia
+  desconocida* = atención + punto hueco + texto — nunca "al día". La versión de firmware registrada
+  y las fechas van en tinta normal (dato observado). El sistema señala; la persona actúa (FR-012).
+- **La cuota de intención de compra no atendida es un valor calculado** → color **estimado
+  #1F5673** en la tabla de cobertura; el conteo crudo de eventos y el "¿cubierto?" van en tinta
+  normal. Es una **métrica de cobertura** (Lectura Crítica n.º 4), el texto lo dice — no un
+  faltante de inventario.
+- **Momento de revelación:** el desglose de la cobertura entra con una única transición de opacidad
+  y desplazamiento vertical corto (240ms) al recargarse, misma familia que el detalle de cliente y
+  el experimento. Sin hover por fila, sin fade-in por bloque. Las dos pantallas de Operación no
+  animan nada salvo la confirmación de una acción.
+- **La bitácora es sólo lectura.** No hay ningún botón de editar ni de borrar: el rastro es de solo
+  anexado (FR-025), forzado por la base de datos. `pan_rechazado` y `terminal_expuesta_detectada`
+  se marcan en crítico + punto lleno.
+- **La tokenización no tiene pantalla propia.** El token y los últimos cuatro dígitos de una venta
+  se hacen visibles a través de la bitácora (`token_emitido`) y del cliente
+  `consultarPagoDeVenta`, que el detalle de venta de 001 consumirá. El número de tarjeta completo
+  **nunca** llega al frontend.
+- **Sin Verde Rasero:** ninguna de las tres pantallas de Pagos tiene una acción que comprometa
+  dinero — 007 no mueve dinero (FR-036). Cero apariciones (Regla del Registro Sin Dinero).
+- **Sin íconos nuevos:** las señales se comunican con formas dibujadas en CSS (punto lleno / medio
+  / hueco), no con íconos — la Regla del Ícono no llega a aplicar.
+
 ### Named Rules
 
 **La Regla de los Tres Portadores.** Ningún dato con antigüedad o incertidumbre se comunica solo

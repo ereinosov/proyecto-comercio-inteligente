@@ -1,0 +1,646 @@
+openapi: 3.1.0
+
+info:
+  title: Rasero — Pagos y Seguridad
+  version: 0.1.0
+  description: |
+    Contrato del módulo 007-pagos-seguridad. **Cuatro preocupaciones acotadas del encargo**
+    (FR-033), cada una con su recurso:
+
+    - `/pagos/medios` y `/pagos/cobertura` — catálogo de medios de pago y su aceptación HISTÓRICA
+      por sucursal, más la cuota de intención de compra no atendida cuando un cliente no pudo pagar
+      como quería (FR-001 a FR-007). Es la métrica que la **Lectura Crítica n.º 4** nombra; NO es
+      `consulta_no_atendida` de 001 ("no hay producto") ni faltante de inventario.
+    - `/pagos/terminales` — registro de datáfonos físicos, su versión de firmware y los indicadores
+      DERIVADOS "desactualizada" / "expuesta a clonación" / "versión de referencia desconocida"
+      (FR-008 a FR-015). El sistema NUNCA deshabilita una terminal por una señal (FR-012).
+    - `/pagos/tokens` y `/pagos/ventas/{id_venta}/pago` — tokenización: cuando una `venta` de 001 se
+      cobra con tarjeta, se conserva ÚNICAMENTE {token opaco, últimos 4 dígitos, marca, tipo,
+      terminal, referencia de venta}; el PAN, el CVV y los datos de banda/chip NUNCA se almacenan,
+      registran ni transmiten (FR-016 a FR-022). IDEMPOTENTE por `id_venta` (un token por cobro).
+    - `/pagos/bitacora` — rastro de SOLO ANEXADO de los hechos de pago (FR-023 a FR-028, Principio
+      IV).
+
+    Reglas transversales que aplican a todo el contrato:
+
+    - **Datos de pago (constitución) y Principio IV**: en NINGÚN punto —campo de columna, línea de
+      log de la aplicación, entrada de `bitacora_auditoria`, respuesta de este contrato o reporte—
+      aparece un número de tarjeta completo (PAN), un CVV ni datos de banda o chip (FR-017, SC-006).
+      El cuerpo de `POST /pagos/tokens` NO se registra literalmente. Un intento de persistir un PAN
+      se RECHAZA (`pagos_pan_detectado`) y se anexa a la bitácora un evento `pan_rechazado` sin el
+      número (FR-018, SC-008).
+    - Este contrato NUNCA participa en `POST /ventas` de 001 ni es camino crítico de un cobro
+      (Principio II, FR-020). El servicio de venta de 001 invoca `POST /pagos/tokens` con un breve
+      tiempo de espera; si 007 no responde, la venta de 001 se completa igual y queda "sin
+      tokenización", y 007 procesa el cobro pendiente después.
+    - 007 SOLO LEE de 001 (`venta`, `turno`, `sucursal`, `operador`). NUNCA escribe en `venta` —ni
+      siquiera `referencia_terminal_pago`, que la puebla el propio servicio de venta de 001
+      (FR-029, FR-030, SC-013). NUNCA integra una pasarela, adquirente o procesador real, NUNCA
+      ejecuta autorización, captura financiera ni settlement, NUNCA mueve dinero (FR-036, SC-014).
+    - `bitacora_auditoria` es de SOLO ANEXADO: una entrada existente no se modifica ni se borra
+      (FR-025, SC-012). No hay ningún endpoint de edición o borrado.
+    - Ninguna magnitud monetaria: este módulo no persiste importes. La cuota de intención no atendida
+      es una razón como cadena decimal (hasta 4 decimales). Nunca coma flotante.
+    - Instantes en RFC 3339 con desplazamiento; el servidor los normaliza a UTC. `desde`/`hasta` y
+      las fechas de vigencia son `YYYY-MM-DD` (día local de la sucursal, `sucursal.zona_horaria` de
+      001, FR-032).
+    - Toda operación se identifica por `id_sucursal`; `GET /pagos/cobertura`, `GET /pagos/terminales`
+      y `GET /pagos/bitacora` lo EXIGEN y NUNCA agregan dos sucursales sin discriminar (FR-006,
+      FR-034).
+    - Cambiar el catálogo o la cobertura de medios, registrar o mover terminales y editar las listas
+      de firmware están reservados al encargado (`operador.es_encargado` de 001, FR-007, FR-015);
+      cada cambio queda en la bitácora (FR-028).
+    - Formato de error unificado con 001-006: `{ codigo, mensaje }`, el mensaje redactado para el
+      operador con la acción correctiva, nunca una traza técnica (Principio IV).
+
+    **Estado de dependencias (verificado contra el repositorio, research.md #11)**: `venta`, `turno`,
+    `sucursal` (con `zona_horaria`) y `operador` están entregadas desde el checkpoint de 001 Setup +
+    Foundational + User Story 1. La entidad `token_pago` la añadió la enmienda constitucional v2.2.6
+    (aprobada y aplicada el 2026-09-05). **Ninguna operación de este contrato está bloqueada.**
+
+servers:
+  - url: http://localhost:8000
+    description: Desarrollo local. Mismo servidor y misma base que 001-006 (puerto 5442).
+
+tags:
+  - name: medios
+  - name: cobertura
+  - name: terminales
+  - name: tokens
+  - name: bitacora
+
+paths:
+
+  /pagos/medios:
+    get:
+      tags: [medios]
+      summary: Catálogo global de medios de pago
+      description: FR-001. Catálogo, no tabla de hechos. `admite_tokenizacion = true` solo para las tarjetas.
+      responses:
+        '200':
+          description: Catálogo de medios de pago
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/MedioPago' }
+
+  /pagos/cobertura:
+    put:
+      tags: [cobertura]
+      summary: Declarar qué medios de pago acepta una sucursal, desde una fecha
+      description: |
+        FR-002, FR-007. Reservado al encargado. Abre un tramo de vigencia `[fecha_desde, NULL]` para
+        `(id_medio_pago, id_sucursal)` y CIERRA el tramo anterior (`fecha_hasta = fecha_desde − 1
+        día`). La cobertura de un período pasado se resuelve por esos tramos, no por el estado
+        actual. Anexa un evento `cobertura_declarada` a la bitácora.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sucursal, id_medio_pago, acepta, fecha_desde, id_operador]
+              properties:
+                id_sucursal: { type: integer }
+                id_medio_pago: { type: integer }
+                acepta:
+                  type: boolean
+                  description: >
+                    `true` abre un tramo de aceptación; `false` cierra el tramo vigente en
+                    `fecha_desde − 1 día` (la sucursal deja de aceptar el medio).
+                fecha_desde: { type: string, format: date, description: Día local de la sucursal. }
+                id_operador:
+                  type: integer
+                  description: Debe ser `es_encargado` en 001 (FR-007).
+      responses:
+        '200':
+          description: Cobertura actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TramoCobertura' }
+        '400':
+          description: '`pagos_fecha_invalida`, `pagos_solape_de_tramos`, `pagos_operador_no_encargado`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: '`pagos_sucursal_no_existe`, `pagos_medio_no_existe`, `pagos_operador_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      tags: [cobertura]
+      summary: Cobertura de medios de pago y cuota de intención no atendida, por sucursal y período
+      description: |
+        FR-004, FR-006. Para cada medio del catálogo, si la sucursal lo aceptaba en el período. La
+        cuota de intención no atendida se DERIVA de los eventos `intencion_no_atendida` de la bitácora
+        de esa sucursal y período (research.md #5) — no hay tabla de eventos de cobertura.
+      parameters:
+        - { name: id_sucursal, in: query, required: true, schema: { type: integer } }
+        - { name: desde, in: query, required: false, schema: { type: string, format: date } }
+        - { name: hasta, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Cobertura y cuota de intención no atendida
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ResumenCobertura' }
+        '400':
+          description: '`pagos_sucursal_requerida`, `pagos_rango_invalido`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /pagos/intencion-no-atendida:
+    post:
+      tags: [cobertura]
+      summary: Registrar que un cliente no pudo completar la compra por su medio de pago
+      description: |
+        FR-003, FR-005. Anexa un evento `intencion_no_atendida` a `bitacora_auditoria` con
+        `id_medio_pago` = el medio DESEADO. NO crea ninguna `venta` ni ninguna `consulta_no_atendida`
+        de 001 (Lectura Crítica n.º 4). Idempotente por `clave_idempotencia`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sucursal, id_medio_pago_deseado, id_operador, clave_idempotencia]
+              properties:
+                id_sucursal: { type: integer }
+                id_medio_pago_deseado: { type: integer }
+                id_operador: { type: integer }
+                nota: { type: string, nullable: true }
+                clave_idempotencia: { type: string }
+      responses:
+        '201':
+          description: Evento registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntradaBitacora' }
+        '200':
+          description: Reintento con la misma `clave_idempotencia` — se devuelve la entrada existente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/EntradaBitacora' }
+        '400':
+          description: '`pagos_sucursal_requerida`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: '`pagos_medio_no_existe`, `pagos_sucursal_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /pagos/terminales:
+    post:
+      tags: [terminales]
+      summary: Registrar una terminal de pago física
+      description: FR-008, FR-015. Reservado al encargado. Anexa `terminal_registrada` a la bitácora.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [identificador, modelo, id_sucursal, version_firmware, id_operador]
+              properties:
+                identificador: { type: string }
+                modelo: { type: string }
+                id_sucursal: { type: integer }
+                version_firmware:
+                  type: string
+                  pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+                fecha_ultima_actualizacion_firmware: { type: string, format: date, nullable: true }
+                id_operador: { type: integer, description: 'Debe ser `es_encargado` (FR-015).' }
+      responses:
+        '201':
+          description: Terminal registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TerminalPago' }
+        '400':
+          description: '`pagos_version_firmware_invalida`, `pagos_identificador_duplicado`, `pagos_operador_no_encargado`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: '`pagos_sucursal_no_existe`, `pagos_operador_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      tags: [terminales]
+      summary: Estado de las terminales de una sucursal, con los indicadores de firmware derivados
+      description: |
+        FR-010, FR-011, FR-014. Los indicadores `desactualizada`, `expuesta_a_clonacion` y
+        `version_referencia_desconocida` se CALCULAN al leer contra `ULTIMA_VERSION_FIRMWARE` y
+        `LISTA_FIRMWARE_VULNERABLE` (config). No hay tabla de indicadores. Ninguna señal deshabilita
+        la terminal (FR-012).
+      parameters:
+        - { name: id_sucursal, in: query, required: true, schema: { type: integer } }
+        - name: solo_con_senal
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+          description: Si es `true`, solo las terminales desactualizadas, expuestas o con versión de referencia desconocida.
+      responses:
+        '200':
+          description: Terminales con su estado de firmware
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/TerminalPago' }
+        '400':
+          description: '`pagos_sucursal_requerida`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /pagos/terminales/{id_terminal_pago}:
+    patch:
+      tags: [terminales]
+      summary: Mover una terminal a otra sucursal, o retirarla
+      description: |
+        FR-014, FR-015. Mover cierra el tramo vigente de `historial_ubicacion` y abre uno nuevo; una
+        señal de firmware se atribuye a la sucursal del tramo vigente EN EL MOMENTO EVALUADO. Retirar
+        marca `activa = false` — NUNCA se borra la terminal (Principio IV). Anexa `terminal_movida` a
+        la bitácora.
+      parameters:
+        - { name: id_terminal_pago, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_operador]
+              properties:
+                id_sucursal_destino: { type: integer, nullable: true, description: Presente para un movimiento. }
+                fecha_movimiento: { type: string, format: date, nullable: true }
+                retirar: { type: boolean, default: false }
+                id_operador: { type: integer }
+      responses:
+        '200':
+          description: Terminal actualizada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TerminalPago' }
+        '404':
+          description: '`pagos_terminal_no_existe`, `pagos_sucursal_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /pagos/terminales/{id_terminal_pago}/firmware:
+    post:
+      tags: [terminales]
+      summary: Registrar una actualización de firmware de una terminal
+      description: |
+        FR-013. Añade una entrada a `historial_firmware`, fija `version_firmware` y
+        `fecha_ultima_actualizacion_firmware`, y REEVALÚA los indicadores (FR-010, FR-011). Anexa
+        `firmware_actualizado` a la bitácora.
+      parameters:
+        - { name: id_terminal_pago, in: path, required: true, schema: { type: integer } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [version, fecha, id_operador]
+              properties:
+                version: { type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$' }
+                fecha: { type: string, format: date }
+                id_operador: { type: integer }
+      responses:
+        '200':
+          description: Firmware actualizado, terminal reevaluada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/TerminalPago' }
+        '400':
+          description: '`pagos_version_firmware_invalida`, `pagos_version_no_avanza` (la nueva versión no es posterior a la actual)'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: '`pagos_terminal_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /pagos/tokens:
+    post:
+      tags: [tokens]
+      summary: Tokenizar un cobro con tarjeta de una venta de 001
+      description: |
+        FR-016 a FR-022. Recibe el número de tarjeta, extrae los últimos 4 dígitos + marca + tipo,
+        genera un TOKEN OPACO (UUID v4) y persiste SOLO eso + terminal + `id_venta`. **El número se
+        descarta; no toca disco ni log.**
+
+        IDEMPOTENTE por `id_venta` (un token por cobro, `UNIQUE`, research.md #15): un segundo `POST`
+        con el mismo `id_venta` devuelve `200` con el token existente. La `clave_idempotencia` la
+        genera el CLIENTE (el flujo de captura de 001) antes del primer intento — misma convención
+        que `venta.clave_idempotencia` de 001; un reintento de red del datáfono reenvía la misma
+        `id_venta` y la misma `clave_idempotencia`.
+
+        RECHAZO DE PAN (FR-018): si `numero_tarjeta` —o cualquier otro campo— contiene una secuencia
+        de 13–19 dígitos que pasa Luhn en un lugar donde no debería, o si `ultimos_digitos` traería
+        más de 4 dígitos, se responde `400 pagos_pan_detectado` y se anexa `pan_rechazado` a la
+        bitácora SIN el número.
+
+        NO camino crítico (FR-020): si esta operación falla, la venta de 001 se completa igual y
+        queda "sin tokenización".
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_venta, id_terminal_pago, numero_tarjeta, clave_idempotencia, marca_tiempo_origen]
+              properties:
+                id_venta: { type: integer, description: 'La venta de 001 que se está cobrando.' }
+                id_terminal_pago: { type: integer }
+                numero_tarjeta:
+                  type: string
+                  writeOnly: true
+                  description: >
+                    Número de tarjeta, SOLO de entrada. NUNCA aparece en ninguna respuesta, log ni
+                    entrada de bitácora. El servidor extrae los últimos 4 dígitos, la marca y el tipo,
+                    y lo DESCARTA.
+                tipo:
+                  type: string
+                  enum: [debito, credito, desconocido]
+                  default: desconocido
+                  description: Lo informa el flujo de captura o el operador. `desconocido` si no se informa.
+                clave_idempotencia: { type: string }
+                marca_tiempo_origen:
+                  type: string
+                  format: date-time
+                  description: Instante del cobro físico; base del desempate offline (FR-022).
+      responses:
+        '201':
+          description: Token emitido
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pago' }
+        '200':
+          description: >
+            El cobro ya estaba tokenizado (mismo `id_venta`) — se devuelve el token existente
+            (idempotencia, FR-021).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pago' }
+        '400':
+          description: >
+            `pagos_pan_detectado` (se recibió un PAN donde no correspondía — registrado sin el
+            número), `pagos_numero_tarjeta_invalido` (no pasa Luhn / longitud fuera de 13–19).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: '`pagos_venta_no_existe`, `pagos_terminal_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: >
+            `pagos_clave_idempotencia_reusada` (la `clave_idempotencia` ya se usó para otra
+            `id_venta`).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /pagos/ventas/{id_venta}/pago:
+    get:
+      tags: [tokens]
+      summary: Consultar el pago tokenizado de una venta
+      description: |
+        FR-019. Devuelve el token y los últimos 4 dígitos. NUNCA el número completo, el CVV ni datos
+        de banda/chip. Responde SIEMPRE desde `token_pago`, nunca desde `venta.referencia_terminal_pago`.
+      parameters:
+        - { name: id_venta, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Pago tokenizado de la venta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Pago' }
+        '404':
+          description: >
+            `pagos_venta_no_existe`, o `pagos_venta_sin_tokenizacion` (la venta existe pero se cobró
+            en efectivo, o la tokenización no se completó — FR-020).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /pagos/bitacora:
+    get:
+      tags: [bitacora]
+      summary: Consultar la bitácora de auditoría de pagos
+      description: |
+        FR-023, FR-024, FR-027. Rastro de SOLO ANEXADO. Filtrable por sucursal, terminal y tipo de
+        evento. Ninguna entrada contiene PAN, CVV ni datos de banda/chip (FR-026). No hay endpoint de
+        edición ni de borrado (FR-025).
+      parameters:
+        - { name: id_sucursal, in: query, required: true, schema: { type: integer } }
+        - { name: id_terminal_pago, in: query, required: false, schema: { type: integer } }
+        - name: tipo_evento
+          in: query
+          required: false
+          schema: { $ref: '#/components/schemas/TipoEventoBitacora' }
+        - { name: desde, in: query, required: false, schema: { type: string, format: date } }
+        - { name: hasta, in: query, required: false, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: Entradas de bitácora, más recientes primero
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/EntradaBitacora' }
+        '400':
+          description: '`pagos_sucursal_requerida`, `pagos_rango_invalido`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  schemas:
+
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje:
+          type: string
+          description: Redactado para el operador, con la acción correctiva. Nunca una traza técnica.
+
+    MedioPago:
+      type: object
+      required: [id_medio_pago, nombre, requiere_terminal, admite_tokenizacion, activo]
+      properties:
+        id_medio_pago: { type: integer }
+        nombre:
+          type: string
+          description: 'efectivo, tarjeta_debito, tarjeta_credito, transferencia, billetera_movil, ...'
+        requiere_terminal: { type: boolean }
+        admite_tokenizacion: { type: boolean, description: 'true solo para las tarjetas.' }
+        activo: { type: boolean }
+
+    TramoCobertura:
+      type: object
+      required: [id_cobertura_pago, id_medio_pago, id_sucursal, fecha_desde, id_operador]
+      properties:
+        id_cobertura_pago: { type: integer }
+        id_medio_pago: { type: integer }
+        id_sucursal: { type: integer }
+        fecha_desde: { type: string, format: date }
+        fecha_hasta: { type: string, format: date, nullable: true, description: 'null = vigente.' }
+        id_operador: { type: integer }
+
+    ResumenCobertura:
+      type: object
+      required: [id_sucursal, periodo, medios, total_intencion_no_atendida]
+      properties:
+        id_sucursal: { type: integer }
+        periodo: { type: string, description: '"desde a hasta" en día local, o "sucursal inexistente en el período".' }
+        medios:
+          type: array
+          items:
+            type: object
+            required: [id_medio_pago, nombre, cubierto, intencion_no_atendida, cuota_no_atendida]
+            properties:
+              id_medio_pago: { type: integer }
+              nombre: { type: string }
+              cubierto:
+                type: boolean
+                description: Si la sucursal aceptaba ese medio durante (todo) el período.
+              intencion_no_atendida:
+                type: integer
+                description: Nº de eventos en que un cliente quiso pagar con este medio y no pudo.
+              cuota_no_atendida:
+                type: string
+                description: >
+                  Razón como cadena decimal (hasta 4 decimales): eventos de este medio / total de
+                  eventos de intención no atendida del período. "0" si no hubo eventos.
+        total_intencion_no_atendida:
+          type: integer
+          description: Total de eventos de intención no atendida de la sucursal en el período.
+
+    TerminalPago:
+      type: object
+      required:
+        [id_terminal_pago, identificador, modelo, id_sucursal, version_firmware, activa,
+         desactualizada, expuesta_a_clonacion, version_referencia_desconocida]
+      properties:
+        id_terminal_pago: { type: integer }
+        identificador: { type: string }
+        modelo: { type: string }
+        id_sucursal: { type: integer, description: Sucursal actual. }
+        version_firmware: { type: string }
+        fecha_ultima_actualizacion_firmware: { type: string, format: date, nullable: true }
+        ultima_version_referencia:
+          type: string
+          nullable: true
+          description: 'De `ULTIMA_VERSION_FIRMWARE[modelo]` (config). null ⇒ version_referencia_desconocida.'
+        desactualizada:
+          type: boolean
+          description: 'version_firmware < ultima_version_referencia (FR-010).'
+        expuesta_a_clonacion:
+          type: boolean
+          description: 'version o modelo en LISTA_FIRMWARE_VULNERABLE (FR-011).'
+        version_referencia_desconocida:
+          type: boolean
+          description: 'No hay ultima_version_referencia para el modelo — NUNCA se asume "al día" (FR-010).'
+        referencias_vulnerabilidad:
+          type: array
+          items: { type: string }
+          description: 'Referencias (CVE, boletín, nota interna) que motivan expuesta_a_clonacion. Vacío si no hay.'
+        historial_ubicacion:
+          type: array
+          items:
+            type: object
+            properties:
+              id_sucursal: { type: integer }
+              desde: { type: string, format: date }
+              hasta: { type: string, format: date, nullable: true }
+        historial_firmware:
+          type: array
+          items:
+            type: object
+            properties:
+              version: { type: string }
+              fecha: { type: string, format: date }
+              id_operador: { type: integer }
+        activa: { type: boolean }
+
+    Pago:
+      type: object
+      additionalProperties: false
+      description: >
+        Respuesta de tokenización. `numero_tarjeta` es `writeOnly` en la petición y NO figura aquí;
+        `additionalProperties: false` hace explícito en el contrato que ningún campo de PAN, CVV o
+        banda/chip puede aparecer en esta respuesta (FR-017, FR-019, SC-006).
+      required:
+        [token, id_venta, ultimos_digitos, marca, tipo, id_terminal_pago, id_sucursal, instante,
+         dia_local]
+      properties:
+        token:
+          type: string
+          description: >
+            Identificador sustituto OPACO (UUID v4). No permite derivar el número de tarjeta ni un
+            identificador estable de tarjeta entre ventas.
+        id_venta: { type: integer }
+        ultimos_digitos:
+          type: string
+          pattern: '^[0-9]{4}$'
+          description: Los últimos CUATRO dígitos. Nunca más.
+        marca: { type: string, enum: [visa, mastercard, amex, diners, otra] }
+        tipo: { type: string, enum: [debito, credito, desconocido] }
+        id_terminal_pago: { type: integer }
+        id_sucursal: { type: integer }
+        instante: { type: string, format: date-time }
+        dia_local: { type: string, format: date }
+
+    TipoEventoBitacora:
+      type: string
+      enum:
+        [token_emitido, token_idempotencia_divergente, token_purgado, pan_rechazado,
+         firmware_actualizado, firmware_desactualizado_detectado, terminal_expuesta_detectada,
+         terminal_registrada, terminal_movida, medio_pago_alta, medio_pago_baja, cobertura_declarada,
+         intencion_no_atendida, config_firmware_cambiada]
+
+    EntradaBitacora:
+      type: object
+      required:
+        [id_bitacora_auditoria, tipo_evento, instante, dia_local, id_sucursal, iniciador_tipo,
+         resultado]
+      properties:
+        id_bitacora_auditoria: { type: integer, format: int64 }
+        tipo_evento: { $ref: '#/components/schemas/TipoEventoBitacora' }
+        instante: { type: string, format: date-time }
+        dia_local: { type: string, format: date }
+        id_sucursal: { type: integer }
+        id_terminal_pago: { type: integer, nullable: true }
+        id_medio_pago:
+          type: integer
+          nullable: true
+          description: 'Para intencion_no_atendida, es el medio DESEADO por el cliente.'
+        iniciador_tipo: { type: string, enum: [operador, proceso] }
+        id_operador: { type: integer, nullable: true, description: 'Solo id_operador; nunca pin_hash.' }
+        proceso: { type: string, nullable: true }
+        resultado:
+          type: string
+          description: Redactado desde plantillas, nunca desde entrada de usuario. Nunca contiene un PAN.
+        referencia_recurso_tipo:
+          type: string
+          nullable: true
+          enum: [token_pago, venta, terminal_pago, medio_pago, cobertura_pago]
+        referencia_recurso_id: { type: string, nullable: true }

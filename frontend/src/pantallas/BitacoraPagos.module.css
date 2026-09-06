@@ -1,0 +1,106 @@
+/* Bitácora de auditoría de pagos — registro de OPERACIÓN: alta densidad, la tabla como elemento
+   principal, sin tarjetas, radio 2px, IBM Plex Sans con cifras tabulares, sin animación (DESIGN.md;
+   un libro de rastro es de la familia "inventario"). SÓLO LECTURA — ninguna acción de edición ni
+   de borrado (FR-025). Sin Verde Rasero (La Regla del Registro Sin Dinero). */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+}
+
+.encabezado {
+  flex-shrink: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 16px 24px 10px;
+}
+
+.titulo {
+  font-size: 18px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.resumen {
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+}
+
+.filtros {
+  flex-shrink: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 10px 24px 14px;
+  background: var(--color-superficie-alta);
+  border-top: 1px solid var(--color-borde);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.select {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 6px 8px;
+}
+
+.error {
+  color: var(--color-critico);
+  font-size: 13px;
+  margin: 4px 24px 0;
+}
+
+.tablaContenedor {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 0 24px 24px;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  font-size: 13px;
+}
+
+.tabla th,
+.tabla td {
+  text-align: left;
+  padding: 7px 12px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.tabla th {
+  color: var(--color-tinta-suave);
+  font-weight: 500;
+  position: sticky;
+  top: 0;
+  background: var(--color-superficie-alta);
+}
+
+.critico {
+  color: var(--color-critico);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.puntoLleno {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}

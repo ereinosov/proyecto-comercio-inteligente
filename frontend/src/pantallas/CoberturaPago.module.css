@@ -1,0 +1,152 @@
+/* Cobertura de medios de pago — registro de ANÁLISIS: una decisión por bloque, aire visual, líneas
+   bajo 80 caracteres, radio 6px, Source Serif 4 (DESIGN.md). Sin Verde Rasero: esta pantalla no
+   tiene ninguna acción que comprometa dinero (La Regla del Registro Sin Dinero). La cuota de
+   intención no atendida es un valor calculado → color `estimado`. */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.encabezado {
+  flex-shrink: 0;
+  padding: 24px 32px 8px;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0;
+}
+
+.subtitulo {
+  font-size: 14px;
+  color: var(--color-tinta-suave);
+  margin: 4px 0 0;
+  max-width: 70ch;
+}
+
+.cuerpo {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 8px 32px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.bloque {
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 18px 20px;
+  max-width: 760px;
+}
+
+.bloqueTitulo {
+  font-size: 16px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: flex-end;
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  font-family: var(--tipografia-operacion);
+}
+
+.entrada,
+.select {
+  font-family: var(--tipografia-operacion);
+  font-size: 14px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 7px 9px;
+}
+
+.boton {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-analisis);
+  padding: 8px 16px;
+  cursor: pointer;
+}
+
+.confirmado {
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  font-family: var(--tipografia-operacion);
+}
+
+.error {
+  color: var(--color-critico);
+  font-size: 13px;
+  margin: 6px 0 0;
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: 13px;
+}
+
+.tabla th,
+.tabla td {
+  text-align: left;
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.tabla th {
+  color: var(--color-tinta-suave);
+  font-weight: 500;
+}
+
+.cubierto {
+  color: var(--color-tinta);
+}
+
+.noCubierto {
+  color: var(--color-tinta-suave);
+}
+
+.estimado {
+  color: var(--color-estimado);
+}
+
+.animacionRevelar {
+  animation: revelar 240ms ease-out;
+}
+
+@keyframes revelar {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -186,3 +186,32 @@ class CajaBloqueadoPor001(ErrorCaja):
             "disponible en el módulo de ventas e inventario. Vuelve a intentarlo cuando lo esté.",
             status_code=409,
         )
+
+
+# --------------------------------------------------------------------------
+# 007-pagos-seguridad
+# --------------------------------------------------------------------------
+
+
+class ErrorPagos(ErrorDominio):
+    """Error de dominio de 007. Lleva su propio `codigo` y `status_code` por instancia — los
+    prefijos `pagos_` mantienen los códigos del contrato agrupados y legibles.
+    """
+
+    def __init__(self, codigo: str, mensaje: str, *, status_code: int = 400):
+        self.codigo = codigo
+        self.status_code = status_code
+        super().__init__(mensaje)
+
+
+class PanDetectado(ErrorPagos):
+    """Se recibió un número de tarjeta completo donde no correspondía. Se rechaza y se registra en
+    la bitácora SIN el número (FR-018, SC-008). El PAN nunca se almacena, registra ni transmite.
+    """
+
+    def __init__(self):
+        super().__init__(
+            "pagos_pan_detectado",
+            "El sistema no puede guardar un número de tarjeta completo. Sólo se conservan la marca "
+            "y los últimos cuatro dígitos. Revisa la integración del datáfono.",
+        )

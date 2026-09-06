@@ -1198,3 +1198,184 @@ class AnomaliaCaja(Base):
             name="ck_anomalia_caja_resolucion_coherente",
         ),
     )
+
+
+# --------------------------------------------------------------------------
+# 007-pagos-seguridad — medio_pago, terminal_pago, cobertura_pago,
+# bitacora_auditoria, token_pago (data-model.md, constitución v2.2.6).
+# `token_pago` añadida por la enmienda v2.2.6 (research.md #1): registro
+# autoritativo de un cobro con tarjeta tokenizado, UNIQUE por cobro e
+# idempotencia. SIN ningún campo de PAN/CVV/banda; `ultimos_digitos CHAR(4)`
+# con CHECK de 4 dígitos (barrera de esquema, FR-018). 007 SÓLO LEE de 001.
+# Los indicadores de firmware y la cuota de intención no atendida NO son
+# entidad: cálculo derivado (research.md #3, #5).
+# --------------------------------------------------------------------------
+
+
+class MedioPago(Base):
+    """Catálogo global de medios de pago (FR-001). Una fila por medio, extensible sin migración."""
+
+    __tablename__ = "medio_pago"
+
+    id_medio_pago: Mapped[int] = mapped_column(Integer, primary_key=True)
+    nombre: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    requiere_terminal: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    admite_tokenizacion: Mapped[bool] = mapped_column(Boolean, nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+
+class TerminalPago(Base):
+    """Terminal de pago (datáfono) física (FR-008 a FR-015). NUEVA en este módulo: 001 sólo guarda
+    una `referencia_terminal_pago` opaca. Los indicadores "desactualizada"/"expuesta a clonación"
+    NO son columnas: cálculo derivado al leer (research.md #3). El sistema NUNCA marca `activa =
+    False` por una señal de firmware (FR-012).
+    """
+
+    __tablename__ = "terminal_pago"
+
+    id_terminal_pago: Mapped[int] = mapped_column(Integer, primary_key=True)
+    identificador: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    modelo: Mapped[str] = mapped_column(String, nullable=False)
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    version_firmware: Mapped[str] = mapped_column(String, nullable=False)
+    fecha_ultima_actualizacion_firmware: Mapped[date | None] = mapped_column(Date, nullable=True)
+    historial_ubicacion: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    historial_firmware: Mapped[list] = mapped_column(JSONB, nullable=False, default=list)
+    id_operador_registro: Mapped[int] = mapped_column(
+        ForeignKey("operador.id_operador"), nullable=False
+    )
+    instante_registro: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    activa: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "version_firmware ~ '^[0-9]+\\.[0-9]+\\.[0-9]+$'", name="ck_terminal_pago_version"
+        ),
+    )
+
+
+class CoberturaPago(Base):
+    """Aceptación de un `medio_pago` en una `sucursal`, con vigencia histórica por tramos
+    `[fecha_desde, fecha_hasta]` sin solape (FR-002). La cuota de intención de compra no atendida
+    se DERIVA de `bitacora_auditoria` (research.md #5), no se persiste aquí.
+    """
+
+    __tablename__ = "cobertura_pago"
+
+    id_cobertura_pago: Mapped[int] = mapped_column(Integer, primary_key=True)
+    id_medio_pago: Mapped[int] = mapped_column(
+        ForeignKey("medio_pago.id_medio_pago"), nullable=False
+    )
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    fecha_desde: Mapped[date] = mapped_column(Date, nullable=False)
+    fecha_hasta: Mapped[date | None] = mapped_column(Date, nullable=True)
+    id_operador: Mapped[int] = mapped_column(
+        ForeignKey("operador.id_operador"), nullable=False
+    )
+    instante_registro: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "fecha_hasta IS NULL OR fecha_hasta >= fecha_desde", name="ck_cobertura_pago_periodo"
+        ),
+    )
+
+
+class BitacoraAuditoria(Base):
+    """Rastro de SOLO ANEXADO de los hechos de pago (Principio IV, FR-023 a FR-028). Un TRIGGER
+    `BEFORE UPDATE OR DELETE` (migración 0007) rechaza cualquier modificación o borrado a nivel de
+    motor (FR-025). NUNCA contiene PAN, CVV ni datos de banda/chip (FR-026); `resultado` se redacta
+    desde plantillas por `tipo_evento`, nunca desde texto libre del cliente (research.md #6).
+    """
+
+    __tablename__ = "bitacora_auditoria"
+
+    id_bitacora_auditoria: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    tipo_evento: Mapped[str] = mapped_column(String, nullable=False)
+    instante: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    dia_local: Mapped[date] = mapped_column(Date, nullable=False)
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    id_terminal_pago: Mapped[int | None] = mapped_column(
+        ForeignKey("terminal_pago.id_terminal_pago"), nullable=True
+    )
+    id_medio_pago: Mapped[int | None] = mapped_column(
+        ForeignKey("medio_pago.id_medio_pago"), nullable=True
+    )
+    iniciador_tipo: Mapped[str] = mapped_column(String, nullable=False)
+    id_operador: Mapped[int | None] = mapped_column(
+        ForeignKey("operador.id_operador"), nullable=True
+    )
+    proceso: Mapped[str | None] = mapped_column(String, nullable=True)
+    resultado: Mapped[str] = mapped_column(String, nullable=False)
+    referencia_recurso_tipo: Mapped[str | None] = mapped_column(String, nullable=True)
+    referencia_recurso_id: Mapped[str | None] = mapped_column(String, nullable=True)
+    clave_idempotencia: Mapped[str | None] = mapped_column(String, nullable=True)
+
+    __table_args__ = (
+        CheckConstraint(
+            "tipo_evento IN ('token_emitido','token_idempotencia_divergente','token_purgado',"
+            "'pan_rechazado','firmware_actualizado','firmware_desactualizado_detectado',"
+            "'terminal_expuesta_detectada','terminal_registrada','terminal_movida','medio_pago_alta',"
+            "'medio_pago_baja','cobertura_declarada','intencion_no_atendida','config_firmware_cambiada')",
+            name="ck_bitacora_auditoria_tipo_evento",
+        ),
+        CheckConstraint(
+            "iniciador_tipo IN ('operador','proceso')", name="ck_bitacora_auditoria_iniciador"
+        ),
+        CheckConstraint(
+            "referencia_recurso_tipo IS NULL OR referencia_recurso_tipo IN "
+            "('token_pago','venta','terminal_pago','medio_pago','cobertura_pago')",
+            name="ck_bitacora_auditoria_referencia",
+        ),
+    )
+
+
+class TokenPago(Base):
+    """Registro AUTORITATIVO de un cobro con tarjeta tokenizado (research.md #1, #4). Guarda
+    ÚNICAMENTE el identificador sustituto opaco y el metadato mínimo que la constitución permite
+    conservar ("Datos de pago": identificadores y últimos dígitos). SIN ningún campo de PAN, CVV o
+    banda/chip. `ultimos_digitos` es `CHAR(4)` con CHECK de 4 dígitos: barrera de esquema (FR-018).
+
+    Idempotencia (research.md #15): PRIMARIA por `UNIQUE (id_venta)` (un token por cobro, como
+    `arqueo` usa `UNIQUE (id_turno)`); `clave_idempotencia UNIQUE` es la segunda barrera, la genera
+    el cliente. FK `id_venta` de SOLO LECTURA: 007 consulta `venta` de 001, nunca la escribe.
+    """
+
+    __tablename__ = "token_pago"
+
+    id_token_pago: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    token: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    id_venta: Mapped[int] = mapped_column(
+        ForeignKey("venta.id_venta"), unique=True, nullable=False
+    )
+    clave_idempotencia: Mapped[str] = mapped_column(String, unique=True, nullable=False)
+    ultimos_digitos: Mapped[str] = mapped_column(String(4), nullable=False)
+    marca: Mapped[str] = mapped_column(String, nullable=False)
+    tipo: Mapped[str] = mapped_column(String, nullable=False)
+    id_terminal_pago: Mapped[int] = mapped_column(
+        ForeignKey("terminal_pago.id_terminal_pago"), nullable=False
+    )
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    instante: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    dia_local: Mapped[date] = mapped_column(Date, nullable=False)
+    marca_tiempo_origen: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+
+    __table_args__ = (
+        CheckConstraint(
+            "ultimos_digitos ~ '^[0-9]{4}$'", name="ck_token_pago_ultimos_digitos"
+        ),
+        CheckConstraint(
+            "marca IN ('visa','mastercard','amex','diners','otra')", name="ck_token_pago_marca"
+        ),
+        CheckConstraint(
+            "tipo IN ('debito','credito','desconocido')", name="ck_token_pago_tipo"
+        ),
+    )

@@ -7,6 +7,8 @@ import { Pronostico } from "./pantallas/Pronostico";
 import { Promociones } from "./pantallas/Promociones";
 import { Arqueo } from "./pantallas/Arqueo";
 import { CajaFraude } from "./pantallas/CajaFraude";
+import { TerminalesPago } from "./pantallas/TerminalesPago";
+import { Pagos } from "./pantallas/Pagos";
 import { cerrarTurno, type Turno } from "./servicios/turnos";
 import marcaSistema from "./activos/marca/rasero-wordmark-512w.png";
 import marcaNegocio from "./activos/marca/despensa-icon-verde-512.png";
@@ -19,7 +21,9 @@ type Pantalla =
   | "pronostico"
   | "promociones"
   | "arqueo"
-  | "cajafraude";
+  | "cajafraude"
+  | "terminales"
+  | "pagos";
 
 export function App() {
   const [turno, setTurno] = useState<Turno | null>(null);
@@ -90,6 +94,18 @@ export function App() {
         >
           Caja y fraude
         </button>
+        <button
+          className={pantalla === "terminales" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          onClick={() => setPantalla("terminales")}
+        >
+          Terminales
+        </button>
+        <button
+          className={pantalla === "pagos" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          onClick={() => setPantalla("pagos")}
+        >
+          Pagos
+        </button>
         <img
           className={estilos.marcaNegocio}
           src={marcaNegocio}
@@ -107,6 +123,12 @@ export function App() {
         {pantalla === "promociones" && <Promociones idSucursal={turno.id_sucursal} />}
         {pantalla === "arqueo" && <Arqueo idSucursal={turno.id_sucursal} />}
         {pantalla === "cajafraude" && <CajaFraude idSucursal={turno.id_sucursal} />}
+        {pantalla === "terminales" && (
+          <TerminalesPago idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
+        )}
+        {pantalla === "pagos" && (
+          <Pagos idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
+        )}
       </div>
     </div>
   );
