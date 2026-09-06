@@ -234,10 +234,10 @@ modifica ninguna entidad ni contrato — reutiliza `GET /demanda` y `GET /produc
 tal cual; no requiere enmienda constitucional (verificado contra la entrada de 004 en la tabla de
 Propiedad de Datos).
 
-- [X] T069 [US7] Fuente de datos: `GET /demanda` ya devuelve `demanda_observada` + `demanda_corregida` por día (US1, esquema `PuntoSerie`), y `GET /productos/{id}/pronostico` ya devuelve `serie_pronosticada` (US3). El gráfico consume ambos sin cambio de contrato ni endpoint nuevo — verificado contra `backend/rasero/api/pronostico.py`.
-- [X] T070 [P] [US7] `frontend/src/componentes/graficos/DemandaPronosticoGrafico.tsx`: `<LineChart>` de Recharts sobre `GraficoContenedor` (registro Análisis, borde 2px). Serie "Demanda observada" en Tinta (`connectNulls={false}`), serie "Corregida / pronosticada" en Estimado (#1F5673), prolongada por el horizonte de pronóstico vigente. `TooltipPropio`. Estados cargando/vacío del contenedor.
-- [X] T071 [US7] Integrar el gráfico en `frontend/src/componentes/VistaPronostico.tsx` encima de la tabla de la proyección; la tabla no cambia.
-- [X] T072 [US7] Verificación `tsc -b`, `eslint`, `vite build` sin errores.
+- [X] T074 [US7] Fuente de datos: `GET /demanda` ya devuelve `demanda_observada` + `demanda_corregida` por día (US1, esquema `PuntoSerie`), y `GET /productos/{id}/pronostico` ya devuelve `serie_pronosticada` (US3). El gráfico consume ambos sin cambio de contrato ni endpoint nuevo — verificado contra `backend/rasero/api/pronostico.py`.
+- [X] T075 [P] [US7] `frontend/src/componentes/graficos/DemandaPronosticoGrafico.tsx`: `<LineChart>` de Recharts sobre `GraficoContenedor` (registro Análisis, borde 2px). Serie "Demanda observada" en Tinta (`connectNulls={false}`), serie "Corregida / pronosticada" en Estimado (#1F5673), prolongada por el horizonte de pronóstico vigente. `TooltipPropio`. Estados cargando/vacío del contenedor.
+- [X] T076 [US7] Integrar el gráfico en `frontend/src/componentes/VistaPronostico.tsx` encima de la tabla de la proyección; la tabla no cambia.
+- [X] T077 [US7] Verificación `tsc -b`, `eslint`, `vite build` sin errores.
 
 **Checkpoint US7**: la vista de Pronóstico muestra el gráfico de dos series; la tabla sigue igual.
 

@@ -178,12 +178,12 @@ no introduce ni modifica ninguna entidad — sólo añade un endpoint de lectura
 propiedad de 006; no requiere enmienda constitucional (verificado contra la entrada de 006 en la
 tabla de Propiedad de Datos: `arqueo`, `merma`, `anomalia_caja`).
 
-- [X] T051 [US5] Servicio `resumen_mermas_por_causa(sesion, *, id_sucursal, desde, hasta) -> list[dict]` en `backend/rasero/servicios/mermas.py`: agrega `merma.valoracion` por `date_trunc('week', periodo_hasta)` y por causa, excluye `pendiente_clasificar`, cuenta aparte las mermas sin valoración calculable (`sin_valor`). Una sola consulta agregada, sin N+1 ni agregación en el frontend.
-- [X] T052 [US5] Endpoint `GET /caja/mermas/resumen?id_sucursal=&desde=&hasta=` en `backend/rasero/api/caja.py` (ruta literal `mermas/resumen`, no colisiona con `/caja/mermas`).
-- [X] T053 [P] [US5] Prueba de integración en `tests/integracion/test_resumen_mermas.py`: mermas de varias causas y semanas se agregan a los buckets correctos; `pendiente_clasificar` no aparece; una merma sin valoración cuenta en `sin_valor` y no en la valoración.
-- [X] T054 [P] [US5] Cliente HTTP `obtenerResumenMermas()` + tipo `ResumenMermaSemana` en `frontend/src/servicios/caja.ts`.
-- [X] T055 [US5] `frontend/src/componentes/graficos/MermasPorCausaGrafico.tsx`: `<BarChart>` de barras apiladas por semana sobre `GraficoContenedor` (registro Análisis, borde 2px). Una serie por causa, color de `SERIES_NEUTRAS` (variaciones de opacidad de #1F5673 / #5A6862) — nunca colores semánticos como paleta. Leyenda en Tinta Suave, `TooltipPropio`, estado vacío del contenedor. Integrado en `Mermas.tsx` sobre la lista.
-- [X] T056 [US5] Verificación `pytest tests/integracion/test_resumen_mermas.py`, `tsc -b`, `eslint`, `vite build` sin errores.
+- [X] T057 [US5] Servicio `resumen_mermas_por_causa(sesion, *, id_sucursal, desde, hasta) -> list[dict]` en `backend/rasero/servicios/mermas.py`: agrega `merma.valoracion` por `date_trunc('week', periodo_hasta)` y por causa, excluye `pendiente_clasificar`, cuenta aparte las mermas sin valoración calculable (`sin_valor`). Una sola consulta agregada, sin N+1 ni agregación en el frontend.
+- [X] T058 [US5] Endpoint `GET /caja/mermas/resumen?id_sucursal=&desde=&hasta=` en `backend/rasero/api/caja.py` (ruta literal `mermas/resumen`, no colisiona con `/caja/mermas`).
+- [X] T059 [P] [US5] Prueba de integración en `tests/integracion/test_resumen_mermas.py`: mermas de varias causas y semanas se agregan a los buckets correctos; `pendiente_clasificar` no aparece; una merma sin valoración cuenta en `sin_valor` y no en la valoración.
+- [X] T060 [P] [US5] Cliente HTTP `obtenerResumenMermas()` + tipo `ResumenMermaSemana` en `frontend/src/servicios/caja.ts`.
+- [X] T061 [US5] `frontend/src/componentes/graficos/MermasPorCausaGrafico.tsx`: `<BarChart>` de barras apiladas por semana sobre `GraficoContenedor` (registro Análisis, borde 2px). Una serie por causa, color de `SERIES_NEUTRAS` (variaciones de opacidad de #1F5673 / #5A6862) — nunca colores semánticos como paleta. Leyenda en Tinta Suave, `TooltipPropio`, estado vacío del contenedor. Integrado en `Mermas.tsx` sobre la lista.
+- [X] T062 [US5] Verificación `pytest tests/integracion/test_resumen_mermas.py`, `tsc -b`, `eslint`, `vite build` sin errores.
 
 **Checkpoint US5**: Mermas muestra el gráfico de barras apiladas por causa y semana; la lista de mermas individuales sigue igual.
 
