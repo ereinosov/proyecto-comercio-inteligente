@@ -111,6 +111,15 @@ visual o por rellenar una zona apagada está prohibido: si aparece el crítico, 
 **La Regla de la Sola Voz.** El Verde Rasero aparece una vez por pantalla, en la acción que
 compromete dinero. Una segunda aparición lo convierte en decoración y anula la primera.
 
+**La Regla del Ícono.** Todo ícono de la interfaz es un SVG —propio, o de una única librería
+coherente con el resto del sistema— y **nunca** un emoji. Un emoji no respeta el sistema tipográfico
+(no se compone en IBM Plex Sans ni en Source Serif 4); no respeta el sistema cromático (trae su
+propio color y pisa los tres semánticos reservados —atención, crítico, estimado— y el Verde Rasero
+exclusivo de la Sola Voz); varía de render entre sistema operativo y navegador —el mismo ícono se ve
+distinto en la máquina donde se construye y en la del evaluador, y esa diferencia no es defendible—;
+y su volumen, su sombra y su brillo rompen la superficie plana de 2px/6px sin sombras del rasero.
+Aplica a los siete módulos, presentes y futuros, sin excepción.
+
 ## Typography
 
 **Operación:** IBM Plex Sans (con system-ui, sans-serif)
