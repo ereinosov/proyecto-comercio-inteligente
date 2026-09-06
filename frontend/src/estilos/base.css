@@ -1,0 +1,18 @@
+/* Reset mínimo de layout del sistema.
+
+   Sin `body { margin: 0 }` el navegador aplica su margen por defecto de 8px al
+   <body>; combinado con `.aplicacion { height: 100vh }` eso empuja el armazón
+   16px fuera del viewport y produce un scrollbar vertical permanente falso —
+   visible incluso en pantallas de poco contenido (p. ej. Cobertura de medios).
+   El scrollbar del navegador debe aparecer sólo cuando el contenido de una
+   pantalla realmente excede el alto disponible (nav + contenido + footer). */
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}

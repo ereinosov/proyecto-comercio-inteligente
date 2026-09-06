@@ -96,6 +96,23 @@ function Chevron() {
   );
 }
 
+// Pin de ubicación: SVG de línea propio (La Regla del Ícono: SVG siempre, nunca emoji),
+// ~12px, outline sin relleno. Acompaña al nombre de sucursal en el footer.
+function IconoUbicacion() {
+  return (
+    <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
+      <path
+        d="M8 1.75c-2.62 0-4.75 2.05-4.75 4.58 0 3.3 4.75 7.92 4.75 7.92s4.75-4.62 4.75-7.92C12.75 3.8 10.62 1.75 8 1.75Z"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.4"
+        strokeLinejoin="round"
+      />
+      <circle cx="8" cy="6.3" r="1.7" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    </svg>
+  );
+}
+
 function GrupoNav({
   etiqueta,
   opciones,
@@ -278,6 +295,9 @@ export function App() {
       </div>
       {nombreSucursal && (
         <footer className={estilos.pie}>
+          <span className={estilos.iconoUbicacion}>
+            <IconoUbicacion />
+          </span>
           <span>{nombreSucursal}</span>
         </footer>
       )}

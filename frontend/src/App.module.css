@@ -45,16 +45,24 @@
 }
 
 /* Footer persistente: franja delgada, Superficie Base, borde superior 1px en Borde
-   (La Regla del Filo — nunca sombra). Nombre de la sucursal activa, Tinta Suave. */
+   (La Regla del Filo — nunca sombra). Ícono de ubicación (SVG de línea propio, ~12px) +
+   nombre de la sucursal activa, ambos en Tinta Suave, alineados a la izquierda. */
 .pie {
   flex-shrink: 0;
   display: flex;
   align-items: center;
+  gap: 6px;
   padding: 6px 20px;
   background: var(--color-superficie-base);
   border-top: 1px solid var(--color-borde);
   font-family: var(--tipografia-operacion);
   font-size: 12px;
+  color: var(--color-tinta-suave);
+}
+
+.iconoUbicacion {
+  display: inline-flex;
+  flex-shrink: 0;
   color: var(--color-tinta-suave);
 }
 
@@ -186,4 +194,9 @@
 .contenido {
   flex: 1;
   min-height: 0;
+  /* El scrollbar aparece SOLO si la pantalla activa desborda el alto disponible
+     (viewport − nav − footer). Las pantallas que gestionan su propio scroll interno
+     (`.pantalla { height: 100% }` + área con `overflow-y: auto`) encajan exacto y
+     nunca disparan este scroll; las que sólo fluyen contenido largo sí lo usan. */
+  overflow-y: auto;
 }
