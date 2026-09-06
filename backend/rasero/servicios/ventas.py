@@ -38,6 +38,7 @@ from rasero.persistencia.modelos import (
     Venta,
 )
 from rasero.persistencia.movimientos import obtener_existencia, registrar_movimiento
+from rasero.seguridad import RANGO_ROL
 
 
 @dataclass
@@ -266,7 +267,10 @@ def anular_venta(
     turno_en_curso = turno_venta.instante_cierre is None
     es_su_propio_turno = turno_venta.id_operador == id_operador_ejecuta
 
-    autorizado = (turno_en_curso and es_su_propio_turno) or operador.es_encargado
+    # Enmienda v2.3.0: el rango de rol se lee de RANGO_ROL (jerarquía central), no de un
+    # booleano por operador. Anular una venta de turno cerrado exige rol `encargado` o más.
+    tiene_rango_encargado = RANGO_ROL.get(operador.rol, 0) >= RANGO_ROL["encargado"]
+    autorizado = (turno_en_curso and es_su_propio_turno) or tiene_rango_encargado
     if not autorizado:
         raise AnulacionNoAutorizada()
 

@@ -35,11 +35,20 @@ def crear_sucursal(sesion, *, zona: str = _ZONA) -> Sucursal:
     return sucursal
 
 
-def crear_operador(sesion, *, nombre: str | None = None, es_encargado: bool = False) -> Operador:
+def crear_operador(
+    sesion, *, nombre: str | None = None, es_encargado: bool = False,
+    rol: str | None = None, id_sucursal: int | None = None,
+) -> Operador:
+    # Enmienda v2.3.0: `rol` + `id_sucursal` en vez de `es_encargado` (alias conservado).
+    if rol is None:
+        rol = "encargado" if es_encargado else "cajero"
+    if id_sucursal is None:
+        id_sucursal = crear_sucursal(sesion).id_sucursal
     operador = Operador(
         nombre=nombre or f"Operador {uuid.uuid4().hex[:6]}",
         pin_hash="",
-        es_encargado=es_encargado,
+        rol=rol,
+        id_sucursal=id_sucursal,
         activo=True,
     )
     sesion.add(operador)

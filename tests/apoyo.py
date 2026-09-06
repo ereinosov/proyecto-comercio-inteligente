@@ -131,7 +131,11 @@ def crear_escenario_basico(sesion, *, existencia_inicial: int = 10, es_granel: b
     sesion.add(producto)
     sesion.flush()
 
-    operador = Operador(nombre="Operador de prueba", pin_hash="", es_encargado=False, activo=True)
+    # Enmienda v2.3.0: `operador` tiene `rol` e `id_sucursal` en vez de `es_encargado`.
+    operador = Operador(
+        nombre="Operador de prueba", pin_hash="", rol="cajero",
+        id_sucursal=sucursal.id_sucursal, activo=True,
+    )
     sesion.add(operador)
     sesion.flush()
     operador.pin_hash = hashear_pin("1234", str(operador.id_operador))

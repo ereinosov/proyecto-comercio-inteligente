@@ -52,15 +52,24 @@ def sembrar() -> None:
         sesion.flush()
 
         cajera = Operador(
-            nombre="Ana Cajera", pin_hash="", es_encargado=False, activo=True
+            nombre="Ana Cajera", pin_hash="", rol="cajero",
+            id_sucursal=quevedo.id_sucursal, activo=True,
         )
         encargado = Operador(
-            nombre="Luis Encargado", pin_hash="", es_encargado=True, activo=True
+            nombre="Luis Encargado", pin_hash="", rol="encargado",
+            id_sucursal=quevedo.id_sucursal, activo=True,
         )
-        sesion.add_all([cajera, encargado])
+        # Enmienda v2.3.0 (Principio VI): el rol `admin` se crea SIEMPRE de forma explícita,
+        # nunca por migración. "Marta Administradora" sigue el estilo de nombres de la semilla.
+        admin = Operador(
+            nombre="Marta Administradora", pin_hash="", rol="admin",
+            id_sucursal=quevedo.id_sucursal, activo=True,
+        )
+        sesion.add_all([cajera, encargado, admin])
         sesion.flush()
         cajera.pin_hash = hashear_pin("1234", str(cajera.id_operador))
         encargado.pin_hash = hashear_pin("9999", str(encargado.id_operador))
+        admin.pin_hash = hashear_pin("0000", str(admin.id_operador))
         sesion.flush()
 
         ahora = datetime.now(timezone.utc)
@@ -103,8 +112,9 @@ def sembrar() -> None:
 
         sesion.commit()
         print("Semilla cargada: Despensa Los Ríos (Quevedo Centro, Buena Fe).")
-        print(f"  Operador cajera: id={cajera.id_operador} PIN=1234")
-        print(f"  Operador encargado: id={encargado.id_operador} PIN=9999")
+        print(f"  Operador cajera (rol cajero): id={cajera.id_operador} PIN=1234")
+        print(f"  Operador encargado (rol encargado): id={encargado.id_operador} PIN=9999")
+        print(f"  Operador admin (rol admin): id={admin.id_operador} PIN=0000")
         print(f"  Sucursal Quevedo Centro: id={quevedo.id_sucursal}")
         print(f"  Sucursal Buena Fe: id={buena_fe.id_sucursal}")
         print(f"  Producto Atún en lata: id={atun.id_producto} (50 u en Quevedo Centro)")

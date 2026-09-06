@@ -86,7 +86,8 @@ def _escenario(sesion: Session) -> dict:
     ).scalar_one_or_none()
     if operador is None:
         operador = Operador(
-            nombre="Cajera Reactivación", pin_hash="", es_encargado=False, activo=True
+            nombre="Cajera Reactivación", pin_hash="", rol="cajero",
+            id_sucursal=sucursal.id_sucursal, activo=True,
         )
         sesion.add(operador)
         sesion.flush()

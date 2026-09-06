@@ -149,7 +149,7 @@ def test_cobertura_tramos_encadenados_y_reserva_al_encargado(sesion):
         "/pagos/cobertura",
         json={**base, "fecha_desde": "2026-09-01", "id_operador": no_encargado.id_operador},
     )
-    assert r.status_code == 400 and r.json()["codigo"] == "pagos_operador_no_encargado"
+    assert r.status_code == 403 and r.json()["codigo"] == "rol_insuficiente"  # enmienda v2.3.0
 
 
 def test_la_restriccion_de_exclusion_gist_rechaza_un_solape_de_vigencia(sesion):

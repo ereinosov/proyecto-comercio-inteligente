@@ -78,8 +78,10 @@ def test_no_encargado_no_puede_administrar_maestros(sesion):
         "/administracion/categorias",
         json={"nombre": _nombre("Cat"), "id_operador": cajero.id_operador},
     )
-    assert r.status_code == 400
-    assert r.json()["codigo"] == "admin_operador_no_encargado"
+    # Enmienda v2.3.0: la verificación pasa por el mecanismo central `requiere_rol`, que
+    # devuelve 403 `rol_insuficiente` en vez del antiguo 400 `admin_operador_no_encargado`.
+    assert r.status_code == 403
+    assert r.json()["codigo"] == "rol_insuficiente"
 
 
 def test_desactivar_categoria_con_productos_informa_pero_no_bloquea(sesion):

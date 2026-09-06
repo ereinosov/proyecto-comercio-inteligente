@@ -97,8 +97,17 @@ class Operador(Base):
     id_operador: Mapped[int] = mapped_column(Integer, primary_key=True)
     nombre: Mapped[str] = mapped_column(String, nullable=False)
     pin_hash: Mapped[str] = mapped_column(String, nullable=False)
-    es_encargado: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
+    # Enmienda v2.3.0 (Principio VI): `id_sucursal` (sucursal fija, uno-a-uno) y `rol`
+    # (ENUM cerrado cajero<encargado<admin) reemplazan al booleano de encargado anterior.
+    id_sucursal: Mapped[int] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=False
+    )
+    rol: Mapped[str] = mapped_column(String, nullable=False, default="cajero")
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+
+    __table_args__ = (
+        CheckConstraint("rol IN ('cajero','encargado','admin')", name="ck_operador_rol"),
+    )
 
 
 class Turno(Base):

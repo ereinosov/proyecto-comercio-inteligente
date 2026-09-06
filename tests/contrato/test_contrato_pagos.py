@@ -85,7 +85,7 @@ def test_contrato_cobertura(sesion):
                 },
             )
         )
-        == "pagos_operador_no_encargado"
+        == "rol_insuficiente"  # enmienda v2.3.0: requiere_rol central
     )
     assert (
         _error(
@@ -203,7 +203,7 @@ def test_contrato_terminales(sesion):
                 },
             )
         )
-        == "pagos_operador_no_encargado"
+        == "rol_insuficiente"  # enmienda v2.3.0: requiere_rol central
     )
 
     assert _error(cliente.get("/pagos/terminales")) == "pagos_sucursal_requerida"

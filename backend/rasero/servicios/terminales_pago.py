@@ -20,7 +20,8 @@ from rasero.config import pagos as cfg
 from rasero.dominio.firmware import comparar_version, evaluar_terminal
 from rasero.dominio.pagos import hoy_local
 from rasero.errores import ErrorPagos
-from rasero.persistencia.modelos import Operador, Sucursal, TerminalPago
+from rasero.seguridad import requiere_rol
+from rasero.persistencia.modelos import Sucursal, TerminalPago
 from rasero.servicios import bitacora_pagos
 
 _VERSION = r"^[0-9]+\.[0-9]+\.[0-9]+$"
@@ -32,17 +33,6 @@ def _sucursal_o_404(sesion: Session, id_sucursal: int) -> Sucursal:
         raise ErrorPagos("pagos_sucursal_no_existe", "Esa sucursal no existe.", status_code=404)
     return sucursal
 
-
-def _encargado_o_error(sesion: Session, id_operador: int) -> Operador:
-    operador = sesion.get(Operador, id_operador)
-    if operador is None:
-        raise ErrorPagos("pagos_operador_no_existe", "Ese operador no existe.", status_code=404)
-    if not operador.es_encargado:
-        raise ErrorPagos(
-            "pagos_operador_no_encargado",
-            "Sólo un encargado puede registrar o mover una terminal de pago.",
-        )
-    return operador
 
 
 def _terminal_o_404(sesion: Session, id_terminal_pago: int) -> TerminalPago:
@@ -76,7 +66,7 @@ def registrar_terminal(
 ) -> TerminalPago:
     _valida_version(version_firmware)
     _sucursal_o_404(sesion, id_sucursal)
-    _encargado_o_error(sesion, id_operador)
+    requiere_rol(sesion, id_operador, "encargado")
     if sesion.execute(
         select(TerminalPago).where(TerminalPago.identificador == identificador)
     ).scalar_one_or_none() is not None:
@@ -122,7 +112,7 @@ def mover_o_retirar_terminal(
     retirar: bool = False,
 ) -> TerminalPago:
     terminal = _terminal_o_404(sesion, id_terminal_pago)
-    _encargado_o_error(sesion, id_operador)
+    requiere_rol(sesion, id_operador, "encargado")
     zona = _sucursal_o_404(sesion, terminal.id_sucursal).zona_horaria
     fecha = fecha_movimiento or hoy_local(zona)
 
@@ -172,7 +162,7 @@ def registrar_actualizacion_firmware(
 ) -> TerminalPago:
     _valida_version(version)
     terminal = _terminal_o_404(sesion, id_terminal_pago)
-    _encargado_o_error(sesion, id_operador)
+    requiere_rol(sesion, id_operador, "encargado")
     if comparar_version(version, terminal.version_firmware) <= 0:
         raise ErrorPagos(
             "pagos_version_no_avanza",

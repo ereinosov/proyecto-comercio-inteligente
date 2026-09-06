@@ -35,8 +35,13 @@ def _sucursal(sesion, nombre):
     return s
 
 
-def _operador(sesion):
-    op = Operador(nombre=f"Op {uuid.uuid4().hex[:5]}", pin_hash="", es_encargado=False, activo=True)
+def _operador(sesion, id_sucursal):
+    # Enmienda v2.3.0: `operador` tiene `rol` e `id_sucursal` (sucursal fija) en vez de
+    # `es_encargado`. Un `cajero` sólo abre turno en su propia sucursal, de ahí el parámetro.
+    op = Operador(
+        nombre=f"Op {uuid.uuid4().hex[:5]}", pin_hash="", rol="cajero",
+        id_sucursal=id_sucursal, activo=True,
+    )
     sesion.add(op)
     sesion.flush()
     op.pin_hash = hashear_pin("1234", str(op.id_operador))
@@ -69,7 +74,7 @@ def _abrir_turno(id_operador, id_sucursal):
 def test_escenario_1_venta_mixta_con_producto_a_peso():
     s = SesionLocal()
     suc = _sucursal(s, "Quevedo Centro")
-    op = _operador(s)
+    op = _operador(s, suc.id_sucursal)
     unidad = _producto(s, es_granel=False, precio="1.7500")
     granel = _producto(s, es_granel=True, precio="7.3300")  # precio por kg impar
     s.commit()
@@ -116,7 +121,7 @@ def test_escenario_1_venta_mixta_con_producto_a_peso():
 def test_escenario_2_idempotencia_diez_reintentos():
     s = SesionLocal()
     suc = _sucursal(s, "Quevedo Centro")
-    op = _operador(s)
+    op = _operador(s, suc.id_sucursal)
     p = _producto(s)
     s.commit()
     id_turno = _abrir_turno(op.id_operador, suc.id_sucursal)
@@ -154,7 +159,7 @@ def test_escenario_2_idempotencia_diez_reintentos():
 def test_escenario_3_seleccion_de_lote_por_caducidad():
     s = SesionLocal()
     suc = _sucursal(s, "Quevedo Centro")
-    op = _operador(s)
+    op = _operador(s, suc.id_sucursal)
     p = _producto(s, lleva_caducidad=True)
     ahora = datetime.now(timezone.utc)
     # Lote B: entró hace una semana, caduca en un mes.
@@ -187,7 +192,7 @@ def test_escenario_3_seleccion_de_lote_por_caducidad():
 def test_escenario_4_saldo_negativo_y_reconstruccion():
     s = SesionLocal()
     suc = _sucursal(s, "Quevedo Centro")
-    op = _operador(s)
+    op = _operador(s, suc.id_sucursal)
     p = _producto(s)
     s.commit()
     id_turno = _abrir_turno(op.id_operador, suc.id_sucursal)
@@ -263,7 +268,7 @@ def test_escenario_5_traspaso_con_mercancia_en_transito():
 def test_escenario_6_reconciliacion_offline():
     s = SesionLocal()
     suc = _sucursal(s, "Quevedo Centro")
-    op = _operador(s)
+    op = _operador(s, suc.id_sucursal)
     p = _producto(s)
     s.commit()
     id_turno = _abrir_turno(op.id_operador, suc.id_sucursal)
@@ -293,7 +298,7 @@ def test_escenario_6_reconciliacion_offline():
 def test_escenario_7_consulta_no_atendida_en_dos_toques():
     s = SesionLocal()
     suc = _sucursal(s, "Quevedo Centro")
-    op = _operador(s)
+    op = _operador(s, suc.id_sucursal)
     p = _producto(s)
     s.commit()
     id_turno = _abrir_turno(op.id_operador, suc.id_sucursal)

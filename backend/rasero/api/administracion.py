@@ -5,9 +5,9 @@ Prefijo `/administracion`. Cada endpoint hace su propio `commit`; el servicio
 (`servicios/administracion.py`) no comitea — mismo patrón que `api/pagos.py` frente a
 `servicios/terminales_pago.py`.
 
-Autorización de escritura: `operador.es_encargado`, verificado en el servicio con el mismo
-mecanismo que `terminales_pago.py` / `cobertura_pago.py`. El `id_operador` viaja en el cuerpo,
-igual que en `POST /pagos/terminales`.
+Autorización de escritura: rol `encargado` o superior, verificado en el servicio por el
+mecanismo central `requiere_rol` (Principio VI, enmienda v2.3.0). El `id_operador` viaja en el
+cuerpo, igual que en `POST /pagos/terminales`.
 
 Estructura de respuesta y forma del error `{codigo, mensaje}`: unificadas con `api/clientes.py`
 y `api/pagos.py`.

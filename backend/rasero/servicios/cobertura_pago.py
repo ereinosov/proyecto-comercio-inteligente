@@ -19,6 +19,7 @@ from sqlalchemy.orm import Session
 from rasero.dominio.cobertura import cerrar_tramo_anterior, cobertura_en_fecha, cuota_no_atendida
 from rasero.dominio.pagos import hoy_local
 from rasero.errores import ErrorPagos
+from rasero.seguridad import requiere_rol
 from rasero.persistencia.modelos import (
     BitacoraAuditoria,
     CoberturaPago,
@@ -42,17 +43,6 @@ def _medio_o_404(sesion: Session, id_medio_pago: int) -> MedioPago:
         raise ErrorPagos("pagos_medio_no_existe", "Ese medio de pago no existe.", status_code=404)
     return medio
 
-
-def _encargado_o_error(sesion: Session, id_operador: int) -> Operador:
-    operador = sesion.get(Operador, id_operador)
-    if operador is None:
-        raise ErrorPagos("pagos_operador_no_existe", "Ese operador no existe.", status_code=404)
-    if not operador.es_encargado:
-        raise ErrorPagos(
-            "pagos_operador_no_encargado",
-            "Sólo un encargado puede cambiar qué medios de pago acepta una sucursal.",
-        )
-    return operador
 
 
 def listar_medios(sesion: Session) -> list[dict]:
@@ -80,7 +70,7 @@ def declarar_cobertura(
 ) -> CoberturaPago | None:
     _sucursal_o_404(sesion, id_sucursal)
     medio = _medio_o_404(sesion, id_medio_pago)
-    _encargado_o_error(sesion, id_operador)
+    requiere_rol(sesion, id_operador, "encargado")
 
     # Cierra el tramo vigente (fecha_hasta IS NULL) para este (medio, sucursal).
     tramo_vigente = sesion.execute(

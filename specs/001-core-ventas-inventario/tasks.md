@@ -271,35 +271,35 @@ puede usar; `admin` gestiona operadores.
 
 ### Línea base (antes de tocar el modelo)
 
-- [ ] T096 [US10] Correr la suite completa (`backend/.venv/Scripts/pytest tests`) y registrar el resultado como línea base en el mensaje de commit / PR: qué pasa hoy, antes del cambio de esquema
-- [ ] T097 [US10] Grep de línea base: listar toda referencia a `es_encargado` y a `_encargado_o_error` en `backend/` y `frontend/src/`, y todo endpoint sin ningún control de identidad de operador, para el resumen final (FR-057, spec §B4)
+- [X] T096 [US10] Correr la suite completa (`backend/.venv/Scripts/pytest tests`) y registrar el resultado como línea base en el mensaje de commit / PR: qué pasa hoy, antes del cambio de esquema
+- [X] T097 [US10] Grep de línea base: listar toda referencia a `es_encargado` y a `_encargado_o_error` en `backend/` y `frontend/src/`, y todo endpoint sin ningún control de identidad de operador, para el resumen final (FR-057, spec §B4)
 
 ### Migración de datos
 
-- [ ] T098 [US10] Migración de Alembic en `backend/migraciones/versions/` que: añade `operador.id_sucursal` (FK → `sucursal`, NOT NULL) y `operador.rol` (`TEXT NOT NULL CHECK (rol IN ('cajero','encargado','admin'))`); convierte datos con **comentario explícito de la regla**: `es_encargado=FALSE → 'cajero'`, `es_encargado=TRUE → 'encargado'`, ningún `admin`; deriva `id_sucursal` del último turno del operador o de la primera sucursal activa; elimina la columna `es_encargado`; incluye `downgrade()` que revierte (recrea `es_encargado`, `'encargado'/'admin' → TRUE`, resto `FALSE`, elimina `rol` e `id_sucursal`) (FR-054, FR-055, FR-056)
-- [ ] T099 [US10] Actualizar `backend/rasero/persistencia/modelos.py`: `Operador` gana `id_sucursal: Mapped[int]` (FK, nullable=False) y `rol: Mapped[str]` con `CheckConstraint`; se retira `es_encargado` (depende de T098)
+- [X] T098 [US10] Migración de Alembic en `backend/migraciones/versions/` que: añade `operador.id_sucursal` (FK → `sucursal`, NOT NULL) y `operador.rol` (`TEXT NOT NULL CHECK (rol IN ('cajero','encargado','admin'))`); convierte datos con **comentario explícito de la regla**: `es_encargado=FALSE → 'cajero'`, `es_encargado=TRUE → 'encargado'`, ningún `admin`; deriva `id_sucursal` del último turno del operador o de la primera sucursal activa; elimina la columna `es_encargado`; incluye `downgrade()` que revierte (recrea `es_encargado`, `'encargado'/'admin' → TRUE`, resto `FALSE`, elimina `rol` e `id_sucursal`) (FR-054, FR-055, FR-056)
+- [X] T099 [US10] Actualizar `backend/rasero/persistencia/modelos.py`: `Operador` gana `id_sucursal: Mapped[int]` (FK, nullable=False) y `rol: Mapped[str]` con `CheckConstraint`; se retira `es_encargado` (depende de T098)
 
 ### Backend — mecanismo central
 
-- [ ] T100 [US10] Extender `backend/rasero/seguridad.py` (NO duplicarlo) con `RANGO_ROL` (jerarquía `cajero`<`encargado`<`admin`) y `requiere_rol(sesion, id_operador, rol_minimo) -> Operador`: resuelve el operador, valida existencia y `activo`, valida `rol >= rol_minimo`; levanta el `ErrorDominio` apropiado con los códigos ya existentes del sistema (reutiliza `ErrorAdministracion` / `ErrorPagos` según el router; no inventa tipo nuevo) (FR-057; depende de T099)
-- [ ] T101 [US10] Factory de dependency de FastAPI en `backend/rasero/seguridad.py` (o `api/dependencias.py` si encaja mejor con el patrón): `exige_rol(rol_minimo)` devuelve una dependency que lee `id_operador` del cuerpo/query igual que hoy y llama `requiere_rol` (FR-057; depende de T100)
-- [ ] T102 [P] [US10] Reemplazar `_encargado_o_error` en `backend/rasero/servicios/administracion.py` por `requiere_rol(..., "encargado")`; eliminar la función local (FR-057, FR-058; depende de T100)
-- [ ] T103 [P] [US10] Ídem en `backend/rasero/servicios/cobertura_pago.py` (FR-057, FR-058; depende de T100)
-- [ ] T104 [P] [US10] Ídem en `backend/rasero/servicios/terminales_pago.py` (FR-057, FR-058; depende de T100)
-- [ ] T105 [US10] `backend/rasero/servicios/ventas.py` / anulación: la anulación de venta de turno cerrado pasa a `requiere_rol(..., "encargado")` (data-model.md, regla de autorización FR-049; depende de T100)
-- [ ] T106 [US10] Restricción de sucursal en `backend/rasero/servicios/turnos.py::abrir_turno`: si `operador.rol` ∈ {`cajero`,`encargado`} y `id_sucursal != operador.id_sucursal` → `ErrorDominio` `{codigo: "turno_sucursal_no_asignada", mensaje: "Este operador está asignado a [sucursal], no puede abrir turno en otra sucursal."}`; `admin` sin restricción (FR-060, FR-061; depende de T099)
+- [X] T100 [US10] Extender `backend/rasero/seguridad.py` (NO duplicarlo) con `RANGO_ROL` (jerarquía `cajero`<`encargado`<`admin`) y `requiere_rol(sesion, id_operador, rol_minimo) -> Operador`: resuelve el operador, valida existencia y `activo`, valida `rol >= rol_minimo`; levanta el `ErrorDominio` apropiado con los códigos ya existentes del sistema (reutiliza `ErrorAdministracion` / `ErrorPagos` según el router; no inventa tipo nuevo) (FR-057; depende de T099)
+- [X] T101 [US10] Factory de dependency de FastAPI en `backend/rasero/seguridad.py` (o `api/dependencias.py` si encaja mejor con el patrón): `exige_rol(rol_minimo)` devuelve una dependency que lee `id_operador` del cuerpo/query igual que hoy y llama `requiere_rol` (FR-057; depende de T100)
+- [X] T102 [P] [US10] Reemplazar `_encargado_o_error` en `backend/rasero/servicios/administracion.py` por `requiere_rol(..., "encargado")`; eliminar la función local (FR-057, FR-058; depende de T100)
+- [X] T103 [P] [US10] Ídem en `backend/rasero/servicios/cobertura_pago.py` (FR-057, FR-058; depende de T100)
+- [X] T104 [P] [US10] Ídem en `backend/rasero/servicios/terminales_pago.py` (FR-057, FR-058; depende de T100)
+- [X] T105 [US10] `backend/rasero/servicios/ventas.py` / anulación: la anulación de venta de turno cerrado pasa a `requiere_rol(..., "encargado")` (data-model.md, regla de autorización FR-049; depende de T100)
+- [X] T106 [US10] Restricción de sucursal en `backend/rasero/servicios/turnos.py::abrir_turno`: si `operador.rol` ∈ {`cajero`,`encargado`} y `id_sucursal != operador.id_sucursal` → `ErrorDominio` `{codigo: "turno_sucursal_no_asignada", mensaje: "Este operador está asignado a [sucursal], no puede abrir turno en otra sucursal."}`; `admin` sin restricción (FR-060, FR-061; depende de T099)
 
 ### Backend — gestión de operadores (admin-only)
 
-- [ ] T107 [US10] `backend/rasero/servicios/operadores.py`: `crear_operador`, `actualizar_operador` (nombre, rol, id_sucursal), `fijar_activo_operador`, todos tras `requiere_rol(..., "admin")`; valida sucursal existente y rol del ENUM; `listar_operadores_activos` devuelve `rol` e `id_sucursal` (no `pin_hash`) (FR-059; depende de T100)
-- [ ] T108 [US10] `backend/rasero/api/operadores.py`: `GET /operadores` devuelve `rol`/`id_sucursal`; `POST /operadores`, `PUT /operadores/{id}`, `POST /operadores/{id}/activo` con la dependency `exige_rol("admin")` (FR-059; depende de T101, T107)
+- [X] T107 [US10] `backend/rasero/servicios/operadores.py`: `crear_operador`, `actualizar_operador` (nombre, rol, id_sucursal), `fijar_activo_operador`, todos tras `requiere_rol(..., "admin")`; valida sucursal existente y rol del ENUM; `listar_operadores_activos` devuelve `rol` e `id_sucursal` (no `pin_hash`) (FR-059; depende de T100)
+- [X] T108 [US10] `backend/rasero/api/operadores.py`: `GET /operadores` devuelve `rol`/`id_sucursal`; `POST /operadores`, `PUT /operadores/{id}`, `POST /operadores/{id}/activo` con la dependency `exige_rol("admin")` (FR-059; depende de T101, T107)
 
 ### Backend — pruebas obligatorias (contrato + transición de estado, Principio III)
 
-- [ ] T109 [US10] `tests/integracion/test_autorizacion.py`: `requiere_rol` acepta/rechaza por jerarquía; un `cajero` y un `encargado` son rechazados en acciones de admin; un `encargado` puede administrar maestros; operador inactivo rechazado (FR-057, FR-058, FR-059)
-- [ ] T110 [US10] `tests/integracion/test_turno_sucursal.py`: `cajero`/`encargado` sólo abren turno en su sucursal (código y mensaje exactos); `admin` abre en cualquiera (FR-060, FR-061)
-- [ ] T111 [US10] `tests/integracion/test_migracion_operador.py` (o extensión de una suite existente): tras migrar la semilla, `Ana Cajera → cajero`, `Luis Encargado → encargado`, 0 `admin` automáticos, toda `id_sucursal` no nula (FR-056, SC-012)
-- [ ] T112 [US10] Actualizar las suites que asumían el modelo viejo (`tests/integracion/test_administracion.py`, `test_cobertura.py`, `test_terminales.py`, `tests/apoyo*.py`, `test_quickstart_001.py`): `Operador(es_encargado=…)` → `Operador(rol=…, id_sucursal=…)`. Documentar en el commit cuáles se tocaron y por qué (test que asumía el modelo viejo, no regresión)
+- [X] T109 [US10] `tests/integracion/test_autorizacion.py`: `requiere_rol` acepta/rechaza por jerarquía; un `cajero` y un `encargado` son rechazados en acciones de admin; un `encargado` puede administrar maestros; operador inactivo rechazado (FR-057, FR-058, FR-059)
+- [X] T110 [US10] `tests/integracion/test_turno_sucursal.py`: `cajero`/`encargado` sólo abren turno en su sucursal (código y mensaje exactos); `admin` abre en cualquiera (FR-060, FR-061)
+- [X] T111 [US10] `tests/integracion/test_migracion_operador.py` (o extensión de una suite existente): tras migrar la semilla, `Ana Cajera → cajero`, `Luis Encargado → encargado`, 0 `admin` automáticos, toda `id_sucursal` no nula (FR-056, SC-012)
+- [X] T112 [US10] Actualizar las suites que asumían el modelo viejo (`tests/integracion/test_administracion.py`, `test_cobertura.py`, `test_terminales.py`, `tests/apoyo*.py`, `test_quickstart_001.py`): `Operador(es_encargado=…)` → `Operador(rol=…, id_sucursal=…)`. Documentar en el commit cuáles se tocaron y por qué (test que asumía el modelo viejo, no regresión)
 
 ### Frontend — hook y ocultamiento
 
@@ -316,7 +316,7 @@ puede usar; `admin` gestiona operadores.
 
 ### Semilla
 
-- [ ] T120 [US10] `backend/rasero/semilla.py`: `Ana Cajera` con `rol="cajero"`, `id_sucursal=quevedo`; `Luis Encargado` con `rol="encargado"`, `id_sucursal=quevedo`; **nuevo** `Marta Administradora` con `rol="admin"`, `id_sucursal=quevedo`, `pin_hash` como los demás. Actualizar los `print` del resumen. Ídem cualquier `Operador(...)` en `semilla_reactivacion.py` u otras semillas
+- [X] T120 [US10] `backend/rasero/semilla.py`: `Ana Cajera` con `rol="cajero"`, `id_sucursal=quevedo`; `Luis Encargado` con `rol="encargado"`, `id_sucursal=quevedo`; **nuevo** `Marta Administradora` con `rol="admin"`, `id_sucursal=quevedo`, `pin_hash` como los demás. Actualizar los `print` del resumen. Ídem cualquier `Operador(...)` en `semilla_reactivacion.py` u otras semillas
 
 ### Cierre
 

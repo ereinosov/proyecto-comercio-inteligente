@@ -97,7 +97,8 @@ def actualizar_cliente(
     contacto: str | None = None,
     identificador: str | None = None,
 ) -> Cliente:
-    """Edición de un cliente ya registrado. NO requiere `es_encargado`: cualquier cajero puede
+    """Edición de un cliente ya registrado. NO requiere rol `encargado` (FR-063, enmienda
+    v2.3.0): cualquier cajero puede
     editar un cliente, igual que ya puede crearlo desde la venta. Un cliente anonimizado
     (FR-015/FR-016 de 002) no se edita: sus datos personales ya no existen. El `identificador`,
     si se provee, se valida (422) y se comprueba unicidad contra otros clientes activos (409).
