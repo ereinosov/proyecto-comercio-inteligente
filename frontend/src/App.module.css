@@ -32,12 +32,25 @@
 .pestanaActiva,
 .pestanaInactiva {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 8px 4px;
+  padding: 12px 6px;
   cursor: pointer;
+}
+
+/* Separador vertical real (no sólo margin/gap): línea de 1px en Borde, 24px de alto, centrada
+   verticalmente. Va entre "Venta" y el bloque de grupos, y entre el último grupo y
+   "Administración" — mismo criterio de "separadores claros" que ya usa el panel desplegable
+   interno entre opciones (La Regla del Grupo de Navegación, DESIGN.md). */
+.separador {
+  flex-shrink: 0;
+  align-self: center;
+  width: 1px;
+  height: 24px;
+  margin: 0 8px;
+  background: var(--color-borde);
 }
 
 .pestanaActiva {
@@ -61,11 +74,11 @@
   align-items: center;
   gap: 5px;
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 8px 4px;
+  padding: 12px 6px;
   cursor: pointer;
   color: var(--color-tinta-suave);
 }
@@ -105,13 +118,13 @@
 .opcion,
 .opcionActiva {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   text-align: left;
   background: transparent;
   border: none;
   /* Separador real de 1px en Borde entre cada opción, no sólo padding. */
   border-bottom: 1px solid var(--color-borde);
-  padding: 8px 12px;
+  padding: 10px 14px;
   cursor: pointer;
   color: var(--color-tinta-suave);
 }

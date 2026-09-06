@@ -192,6 +192,8 @@ export function App() {
           Venta
         </button>
 
+        <span className={estilos.separador} aria-hidden="true" />
+
         {GRUPOS.map((g) => (
           <GrupoNav
             key={g.etiqueta}
@@ -201,6 +203,8 @@ export function App() {
             onElegir={setPantalla}
           />
         ))}
+
+        <span className={estilos.separador} aria-hidden="true" />
 
         <button
           className={
