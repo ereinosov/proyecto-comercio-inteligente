@@ -1,6 +1,37 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.2.6 → 2.2.7
+Tipo de cambio: MENOR — amplía el sistema de diseño con reglas nuevas. No toca
+ningún principio, ni la tabla de Propiedad de Datos, ni ningún artefacto de
+funcionalidad (spec.md / plan.md / data-model.md / contracts): la enmienda vive
+enteramente en `DESIGN.md`, que la constitución ya declara como el documento
+derivado donde se ejecutan las decisiones de la sección "Sistema de Diseño".
+
+Motivo: amplía el sistema de diseño con reglas de identidad de negocio, estados
+vacíos, carga y componentes administrables — no reemplaza ninguna regla previa.
+
+Principios modificados: ninguno.
+Secciones añadidas: ninguna (la sección "Sistema de Diseño" queda igual; las
+reglas nuevas se registran en `DESIGN.md` v1.2.0).
+Secciones eliminadas: ninguna.
+
+Reglas nuevas en `DESIGN.md` v1.2.0 (todas aditivas): La Regla de la Identidad
+del Comercio, La Regla del Hueco que Enseña, La Regla del Pulso No el Brillo, La
+Regla del Ícono por Categoría, La Regla del Modal Administrable, La Regla del
+Filtro y la Página, La Regla del Grupo de Navegación.
+
+Puerta de sincronización de enmiendas (v2.2.0): esta enmienda no cita versiones
+en artefactos de funcionalidad porque no cambia ninguna regla que ellos citen;
+la única sincronización es `DESIGN.md` ↔ este historial, ya hecha en el mismo
+cambio.
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.2.5 → 2.2.6
 Tipo de cambio: PARCHE — amplía la entrada de `007-pagos-seguridad` en la
 tabla de Propiedad de Datos de 4 a 5 entidades, detectado al escribir su
@@ -140,6 +171,12 @@ Historial de versiones:
     `bitacora_auditoria`; detectada al escribir `research.md` de 007 en
     `/speckit-plan` (research.md #1); nueva viñeta de frontera
     001/007 sobre la `referencia_terminal_pago` opaca.
+  - 2.2.7 (2026-09-06) — amplía el sistema de diseño con reglas de identidad de
+    negocio, estados vacíos, carga y componentes administrables — no reemplaza
+    ninguna regla previa. Registrada en `DESIGN.md` v1.2.0 (siete reglas nuevas,
+    todas aditivas: Identidad del Comercio, Hueco que Enseña, Pulso No el Brillo,
+    Ícono por Categoría, Modal Administrable, Filtro y la Página, Grupo de
+    Navegación). No toca ningún principio ni la tabla de Propiedad de Datos.
 
 Artefactos de funcionalidad afectados: las citas que reclaman una versión
 vigente de la constitución ("constitución vX.Y.Z", "verificación contra la
@@ -609,4 +646,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.2.6 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-05
+**Versión**: 2.2.7 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-06

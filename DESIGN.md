@@ -47,6 +47,35 @@ components:
     rounded: "{rounded.analisis}"
 ---
 
+<!--
+INFORME DE IMPACTO — enmienda del sistema de diseño
+==================================================
+Cambio de versión: 1.1.0 → 1.2.0 (MENOR — amplía una guía existente con reglas
+nuevas; no elimina ni redefine ninguna regla previa, mismo criterio de versionado
+que la constitución).
+
+Reglas añadidas (todas aditivas, con su carácter y su razón, formato de las
+existentes):
+  - La Regla de la Identidad del Comercio (Components → Named Rules)
+  - La Regla del Hueco que Enseña (Components → Named Rules)
+  - La Regla del Pulso, No el Brillo (Components → Named Rules)
+  - La Regla del Ícono por Categoría (Colors → Named Rules, junto a La Regla del Ícono)
+  - La Regla del Modal Administrable (Components → Named Rules)
+  - La Regla del Filtro y la Página (Components → Named Rules)
+  - La Regla del Grupo de Navegación (Components → Named Rules)
+
+Reglas modificadas o eliminadas: ninguna.
+Secciones nuevas: "Historial de versiones del sistema de diseño" (pie).
+
+Sincronización con la constitución: la enmienda v2.2.7 de `constitution.md`
+registra este mismo cambio en su historial de versiones con la razón "amplía el
+sistema de diseño con reglas de identidad de negocio, estados vacíos, carga y
+componentes administrables — no reemplaza ninguna regla previa". El Principio V
+("Visible": el sistema de diseño es parte de la explicabilidad) y la sección
+"Sistema de Diseño" de la constitución siguen vigentes sin cambio; esta enmienda
+sólo añade reglas ejecutables bajo ellas.
+-->
+
 # Design System: Rasero
 
 ## Overview
@@ -119,6 +148,22 @@ exclusivo de la Sola Voz); varía de render entre sistema operativo y navegador 
 distinto en la máquina donde se construye y en la del evaluador, y esa diferencia no es defendible—;
 y su volumen, su sombra y su brillo rompen la superficie plana de 2px/6px sin sombras del rasero.
 Aplica a los siete módulos, presentes y futuros, sin excepción.
+
+**La Regla del Ícono por Categoría.** En toda superficie donde se liste `Producto` —el catálogo de
+Venta, la lista de Precios, la lista de Administración de productos— cada fila o bloque lleva un
+ícono SVG de línea simple (stroke, sin relleno) asociado a su `id_categoria`, **nunca** una foto
+del producto. Se dibuja un set corto de 4 a 6 íconos genéricos por familia de categoría, derivado
+de las categorías reales sembradas en `backend/rasero/semilla_catalogo.py` —hoy Abarrotes (granos
+y secos), Bebidas, Frescos (refrigerados/perecederos), Limpieza— más un ícono "otros" de respaldo
+para cualquier categoría futura sin familia asignada. El carácter es el mismo que el de La Regla
+del Ícono: una sola línea, sin color propio, sin volumen; el ícono orienta la vista por familia,
+no decora. **El ícono vive puramente en el frontend**, mapeado por `id_categoria`: NO añade ningún
+campo a `producto` ni a `categoria` —esas tablas son de 001 y no se amplían desde una decisión
+presentacional— y una categoría sin mapa cae al ícono "otros" en lugar de romper la fila.
+**Razón**: una foto de producto en una lista de decisión gerencial pesa, tarda en cargar, varía de
+encuadre entre productos y compite con las cifras; un glifo de familia da el mismo golpe de
+reconocimiento ("esto es limpieza, esto es fresco") sin ninguno de esos costos, y no obliga a
+mantener un activo de imagen por SKU.
 
 ## Typography
 
@@ -350,6 +395,91 @@ dinero no usa el Verde Rasero ni una sola vez. "Una vez por pantalla" es un máx
 que cada pantalla deba alcanzar — Clientes.tsx es la primera superficie del sistema en quedar
 en cero apariciones, y es el comportamiento correcto, no una omisión.
 
+**La Regla de la Identidad del Comercio.** La pantalla de apertura de turno invierte la jerarquía
+habitual de un login. El elemento de mayor peso visual de la tarjeta es el **nombre de la
+sucursal** —dato real de `sucursal.nombre`, nunca un literal en JSX— compuesto en Source Serif 4
+sobre un bloque de cabecera con fondo Tinta (#1B2621) y texto en Superficie Base. El wordmark de
+Rasero deja de presidir la tarjeta: baja a marca de sistema pequeña y discreta **encima** de la
+tarjeta, nunca dentro de ella. Bajo el nombre de sucursal va sólo el contexto real disponible: el
+nombre de la caja y la zona horaria (`sucursal.zona_horaria`). Si existe un turno anterior en esa
+sucursal, se muestra "Última apertura: [fecha/hora relativa]" leída del `instante_apertura` del
+turno más reciente de esa sucursal; si no hay ninguno, esa línea se omite —nunca un placeholder
+falso. Esta regla **no** crea ninguna entidad `Negocio` ni `Empresa`: el nombre de sucursal es el
+único dato de negocio real que la pantalla muestra. Cualquier otro texto de marca del comercio que
+aparezca en el frontend (p. ej. "Despensa Los Ríos" como pie de datos de demostración) DEBE venir
+de una variable de entorno de configuración del frontend, nunca de un literal en JSX ni de una
+tabla. **Razón**: quien abre turno no necesita que le recuerden qué software usa —lo abre veinte
+veces por semana—; necesita confirmar de un vistazo *en qué sucursal y caja está entrando*, porque
+ese es el dato que ata todas sus ventas del turno. La forma dice cuál es la decisión.
+
+**La Regla del Hueco que Enseña.** Todo estado vacío —ninguna selección hecha, ninguna fila que
+mostrar— se compone de tres partes y nunca de una sola línea de texto plano: (1) un ícono propio
+en SVG de línea simple (stroke, sin relleno, color Borde o Tinta Suave), nunca un ícono de librería
+genérico de "empty state"; (2) un título corto en el registro tipográfico de la pantalla; y (3)
+una frase que explica **qué** aparecerá ahí cuando haya datos —nunca "no hay nada" ni "selecciona
+algo". Aplica al panel de detalle de Clientes sin selección, a toda lista nueva de Administración
+sin registros y a cualquier lista existente que hoy muestre un placeholder plano de una línea.
+**Razón**: un hueco es la primera pantalla que ve un evaluador que no conoce el sistema; decirle
+qué va a vivir ahí es más barato que un manual y convierte el vacío en una promesa en lugar de un
+error.
+
+**La Regla del Pulso, No el Brillo.** Los estados de carga usan un esqueleto compuesto de bloques
+rectangulares en #E4E9E4, con el **mismo radio** (2px o 6px según el registro de la pantalla que
+reemplazan) y el **mismo layout aproximado** del contenido real que va a cargar —nunca un layout
+genérico de barras iguales. La animación es exclusivamente una oscilación de opacidad entre 100% y
+55%, 1.6s, ease-in-out, infinita. Queda **PROHIBIDO** cualquier "shimmer" o gradiente que cruce el
+bloque de izquierda a derecha: sería importar un gradiente, y los gradientes están prohibidos en
+todo el sistema (La Regla del Filo, No la Sombra). Aplica a cualquier pantalla que hoy no muestre
+nada mientras espera al backend. **Razón**: el esqueleto honesto anticipa la forma de lo que viene
+—cuántas filas, de qué ancho— y hace que la llegada del dato no reacomode la página; el shimmer
+sólo llama la atención sobre la espera.
+
+**La Regla del Modal Administrable.** Todo formulario de creación o edición de un dato maestro
+(Sucursal, Producto, Categoría, Zona de exhibición, Medio de pago, y la edición de Cliente) usa un
+**único componente reutilizable** —`frontend/src/componentes/ModalAdministrable.tsx`— y nunca un
+formulario ad-hoc por pantalla. Estructura: velo de fondo en Tinta al 45% de opacidad sobre el
+contenido subyacente (nunca negro puro); tarjeta centrada de máximo 420px de ancho, radio 6px
+—siempre registro de Análisis, porque administrar un maestro es una decisión gerencial, no una
+operación de caja—; header en Superficie Alta con el título en Source Serif 4 y un botón de cierre
+circular a la derecha; cuerpo en Superficie Base con los campos; footer en Superficie Alta con
+"Cancelar" (borde, sin relleno) y la acción primaria a la derecha. Sin sombra en ningún borde: la
+separación velo / tarjeta / header-footer / cuerpo es puro contraste de tono. **Razón**: cinco
+pantallas de administración con cinco formularios distintos divergen en un mes; un modal único hace
+que "crear un maestro" se vea y se comporte igual en todo el sistema, y que el atajo "+ Crear
+producto" desde Venta sea literalmente el mismo componente que la pantalla de Administración.
+
+**La Regla del Filtro y la Página.** Toda lista que pueda crecer sin límite conocido —Clientes,
+cupones emitidos, bitácora de pagos, cualquier lista de Administración— usa **paginación real**,
+nunca scroll infinito ni carga completa. El componente `frontend/src/componentes/Paginador.tsx`
+recibe página actual, total de páginas y un callback de cambio; se ve como el texto "Página X de Y"
+en Tinta Suave con flechas anterior/siguiente en SVG de línea simple (chevron, sin relleno),
+**deshabilitadas visualmente** (opacidad reducida, no ocultas) en los extremos. Tamaño de página
+por defecto: 20. El patrón baja al backend: todo endpoint GET de listado que hoy devuelva todos los
+registros acepta `pagina` y `tamano_pagina` (convención de parámetro opcional, como `id_sucursal`)
+y devuelve además el total de registros para que el frontend calcule el total de páginas. **Razón**:
+una lista sin techo es rápida con los datos de demostración y se cae en producción; fijar la
+paginación como regla —y no como parche por pantalla— evita que cada lista nueva reabra la
+discusión.
+
+**La Regla del Grupo de Navegación.** El nav principal deja de ser una fila plana de pestañas.
+"Venta" queda siempre visible y a un clic, sin agrupar —es la pantalla de uso más frecuente. El
+resto se organiza en cuatro grupos con menú desplegable: **Inventario** (Conteo, Entradas,
+Traspasos, Capital), **Precios y demanda** (Precios, Competencia, Pronóstico), **Clientes y promos**
+(Clientes, Promociones) y **Caja y seguridad** (Arqueo, Caja y fraude, Terminales, Pagos); más un
+quinto elemento, **Administración**, que no es grupo sino una pantalla propia, al final de la barra.
+Cada grupo es texto + un chevron SVG de línea simple de 10px que gira 180° al abrir con una
+transición de 150ms —animación de mecanismo de interfaz, no decorativa, así que no contradice la
+restricción de animación del registro de Análisis. El panel desplegable abre debajo, en Superficie
+Alta, borde 1px en Borde, radio 2px (es navegación/estructura, no un bloque de Análisis), con
+**separadores de 1px en Borde** entre cada opción —una línea real, no sólo padding— y hover en
+Superficie Base por opción. Si la pantalla activa está dentro de un grupo, el **texto del grupo**
+—no la opción— lleva el mismo subrayado de 2px en Tinta que marca hoy la pestaña activa, para no
+perder contexto con el desplegable cerrado. El operador con turno abierto (`turno.id_operador`
+resuelto a nombre) se muestra en la barra, alineado a la derecha, en Tinta Suave. **Razón**:
+catorce pestañas planas obligan a leer toda la fila cada vez; cuatro grupos más Venta caben de un
+vistazo y agrupan por la pregunta que trae al usuario ("vengo a algo de inventario"), y el nombre
+del operador en la barra responde "¿de quién es este turno?" sin abrir otra pantalla.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -377,3 +507,34 @@ en cero apariciones, y es el comportamiento correcto, no una omisión.
 - **Don't** animar la aparición de un dato de contexto (como un resumen o valor) que no
   confirma una acción del usuario — la animación se reserva para confirmaciones y revelaciones
   deliberadas, nunca para decorar la llegada de un dato.
+- **Don't** usar "shimmer" ni gradiente que cruce un esqueleto de carga (La Regla del Pulso, No
+  el Brillo): el esqueleto sólo oscila su opacidad.
+- **Don't** mostrar un estado vacío como una sola línea de texto plano — usa ícono, título y la
+  frase de qué aparecerá ahí (La Regla del Hueco que Enseña).
+- **Don't** poner una foto de producto en una lista: cada fila lleva el ícono SVG de su familia de
+  categoría (La Regla del Ícono por Categoría).
+- **Don't** escribir un formulario de alta o edición de un dato maestro por pantalla — se usa el
+  único `ModalAdministrable` (La Regla del Modal Administrable).
+- **Don't** hardcodear el nombre del comercio de demostración en JSX ni en una tabla; viene de
+  `sucursal.nombre` real o de una variable de entorno del frontend (La Regla de la Identidad del
+  Comercio).
+
+## Historial de versiones del sistema de diseño
+
+`DESIGN.md` lo deriva el agente documenter de Impeccable a partir de la interfaz ya construida, no
+de intenciones previas (constitución, "Sistema de Diseño"). Su historial de versiones sigue el
+mismo versionado semántico que la constitución: MENOR para una regla o sección nueva, PARCHE para
+una aclaración sin cambio de significado.
+
+- **1.0.0** (2026-09-04) — derivación inicial por el agente documenter, a partir de las primeras
+  pantallas de `001-core-ventas-inventario`: dos registros (Operación 2px / Análisis 6px), paleta
+  de comercio físico, cifras tabulares, cero sombras, tres portadores de incertidumbre.
+- **1.1.0** (2026-09-05) — **La Regla del Ícono** (SVG propio o de una única librería coherente,
+  nunca un emoji), añadida tras una auditoría retroactiva de `001`–`005` sin hallazgos.
+- **1.2.0** (2026-09-06) — esta enmienda: seis reglas nuevas —**Identidad del Comercio**, **Hueco
+  que Enseña**, **Pulso, No el Brillo**, **Modal Administrable**, **Filtro y la Página**, **Grupo
+  de Navegación**— más **La Regla del Ícono por Categoría** junto a La Regla del Ícono. Todas
+  aditivas: no elimina ni redefine ninguna regla previa. Sincronizada con la enmienda **v2.2.7**
+  de la constitución.
+
+**Versión**: 1.2.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-06
