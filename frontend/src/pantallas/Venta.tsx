@@ -12,6 +12,7 @@ import { ErrorApi } from "../servicios/clienteHttp";
 import { listarCategorias, listarProductos, type Categoria, type Producto } from "../servicios/productos";
 import { listarSucursales } from "../servicios/sucursales";
 import { IconoCategoria } from "../componentes/IconoCategoria";
+import { SelectorProducto } from "../componentes/SelectorProducto";
 import { CrearProductoModal } from "../componentes/CrearProductoModal";
 import { type Turno } from "../servicios/turnos";
 import {
@@ -105,7 +106,7 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
 
   function iniciarAgregarFila() {
     setAgregando(true);
-    setIdProductoNuevo(productos[0]?.id_producto ?? "");
+    setIdProductoNuevo("");
     setUnidades("");
     setKg("");
   }
@@ -355,20 +356,13 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
                 <td colSpan={4}>
                   <div className={estilos.formularioFila}>
                     <div className={estilos.campoFila}>
-                      <label htmlFor="producto-nuevo">Producto</label>
-                      <select
-                        id="producto-nuevo"
-                        className={estilos.selectProducto}
-                        value={idProductoNuevo}
-                        onChange={(e) => setIdProductoNuevo(Number(e.target.value))}
-                        autoFocus
-                      >
-                        {productos.map((p) => (
-                          <option key={p.id_producto} value={p.id_producto}>
-                            {p.nombre}
-                          </option>
-                        ))}
-                      </select>
+                      <label>Producto</label>
+                      <SelectorProducto
+                        idSucursal={turno.id_sucursal}
+                        autoAbrir
+                        seleccionado={productoNuevo ?? null}
+                        onSeleccionar={(p) => setIdProductoNuevo(p?.id_producto ?? "")}
+                      />
                       {esEncargado && (
                         <button
                           type="button"

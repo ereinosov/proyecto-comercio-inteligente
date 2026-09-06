@@ -17,10 +17,18 @@ interface Props {
   idSucursal: number;
   seleccionado: Producto | null;
   onSeleccionar: (producto: Producto | null) => void;
+  /** Abre el buscador de entrada, sin el paso previo "+ Elegir producto". Para el flujo de
+   *  caja, de mayor frecuencia: el cajero ya quiere teclear el nombre. */
+  autoAbrir?: boolean;
 }
 
-export function SelectorProducto({ idSucursal, seleccionado, onSeleccionar }: Props) {
-  const [abierto, setAbierto] = useState(false);
+export function SelectorProducto({
+  idSucursal,
+  seleccionado,
+  onSeleccionar,
+  autoAbrir = false,
+}: Props) {
+  const [abierto, setAbierto] = useState(autoAbrir);
   const [busqueda, setBusqueda] = useState("");
   const [catalogo, setCatalogo] = useState<Producto[]>([]);
 
@@ -77,6 +85,14 @@ export function SelectorProducto({ idSucursal, seleccionado, onSeleccionar }: Pr
         placeholder="Buscar por nombre…"
         value={busqueda}
         onChange={(e) => setBusqueda(e.target.value)}
+        onKeyDown={(e) => {
+          // Selección rápida: Enter elige el primer resultado, para no añadir pasos frente
+          // al <select> anterior cuando el cajero ya sabe el nombre exacto.
+          if (e.key === "Enter" && resultados.length > 0) {
+            e.preventDefault();
+            elegir(resultados[0]);
+          }
+        }}
         autoFocus
       />
       <ul className={estilos.resultados}>
