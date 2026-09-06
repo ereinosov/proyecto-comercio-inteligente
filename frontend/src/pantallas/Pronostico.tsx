@@ -19,10 +19,21 @@ import estilos from "./Pronostico.module.css";
 
 type Vista = "pronostico" | "serie" | "validacion" | "sustitutos";
 
+// BLOQUE 3 — "Validación de la descensura" es herramienta de QA/defensa oral (expone FR-009,
+// semilla sintética, código de requisito): no corresponde a la superficie de un encargado real.
+// Se deja fuera de la navegación de producto y solo se muestra si se entra por URL directa
+// (#pronostico/validacion-descensura). Ver quickstart.md de 004.
+const RUTA_QA_DESCENSURA = "pronostico/validacion-descensura";
+const qaDescensuraActiva = () =>
+  typeof window !== "undefined" &&
+  window.location.hash.replace(/^#\/?/, "") === RUTA_QA_DESCENSURA;
+
 const VISTAS: { clave: Vista; texto: string }[] = [
   { clave: "pronostico", texto: "Pronóstico" },
   { clave: "serie", texto: "Serie de demanda" },
-  { clave: "validacion", texto: "Validación de la descensura" },
+  ...(qaDescensuraActiva()
+    ? [{ clave: "validacion" as Vista, texto: "Validación de la descensura" }]
+    : []),
   { clave: "sustitutos", texto: "Sustitutos" },
 ];
 
@@ -31,13 +42,15 @@ export function Pronostico({ idSucursal }: { idSucursal: number }) {
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [idSeleccionado, setIdSeleccionado] = useState<number | null>(null);
-  const [vista, setVista] = useState<Vista>("pronostico");
+  const [vista, setVista] = useState<Vista>(
+    qaDescensuraActiva() ? "validacion" : "pronostico"
+  );
 
   useEffect(() => {
     setCargando(true);
     setError(null);
     setIdSeleccionado(null);
-    setVista("pronostico");
+    setVista(qaDescensuraActiva() ? "validacion" : "pronostico");
     listarProductos(idSucursal)
       .then(setProductos)
       .catch((e) =>
