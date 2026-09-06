@@ -20,6 +20,8 @@ import {
 import { EstadoVacio } from "../componentes/EstadoVacio";
 import { EsqueletoLista } from "../componentes/Esqueleto";
 import { ModalAdministrable } from "../componentes/ModalAdministrable";
+import { CampoIdentificador } from "../componentes/CampoIdentificador";
+import { Obligatorio } from "../componentes/Obligatorio";
 import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import estilos from "./Clientes.module.css";
 
@@ -285,10 +287,12 @@ export function Clientes() {
           onGuardar={guardarEdicion}
           guardando={guardando}
           error={errorEdicion}
-          primariaHabilitada={form.nombre.trim() !== "" && form.fecha_nacimiento !== ""}
+          primariaHabilitada={form.nombre.trim() !== ""}
         >
           <label className={estilos.campoModal}>
-            <span>Nombre</span>
+            <span>
+              Nombre <Obligatorio />
+            </span>
             <input
               value={form.nombre}
               onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
@@ -296,7 +300,7 @@ export function Clientes() {
             />
           </label>
           <label className={estilos.campoModal}>
-            <span>Fecha de nacimiento</span>
+            <span>Fecha de nacimiento (opcional)</span>
             <input
               type="date"
               value={form.fecha_nacimiento}
@@ -310,17 +314,11 @@ export function Clientes() {
               onChange={(e) => setForm((f) => ({ ...f, contacto: e.target.value }))}
             />
           </label>
-          <label className={estilos.campoModal}>
-            <span>Cédula o RUC (opcional)</span>
-            <input
-              inputMode="numeric"
-              maxLength={13}
-              value={form.identificador}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, identificador: e.target.value.replace(/\D/g, "") }))
-              }
-            />
-          </label>
+          <CampoIdentificador
+            value={form.identificador}
+            onChange={(d) => setForm((f) => ({ ...f, identificador: d }))}
+            claseCampo={estilos.campoModal}
+          />
         </ModalAdministrable>
       )}
     </div>

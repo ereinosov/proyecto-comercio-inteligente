@@ -25,6 +25,8 @@ import {
   type ClienteResumen,
 } from "../servicios/clientes";
 import { ModalAdministrable } from "./ModalAdministrable";
+import { CampoIdentificador } from "./CampoIdentificador";
+import { Obligatorio } from "./Obligatorio";
 import estilos from "./IdentificarCliente.module.css";
 
 export interface ClienteSeleccionado {
@@ -166,7 +168,9 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
           primariaHabilitada={form.nombre.trim() !== ""}
         >
           <label className={estilos.campoModal}>
-            <span>Nombre</span>
+            <span>
+              Nombre <Obligatorio />
+            </span>
             <input
               value={form.nombre}
               onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
@@ -181,17 +185,11 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
               onChange={(e) => setForm((f) => ({ ...f, fecha_nacimiento: e.target.value }))}
             />
           </label>
-          <label className={estilos.campoModal}>
-            <span>Cédula o RUC (opcional)</span>
-            <input
-              inputMode="numeric"
-              maxLength={13}
-              value={form.identificador}
-              onChange={(e) =>
-                setForm((f) => ({ ...f, identificador: e.target.value.replace(/\D/g, "") }))
-              }
-            />
-          </label>
+          <CampoIdentificador
+            value={form.identificador}
+            onChange={(d) => setForm((f) => ({ ...f, identificador: d }))}
+            claseCampo={estilos.campoModal}
+          />
         </ModalAdministrable>
       )}
     </>

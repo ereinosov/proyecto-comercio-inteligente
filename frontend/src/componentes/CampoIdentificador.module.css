@@ -1,0 +1,15 @@
+/* Ayuda permanente y validación en vivo del campo "Cédula o RUC". El texto de ayuda es
+   siempre visible (Tinta Suave), no un tooltip que haya que descubrir. El error en vivo va en
+   Crítico y aparece sólo cuando la longitud ya llegó a 10 o 13 dígitos y el valor no valida. */
+
+.ayuda {
+  font-family: var(--tipografia-operacion);
+  font-size: 11px;
+  color: var(--color-tinta-suave);
+}
+
+.error {
+  font-family: var(--tipografia-operacion);
+  font-size: 11px;
+  color: var(--color-critico);
+}

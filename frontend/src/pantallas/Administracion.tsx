@@ -20,6 +20,7 @@ import { EstadoVacio } from "../componentes/EstadoVacio";
 import { EsqueletoLista } from "../componentes/Esqueleto";
 import { IconoCategoria } from "../componentes/IconoCategoria";
 import { ModalAdministrable } from "../componentes/ModalAdministrable";
+import { Obligatorio } from "../componentes/Obligatorio";
 import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
@@ -267,6 +268,13 @@ export function Administracion({ idOperador, esEncargado }: Props) {
 
   const columnas = useMemo(() => descripcionFila(entidad), [entidad]);
 
+  // Un campo obligatorio (no `opcional`, no booleano —los booleanos siempre tienen valor—)
+  // vacío deshabilita la acción primaria del modal. Mismo patrón que Cliente
+  // (`primariaHabilitada={form.nombre.trim() !== ""}`), extendido a los cinco maestros.
+  const obligatoriosLlenos = vista.campos.every(
+    (c) => c.opcional || c.tipo === "bool" || String(valores[c.clave] ?? "").trim() !== "",
+  );
+
   return (
     <div className={estilos.pantalla}>
       <div className={estilos.encabezado}>
@@ -319,8 +327,8 @@ export function Administracion({ idOperador, esEncargado }: Props) {
           <table className={estilos.tabla}>
             <thead>
               <tr>
-                {columnas.map((c) => (
-                  <th key={c}>{c}</th>
+                {columnas.map((c, i) => (
+                  <th key={`${entidad}-col-${i}`}>{c}</th>
                 ))}
                 <th>Estado</th>
                 <th aria-label="Acciones" />
@@ -368,6 +376,7 @@ export function Administracion({ idOperador, esEncargado }: Props) {
           onGuardar={guardar}
           guardando={guardando}
           error={errorModal}
+          primariaHabilitada={obligatoriosLlenos}
         >
           {vista.campos.map((c) => (
             <label key={c.clave} className={estilos.campo}>
@@ -382,7 +391,9 @@ export function Administracion({ idOperador, esEncargado }: Props) {
                 </span>
               ) : (
                 <>
-                  <span className={estilos.campoEtiqueta}>{c.etiqueta}</span>
+                  <span className={estilos.campoEtiqueta}>
+                    {c.etiqueta} {!c.opcional && <Obligatorio />}
+                  </span>
                   {c.tipo === "categoria" ? (
                     <select
                       className={estilos.entrada}
@@ -449,8 +460,8 @@ export function Administracion({ idOperador, esEncargado }: Props) {
                 <strong>conserva todo su historial</strong>. Hoy tiene:
               </p>
               <ul className={estilos.listaDeps}>
-                {aDesactivar.deps.map((d) => (
-                  <li key={d.descripcion}>
+                {aDesactivar.deps.map((d, i) => (
+                  <li key={`dep-${i}`}>
                     <strong>{d.conteo}</strong> {d.descripcion}
                   </li>
                 ))}

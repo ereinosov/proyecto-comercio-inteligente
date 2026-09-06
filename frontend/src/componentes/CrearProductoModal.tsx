@@ -10,6 +10,7 @@
 
 import { useEffect, useState } from "react";
 import { ModalAdministrable } from "./ModalAdministrable";
+import { Obligatorio } from "./Obligatorio";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { crearMaestro, type ProductoMaestro } from "../servicios/administracion";
 import { listarCategorias, type Categoria } from "../servicios/productos";
@@ -65,7 +66,7 @@ export function CrearProductoModal({ idOperador, onCerrar, onCreado }: Props) {
       primariaHabilitada={nombre.trim() !== "" && precio.trim() !== ""}
     >
       <label className={estilos.campo}>
-        <span className={estilos.campoEtiqueta}>Nombre</span>
+        <span className={estilos.campoEtiqueta}>Nombre <Obligatorio /></span>
         <input
           className={estilos.entrada}
           value={nombre}
@@ -89,7 +90,7 @@ export function CrearProductoModal({ idOperador, onCerrar, onCreado }: Props) {
         </select>
       </label>
       <label className={estilos.campo}>
-        <span className={estilos.campoEtiqueta}>Precio base de venta</span>
+        <span className={estilos.campoEtiqueta}>Precio base de venta <Obligatorio /></span>
         <input
           className={estilos.entrada}
           inputMode="decimal"

@@ -1,0 +1,7 @@
+/* Indicador único de campo obligatorio en todo formulario del sistema: un "*" en Crítico
+   junto a la etiqueta. Un solo patrón, aplicado igual en Cliente y en Administración. */
+
+.marca {
+  color: var(--color-critico);
+  font-family: var(--tipografia-operacion);
+}
