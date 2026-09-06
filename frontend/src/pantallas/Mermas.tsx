@@ -12,6 +12,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { SelectorProducto } from "../componentes/SelectorProducto";
+import { MermasPorCausaGrafico } from "../componentes/graficos/MermasPorCausaGrafico";
 import type { Producto } from "../servicios/productos";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
@@ -86,6 +87,8 @@ export function Mermas({ idSucursal, idOperador }: { idSucursal: number; idOpera
   return (
     <div className={estilos.contenido}>
       {error && <p className={estilos.error}>{error}</p>}
+
+      <MermasPorCausaGrafico idSucursal={idSucursal} />
 
       <section className={estilos.bloque}>
         <h2 className={estilos.subtitulo}>Declarar una merma fuera de conteo</h2>

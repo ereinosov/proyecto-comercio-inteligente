@@ -153,6 +153,21 @@ def listar_mermas(
     )
 
 
+@router.get("/mermas/resumen")
+def resumen_mermas(
+    id_sucursal: int,
+    desde: date | None = None,
+    hasta: date | None = None,
+    sesion: Session = Depends(obtener_sesion),
+) -> list[dict]:
+    """US5: valoración de merma agregada por semana y por causa, para el gráfico de Mermas.
+    Ruta literal `mermas/resumen` — no colisiona con `/caja/mermas`.
+    """
+    return servicio_mermas.resumen_mermas_por_causa(
+        sesion, id_sucursal=id_sucursal, desde=desde, hasta=hasta
+    )
+
+
 @router.get("/alertas-caducidad")
 def alertas_caducidad(
     id_sucursal: int | None = None,

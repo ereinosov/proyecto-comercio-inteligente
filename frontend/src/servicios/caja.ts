@@ -187,6 +187,27 @@ export function listarMermas(
   return clienteHttp.get<DesgloseMermas>(`/caja/mermas?${params}`);
 }
 
+/** US5: valoración de merma agregada por semana y por causa (para el gráfico). */
+export interface ResumenMermaSemana {
+  periodo: string;
+  vencimiento: number;
+  dano: number;
+  robo_externo: number;
+  error_conteo: number;
+  merma_granel: number;
+  sin_valor: number;
+}
+
+export function obtenerResumenMermas(
+  idSucursal: number,
+  opciones: { desde?: string; hasta?: string } = {}
+): Promise<ResumenMermaSemana[]> {
+  const params = new URLSearchParams({ id_sucursal: String(idSucursal) });
+  if (opciones.desde) params.set("desde", opciones.desde);
+  if (opciones.hasta) params.set("hasta", opciones.hasta);
+  return clienteHttp.get<ResumenMermaSemana[]>(`/caja/mermas/resumen?${params}`);
+}
+
 export function listarAlertasCaducidad(
   idSucursal: number,
   dentroDeDias?: number

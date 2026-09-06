@@ -327,6 +327,55 @@ def listar_mermas(
     }
 
 
+# Causas reales del ENUM `merma.causa` (sin `pendiente_clasificar`, que no es una causa sino un
+# estado de "aún sin clasificar"). Cada una es una serie del gráfico de US5.
+CAUSAS_GRAFICO = ("vencimiento", "dano", "robo_externo", "error_conteo", "merma_granel")
+
+
+def resumen_mermas_por_causa(
+    sesion: Session, *, id_sucursal: int, desde=None, hasta=None
+) -> list[dict]:
+    """US5 de 006: valoración de merma agregada por SEMANA y por causa, para el gráfico de la
+    pantalla de Mermas. Agrupa por semana (nunca por día — el cuadre de caja es frecuente pero
+    no diario, principio de 006). `pendiente_clasificar` queda fuera: no es una causa.
+
+    Las mermas sin `valoracion` calculable NO suman al alto de la barra (misma honestidad que
+    `listar_mermas`, que ya separa `con_valor_no_calculable`); se cuentan aparte en
+    `sin_valor` por semana.
+    """
+    _sucursal_o_404(sesion, id_sucursal)
+    semana = func.date_trunc("week", Merma.periodo_hasta)
+
+    consulta = (
+        select(
+            semana.label("semana"),
+            Merma.causa,
+            func.coalesce(func.sum(Merma.valoracion), 0).label("valor"),
+            func.count(Merma.id_merma).label("n"),
+            func.count().filter(Merma.valoracion.is_(None)).label("sin_valor"),
+        )
+        .where(Merma.id_sucursal == id_sucursal, Merma.causa != "pendiente_clasificar")
+        .group_by(semana, Merma.causa)
+        .order_by(semana)
+    )
+    if desde is not None:
+        consulta = consulta.where(Merma.periodo_hasta >= desde)
+    if hasta is not None:
+        consulta = consulta.where(Merma.periodo_hasta <= hasta)
+
+    por_semana: dict[str, dict] = {}
+    for fila in sesion.execute(consulta).all():
+        clave = fila.semana.date().isoformat()
+        bucket = por_semana.setdefault(
+            clave,
+            {"periodo": clave, **{c: 0.0 for c in CAUSAS_GRAFICO}, "sin_valor": 0},
+        )
+        bucket[fila.causa] = float(fila.valor)
+        bucket["sin_valor"] += int(fila.sin_valor)
+
+    return [por_semana[k] for k in sorted(por_semana)]
+
+
 def alertas_caducidad(
     sesion: Session, *, id_sucursal: int, dentro_de_dias: int | None = None
 ) -> list[dict]:

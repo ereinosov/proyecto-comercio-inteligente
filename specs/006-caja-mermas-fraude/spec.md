@@ -266,6 +266,37 @@ persona.
 
 ---
 
+### User Story 5 - Visualizar las mermas por causa en el tiempo (Priority: P5)
+
+El encargado abre la pantalla de Mermas y ve, antes de la lista de mermas individuales, un
+gráfico de barras apiladas por semana en el que cada tramo de la barra es una causa
+(`vencimiento`, `daño`, `robo externo`, `error de conteo`, `merma de granel`). Así ve de un
+vistazo qué causa domina la pérdida y cómo evoluciona semana a semana.
+
+**Why this priority**: es una lectura pura sobre `merma` (User Story 2). No escribe ni recalcula
+nada; es aditiva y no reabre el checkpoint de las historias 1–4. El backend agrega la serie por
+semana y causa; el frontend solo la dibuja.
+
+**Independent Test**: con mermas registradas en varias semanas y de varias causas, se abre
+Mermas y se verifica que el gráfico muestra una barra apilada por semana con un tramo por causa,
+que las mermas sin valoración calculable no inflan las barras (se cuentan aparte) y que el eje
+temporal es semanal, nunca diario.
+
+**Acceptance Scenarios**:
+
+1. **Given** mermas de varias causas en varias semanas, **When** el encargado abre Mermas,
+   **Then** ve un gráfico de barras apiladas por semana con un tramo por causa y una leyenda, y
+   la lista de mermas individuales sigue debajo.
+2. **Given** que las causas no tienen un color semántico propio en el sistema, **When** se
+   renderiza el gráfico, **Then** cada causa usa una variación de opacidad/tono de #1F5673 o
+   #5A6862, nunca los colores semánticos reservados (#9A5B08, #8E2A2A, #0F5132) como paleta de
+   categorías.
+3. **Given** mermas cuya valoración no es calculable, **When** se agrega la serie, **Then** esas
+   mermas NO suman al alto de las barras; su número se informa aparte, con la misma honestidad
+   que la lista ya aplica a "valor no calculable".
+
+---
+
 ### Edge Cases
 
 - **Turno cerrado sin ninguna venta**: su arqueo tiene "esperado en caja" igual a cero; si el
@@ -454,6 +485,22 @@ persona.
 - **FR-041**: El sistema DEBE permitir operar y demostrar cada fenómeno por separado; ninguno depende
   de la existencia de otro para funcionar, más allá de que la detección de fraude por sub-registro
   (FR-020) necesita las mermas ya clasificadas (FR-009) para descontarlas del faltante.
+
+**Visualización de mermas (User Story 5)**
+
+- **FR-042**: El sistema DEBE exponer la valoración de merma de una sucursal agregada por
+  **semana** y por **causa** del ENUM `merma.causa` (sin `pendiente_clasificar`, que es un estado
+  y no una causa). La agregación temporal DEBE ser semanal, nunca diaria (el cuadre de caja es
+  frecuente pero no diario).
+- **FR-043**: El sistema DEBE presentar esa serie en la pantalla de Mermas como un gráfico de
+  barras apiladas por semana, con un tramo por causa y su leyenda, sin reemplazar la lista de
+  mermas individuales.
+- **FR-044**: Las causas NO tienen un color semántico propio: el gráfico DEBE usar variaciones de
+  opacidad/tono de #1F5673 y #5A6862, nunca los colores semánticos reservados (#9A5B08, #8E2A2A)
+  ni el color de marca (#0F5132) como paleta de categorías.
+- **FR-045**: Las mermas sin `valoracion` calculable NO DEBEN sumar al alto de las barras; su
+  número se informa aparte, con la misma honestidad que `listar_mermas` ya aplica a "valor no
+  calculable" (FR-010). El gráfico es puramente de lectura: no calcula ni escribe ningún dato.
 
 ### Key Entities *(include if feature involves data)*
 
