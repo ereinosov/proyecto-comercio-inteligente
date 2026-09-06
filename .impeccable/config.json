@@ -1,0 +1,17 @@
+{
+  "detector": {
+    "ignoreRules": [],
+    "ignoreFiles": [],
+    "ignoreValues": [
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "frontend/src/pantallas/Precios.module.css"
+        ],
+        "createdAt": "2026-09-06T15:18:50.924Z",
+        "reason": "pre-existing shipped design (commit predates this session): 4px left border on .bordeBajo/.bordeNegativo is a redundant carrier of margin status using the reserved semantic colors (Atencion/Critico), paired with the dot+text in IndicadorMargen per DESIGN.md Regla del Significado / tres portadores. Not decorative; line flagged only due to line-number shift from adding a search box."
+      }
+    ]
+  }
+}
