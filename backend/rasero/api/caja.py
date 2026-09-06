@@ -7,9 +7,9 @@ Prefijo `/caja` para todo el módulo. Cada endpoint hace su propio `commit`: los
 Este contrato NUNCA participa en `POST /ventas` de 001 ni es camino crítico de un cobro
 (Principio II). 006 SÓLO LEE de 001. Error `{codigo, mensaje}` unificado con 001-005.
 
-Las rutas bloqueadas (`POST /caja/cruce-operador`, y la rama de `POST /caja/mermas` con
-`id_conteo_renglon`) devuelven `409 caja_bloqueado_por_001` mientras 001 no implemente su User
-Story 5 (`conteo_fisico`/`conteo_renglon`, T065-T071) — comportamiento controlado y esperado.
+`POST /caja/cruce-operador` y la rama de `POST /caja/mermas` con `id_conteo_renglon` quedaron
+desbloqueadas cuando 001 implementó su User Story 5 (`conteo_fisico`/`conteo_renglon`,
+T065-T071): ya ejercen la lógica real, sin `409 caja_bloqueado_por_001`.
 """
 
 from datetime import date, datetime

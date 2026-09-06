@@ -16,11 +16,10 @@ implementación.
 - **`001-core-ventas-inventario` User Story 1 completa** (checkpoint `873228d`): `venta`,
   `renglon_venta`, `turno`, `operador`, **`anulacion_venta`** (T032), `producto`, `sucursal`,
   `producto_precio_sucursal`, `lote` — este módulo los **consulta** (nunca escribe en ellos).
-- **BLOQUEO parcial por `001` User Story 5** (`conteo_fisico` / `conteo_renglon`, T065–T071): el
-  **esquema** existe en la migración `0001`, el **servicio no**. Las partes bloqueadas
-  (clasificar una diferencia de conteo, el cruce contra el faltante de inventario, las anomalías de
-  origen inventario) tienen sus pruebas marcadas `@pytest.mark.xfail(reason="001 User Story 5 —
-  T065–T071", strict=True)`. Ver plan.md, "Estado de implementación por historia".
+- **`001` User Story 5 (`conteo_fisico` / `conteo_renglon`, T065–T071) ya está implementada**: las
+  partes que dependían de ella —clasificar una diferencia de conteo, el cruce contra el faltante de
+  inventario, las anomalías de origen inventario— quedaron desbloqueadas; sus pruebas ya no llevan
+  `xfail`.
 - **`007-pagos-seguridad` no existe**: el arqueo compara total contado contra total registrado, sin
   desglose por medio de pago (research.md #4).
 - Misma base **PostgreSQL 16 nativa**, puerto **5442**, que ya usan `001`–`005`.
@@ -54,16 +53,15 @@ pytest tests/integracion/test_arqueo.py tests/integracion/test_merma.py tests/in
 pytest tests/contrato/test_contrato_caja.py
 ```
 
-Las siete suites de la tabla "Pruebas obligatorias" del plan deben estar en verde antes de fusionar;
-las pruebas marcadas `xfail` (rama de `conteo_renglon`, cruce de inventario, anomalías de origen
-inventario) permanecen `xfail` hasta que `001` implemente su User Story 5.
+Las siete suites de la tabla "Pruebas obligatorias" del plan deben estar en verde antes de fusionar.
+Ya no hay ninguna prueba `xfail`: `001` implementó su User Story 5 y la rama de `conteo_renglon`, el
+cruce de inventario y las anomalías de origen inventario quedaron desbloqueados.
 
 ---
 
 ## Escenarios de validación
 
-Cada escenario se comprueba contra PostgreSQL real (puerto 5442). Los marcados **⛔ xfail** dependen
-de `001` User Story 5 y se documentan como fallo esperado, no como error.
+Cada escenario se comprueba contra PostgreSQL real (puerto 5442).
 
 ### 1. El arqueo cuadra por turno y congela lo esperado (FR-002, FR-003, SC-001)
 
@@ -126,11 +124,12 @@ de `001` User Story 5 y se documentan como fallo esperado, no como error.
 1. Se cuenta `existencia` del producto. `POST /caja/mermas` (sin `id_conteo_renglon`).
 2. **Esperado**: `existencia` sin cambios; la merma con `conciliar_con_conteo: true`.
 
-### 9. ⛔ xfail — Clasificar una diferencia de `conteo_renglon` de `001` (FR-009, FR-015)
+### 9. Clasificar una diferencia de `conteo_renglon` de `001` (FR-009, FR-015)
 
 1. `POST /caja/mermas { id_conteo_renglon, causa: "vencimiento", ... }`.
-2. **Esperado hoy**: `409 caja_bloqueado_por_001`. **Al implementar `001` User Story 5**: `201` con
-   la merma valorada sobre la `diferencia` que `001` expone, sin recalcular esa diferencia.
+2. **Esperado**: `201` con la merma valorada sobre la `diferencia` que `001` expone, sin recalcular
+   esa diferencia (FR-033); la cantidad clasificada no puede exceder el faltante bruto;
+   `conciliar_con_conteo: false` (001 ya ajustó la existencia al resolver el conteo).
 
 ### 10. Indicadores por operador: derivados, como desviación de pares (FR-018, FR-019, FR-023, SC-007, SC-008)
 
@@ -146,20 +145,20 @@ de `001` User Story 5 y se documentan como fallo esperado, no como error.
 ### 11. Arqueo cuadrado NO descarta el fraude (FR-008, FR-026, SC-004)
 
 1. Un turno del operador B con arqueo de `diferencia: "0.00"` pero tasa de anulaciones atípica.
-2. `GET /caja/indicadores-operador` sigue señalando a B; `GET /caja/anomalias` (cuando el cruce esté
-   disponible) muestra la anomalía de inventario aunque el arqueo cuadró.
+2. `GET /caja/indicadores-operador` sigue señalando a B; `GET /caja/anomalias` muestra la anomalía
+   de inventario aunque el arqueo cuadró.
 3. **Esperado**: la respuesta del cruce y la interfaz indican explícitamente que un arqueo con
    diferencia cero **no** es evidencia de ausencia de sub-registro.
 
-### 12. ⛔ xfail — Cruce inventario-ventas y anomalía de origen inventario (FR-020, FR-025, SC-012)
+### 12. Cruce inventario-ventas y anomalía de origen inventario (FR-020, FR-025, SC-012)
 
 1. Conteo físico de `001` con faltante de `10` unidades de un producto; `4` explicadas por una merma
    ya clasificada; `1` por una anulación registrada.
 2. `POST /caja/cruce-operador { id_sucursal, desde, hasta, id_conteo_fisico }`.
-3. **Esperado hoy**: `409 caja_bloqueado_por_001`. **Al implementar `001` User Story 5**: se crea una
-   `anomalia_caja` de `origen: "inventario"` con `magnitud: 5` (10 − 4 − 1), `indicador_snapshot` con
-   el desglose y el reparto por turno, e `id_operador` = el del turno con mayor participación. Si la
-   merma y las anulaciones hubieran explicado las 10, **no se crea nada** (FR-025, FR-031).
+3. **Esperado**: `200`; se crea una `anomalia_caja` de `origen: "inventario"` con `magnitud: 5`
+   (10 − 4 − 1), `indicador_snapshot` con el desglose y el reparto por turno, e `id_operador` = el
+   del turno con mayor participación. Si la merma y las anulaciones hubieran explicado las 10,
+   **no se crea nada** (FR-025, FR-031).
 
 ### 13. El sistema nunca cierra una anomalía por el paso del tiempo (FR-029, SC-009)
 
@@ -196,8 +195,7 @@ de `001` User Story 5 y se documentan como fallo esperado, no como error.
 - [ ] Migración `0006_caja_mermas_fraude` aplica y revierte limpio.
 - [ ] Las 3 tablas (`arqueo`, `merma`, `anomalia_caja`) son las únicas nuevas; ninguna tabla de
       indicadores.
-- [ ] Las 7 suites obligatorias del plan en verde; los `xfail` de `001` User Story 5 documentados,
-      no como error.
+- [ ] Las 7 suites obligatorias del plan en verde; 0 `xfail` (001 User Story 5 implementada).
 - [ ] `Arqueo.tsx` en registro Operación (2px, IBM Plex Sans tabular, sin animación salvo
       confirmación); `Mermas.tsx`, `AnomaliasCaja.tsx`, `IndicadoresOperador.tsx` en Análisis (6px,
       Source Serif 4).

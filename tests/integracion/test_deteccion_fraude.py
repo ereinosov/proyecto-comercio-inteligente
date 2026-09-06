@@ -6,17 +6,19 @@ puerto 5442.
   (FR-018, FR-019, FR-023, SC-007, SC-008). Un operador con pocas ventas -> `comparable=false`.
 - T032: un arqueo con `diferencia = "0.00"` NO descarta el sub-registro: el indicador sigue
   señalando al operador (FR-008, FR-026, SC-004).
-- T033: PRUEBA EN VERDE del `409 caja_bloqueado_por_001` del cruce (T037) + PRUEBA XFAIL del
-  comportamiento eventual (crea la anomalía de inventario) hasta 001 User Story 5.
+- T033: 001 implementó su User Story 5, así que `POST /caja/cruce-operador` ya ejerce la lógica
+  real (200): reparte el faltante no explicado por turno y crea una `anomalia_caja` de origen
+  inventario cuando queda faltante sin explicar; ya no devuelve `409 caja_bloqueado_por_001`.
 """
 
 import json
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
-import pytest
 from fastapi.testclient import TestClient
 
 from rasero.api.aplicacion import app
+from rasero.persistencia.modelos import ConteoFisico, ConteoRenglon
 from tests.apoyo_caja import (
     anular_venta,
     crear_operador,
@@ -162,24 +164,9 @@ def test_arqueo_cuadrado_no_descarta_el_sub_registro(sesion):
 # --- T033 -----------------------------------------------------------------------
 
 
-def test_cruce_operador_devuelve_409_bloqueado(sesion):
-    """PRUEBA EN VERDE (T037): `POST /caja/cruce-operador` está bloqueado por 001 User Story 5 y
-    devuelve `409 caja_bloqueado_por_001` — comportamiento controlado y esperado, NO un fallo.
-    """
-    sucursal = crear_sucursal(sesion)
-    sesion.commit()
-    respuesta = cliente.post(
-        "/caja/cruce-operador",
-        json={"id_sucursal": sucursal.id_sucursal, "desde": _DESDE, "hasta": _HASTA},
-    )
-    assert respuesta.status_code == 409
-    assert respuesta.json()["codigo"] == "caja_bloqueado_por_001"
-
-
-@pytest.mark.xfail(reason="bloqueado por 001 US5 T065-T071", strict=True)
-def test_cruce_operador_crea_anomalia_de_inventario(sesion):
-    """XFAIL hasta 001 User Story 5: el cruce debe repartir el faltante no explicado por turno y
-    crear una `anomalia_caja` de origen inventario (FR-020, FR-025).
+def test_cruce_operador_sin_conteo_resuelto_no_crea_nada(sesion):
+    """`POST /caja/cruce-operador` ya no está bloqueado (001 User Story 5): si no hay ningún
+    conteo físico resuelto en la sucursal, responde 200 sin crear ninguna anomalía.
     """
     sucursal = crear_sucursal(sesion)
     sesion.commit()
@@ -188,4 +175,59 @@ def test_cruce_operador_crea_anomalia_de_inventario(sesion):
         json={"id_sucursal": sucursal.id_sucursal, "desde": _DESDE, "hasta": _HASTA},
     )
     assert respuesta.status_code == 200
-    assert "anomalias_creadas" in respuesta.json()
+    cuerpo = respuesta.json()
+    assert cuerpo["anomalias_creadas"] == []
+    assert cuerpo["id_conteo_fisico"] is None
+
+
+def test_cruce_operador_crea_anomalia_de_inventario(sesion):
+    """El cruce reparte el faltante no explicado por turno y crea una `anomalia_caja` de origen
+    inventario (FR-020, FR-025). Un faltante que la merma clasificada explica por completo NO
+    genera anomalía.
+    """
+    sucursal = crear_sucursal(sesion)
+    producto = crear_producto(sesion, precio="3.0000")
+    sesion.commit()
+
+    # Conteo resuelto con un faltante bruto de 5 unidades, sin merma ni anulaciones que lo expliquen.
+    conteo = ConteoFisico(
+        id_sucursal=sucursal.id_sucursal,
+        estado="resuelto",
+        alcance=None,
+        instante_inicio=datetime.now(timezone.utc) - timedelta(days=1),
+        instante_resolucion=datetime.now(timezone.utc),
+    )
+    sesion.add(conteo)
+    sesion.flush()
+    sesion.add(
+        ConteoRenglon(
+            id_conteo_fisico=conteo.id_conteo_fisico,
+            id_producto=producto.id_producto,
+            id_lote=None,
+            cantidad_contada=Decimal("35"),
+            cantidad_esperada=Decimal("40"),
+            diferencia=Decimal("-5"),
+        )
+    )
+    sesion.commit()
+
+    respuesta = cliente.post(
+        "/caja/cruce-operador",
+        json={
+            "id_sucursal": sucursal.id_sucursal,
+            "desde": _DESDE,
+            "hasta": _HASTA,
+            "id_conteo_fisico": conteo.id_conteo_fisico,
+        },
+    )
+    assert respuesta.status_code == 200
+    cuerpo = respuesta.json()
+    assert len(cuerpo["anomalias_creadas"]) == 1
+
+    anomalias = cliente.get(
+        f"/caja/anomalias?id_sucursal={sucursal.id_sucursal}&origen=inventario"
+    ).json()
+    assert len(anomalias) == 1
+    assert anomalias[0]["magnitud"] == 5
+    assert anomalias[0]["origen"] == "inventario"
+    assert anomalias[0]["indicador_snapshot"]["faltante_no_explicado"] == "5"

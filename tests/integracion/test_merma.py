@@ -7,15 +7,14 @@ puerto 5442.
   `id_sucursal` (FR-016, FR-038).
 - T020: `GET /caja/alertas-caducidad` lista lotes de 001 en la ventana, marca los ya caducados,
   sin escribir nada (FR-014).
-- T021 (rama de conteo): PRUEBA EN VERDE del `409 caja_bloqueado_por_001` (comportamiento
-  controlado y esperado, tasks.md T023) + PRUEBA XFAIL del comportamiento eventual (201 clasificado)
-  hasta que 001 implemente su User Story 5.
+- T021 (rama de conteo): 001 implementó su User Story 5, así que `POST /caja/mermas` con
+  `id_conteo_renglon` clasifica la `diferencia` bruta que 001 expone (201), sin recalcularla
+  (FR-033), y ya no devuelve `409 caja_bloqueado_por_001`.
 """
 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
@@ -223,9 +222,10 @@ def _conteo_renglon(sesion, *, id_sucursal, id_producto, id_lote):
     return renglon
 
 
-def test_clasificar_diferencia_de_conteo_devuelve_409_bloqueado(sesion):
-    """PRUEBA EN VERDE (T023): la rama con `id_conteo_renglon` está bloqueada por 001 User Story 5
-    y devuelve `409 caja_bloqueado_por_001` — comportamiento controlado y esperado, NO un fallo.
+def test_clasificar_diferencia_de_conteo_ya_no_esta_bloqueada(sesion):
+    """001 implementó su User Story 5: la rama con `id_conteo_renglon` ya no devuelve
+    `409 caja_bloqueado_por_001`; clasifica (201) y no marca `conciliar_con_conteo` (001 ya
+    ajustó la existencia al resolver el conteo).
     """
     sucursal, producto, operador, lote = _base(sesion)
     renglon = _conteo_renglon(sesion, id_sucursal=sucursal.id_sucursal, id_producto=producto.id_producto, id_lote=lote.id_lote)
@@ -240,14 +240,16 @@ def test_clasificar_diferencia_de_conteo_devuelve_409_bloqueado(sesion):
             "id_conteo_renglon": renglon.id_conteo_renglon,
         },
     )
-    assert respuesta.status_code == 409
-    assert respuesta.json()["codigo"] == "caja_bloqueado_por_001"
+    assert respuesta.status_code == 201
+    cuerpo = respuesta.json()
+    assert cuerpo["id_conteo_renglon"] == renglon.id_conteo_renglon
+    assert cuerpo["conciliar_con_conteo"] is False
+    assert cuerpo["valoracion"] == "6.00"  # 3 × costo 2.00, sin recalcular la diferencia
 
 
-@pytest.mark.xfail(reason="bloqueado por 001 US5 T065-T071", strict=True)
 def test_clasificar_diferencia_de_conteo_clasifica_la_merma(sesion):
-    """XFAIL hasta que 001 implemente su User Story 5: entonces `POST /caja/mermas` con
-    `id_conteo_renglon` debe clasificar la `diferencia` que 001 expone (201), sin recalcularla.
+    """`POST /caja/mermas` con `id_conteo_renglon` clasifica la `diferencia` que 001 expone (201),
+    sin recalcularla (FR-033), y queda enlazada a esa línea de conteo.
     """
     sucursal, producto, operador, lote = _base(sesion)
     renglon = _conteo_renglon(sesion, id_sucursal=sucursal.id_sucursal, id_producto=producto.id_producto, id_lote=lote.id_lote)
@@ -268,3 +270,18 @@ def test_clasificar_diferencia_de_conteo_clasifica_la_merma(sesion):
             Merma.id_conteo_renglon == renglon.id_conteo_renglon
         )
     ).scalar_one() == renglon.id_conteo_renglon
+
+    # No puede clasificar más que el faltante bruto que 001 expone (diferencia −3).
+    exceso = cliente.post(
+        "/caja/mermas",
+        json={
+            "id_producto": producto.id_producto,
+            "id_sucursal": sucursal.id_sucursal,
+            "cantidad_faltante": 99,
+            "causa": "vencimiento",
+            "id_operador_registro": operador.id_operador,
+            "id_conteo_renglon": renglon.id_conteo_renglon,
+        },
+    )
+    assert exceso.status_code == 400
+    assert exceso.json()["codigo"] == "caja_cantidad_excede_faltante"

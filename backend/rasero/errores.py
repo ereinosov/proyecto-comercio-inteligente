@@ -178,19 +178,9 @@ class ErrorCaja(ErrorDominio):
         super().__init__(mensaje)
 
 
-class CajaBloqueadoPor001(ErrorCaja):
-    """La función necesita `conteo_fisico`/`conteo_renglon` de 001 (User Story 5, T065-T071), que
-    tienen esquema pero no servicio. El `409` es comportamiento controlado y esperado, no un fallo
-    (research.md #10; tasks.md T023, T037).
-    """
-
-    def __init__(self):
-        super().__init__(
-            "caja_bloqueado_por_001",
-            "Esta función necesita el conteo físico de inventario, que todavía no está "
-            "disponible en el módulo de ventas e inventario. Vuelve a intentarlo cuando lo esté.",
-            status_code=409,
-        )
+# 001 User Story 5 (`conteo_fisico`/`conteo_renglon`) ya está implementada; la excepción
+# `CajaBloqueadoPor001` que devolvía `409 caja_bloqueado_por_001` se retiró al desbloquear
+# `POST /caja/cruce-operador` y la rama de conteo de `POST /caja/mermas`.
 
 
 # --------------------------------------------------------------------------

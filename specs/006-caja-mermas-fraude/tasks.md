@@ -9,7 +9,7 @@ description: "Task list template for feature implementation"
 
 **Prerequisitos**: plan.md, spec.md, research.md, data-model.md, contracts/openapi.yaml, quickstart.md — todos aprobados contra la constitución **v2.2.6** (sin cambios para `006` desde v2.2.5). Requiere que `001-core-ventas-inventario` User Story 1 ya esté migrada y en ejecución: este módulo **sólo lee** de `001` (`turno`, `venta`, `renglon_venta`, `anulacion_venta`, `producto`, `producto_precio_sucursal`, `sucursal`, `lote`, `operador` — nunca `pin_hash`) y **nunca escribe en ninguna tabla ajena**, ni siquiera vía función-puente (a diferencia de `003`). **Este módulo NO motiva ninguna enmienda constitucional**: sus tres entidades (`arqueo`, `merma`, `anomalia_caja`) coinciden con la tabla de Propiedad de Datos v2.2.6. La revisión #18 de research.md (trade-off de `anomalia_caja.resolucion` como texto libre) no cambia las tres entidades.
 
-**⛔ BLOQUEO PARCIAL por `001` User Story 5** (`conteo_fisico` / `conteo_renglon`, tareas **T065–T071** de `001/tasks.md`, en `[ ]`): el **esquema** de `conteo_fisico` y `conteo_renglon` **sí** existe en la migración `0001`; su **servicio y sus endpoints no**. Las tareas marcadas **⛔ BLOQUEADA por 001 (User Story 5, T065–T071)** dependen de esa lógica de servicio; su prueba correspondiente lleva `@pytest.mark.xfail(reason="bloqueado por 001 US5 T065-T071", strict=True)` — **mismo tratamiento que `004` dio a `consulta_no_atendida`** (T014/T009 de `004/tasks.md`). El esquema (columnas, FKs, **incluida `merma.id_conteo_renglon`**) se crea completo en la migración `0006`; lo bloqueado es únicamente la lógica de servicio que consume esas filas. Ver "Punto de reactivación" al final.
+**BLOQUEO PARCIAL por `001` User Story 5 — RESUELTO**: `001` implementó `conteo_fisico` / `conteo_renglon` (servicio + endpoints, T065–T071). Las tareas que estaban marcadas **⛔ BLOQUEADA por 001 (User Story 5)** —T021, T023 (rama con `id_conteo_renglon`), T033, T036, T037, T044— quedaron desbloqueadas: se quitaron los `xfail` y se completó la lógica de servicio. Ver "Punto de reactivación — RESUELTO" al final.
 
 **Pruebas**: se incluyen las **7 suites obligatorias** de la tabla "Pruebas obligatorias" de plan.md (Principio III — el riesgo central es doble: un arqueo que trate una diferencia de cero como "sin novedad" enmascara el fraude de sub-registro que la Lectura Crítica n.º 1 describe; una señal por operador presentada como conclusión de fraude, o un faltante imputado sin descontar la merma declarada, acusa a una persona con un cálculo mal hecho). **Todas corren contra PostgreSQL real en el puerto 5442, nunca contra mocks ni SQLite** — mismo criterio que `001`–`005`. No se generan pruebas de interfaz, maquetación ni componentes visuales.
 
@@ -177,25 +177,26 @@ description: "Task list template for feature implementation"
 - [X] T051 [P] Ejecutar los 16 escenarios de `quickstart.md` de extremo a extremo y confirmar el resultado esperado de cada uno; los escenarios **9** (rama de `conteo_renglon`) y **12** (cruce inventario-ventas) se comprueban como **`xfail` documentado**, no como fallo
 - [X] T052 [P] Auditar `Arqueo.tsx` (Operación) y `Mermas.tsx` / `AnomaliasCaja.tsx` / `IndicadoresOperador.tsx` (Análisis): **cero apariciones del Verde Rasero `#0F5132`** (Regla del Registro Sin Dinero); color, radio y tipografía sólo desde los tokens del sistema; los tres semánticos usados **sólo** por significado (Regla del Significado — crítico para anomalía `sin_explicacion` y lote caducado, atención para lote por caducar y diferencia con motivo, estimado para todo valor calculado); "sin explicación", "no calculable", "sin ventas suficientes para comparar" y "lote caducado" con los tres portadores simultáneos
 - [X] T053 Actualizar `DESIGN.md` con la skill de Impeccable (agente `documenter`), derivándolo de las cuatro pantallas ya construidas — añade la descripción de `Caja, Mermas y Fraude` a los componentes; sidecar `.impeccable/design.json` actualizado en el mismo cambio. **No** se añaden reglas nombradas nuevas en este pase (la "Regla del Ícono" es un cambio independiente)
-- [X] T054 Ejecutar `pytest tests` completo contra PostgreSQL real (puerto 5442) — las **7 suites obligatorias** (T007/T008/T009 → `test_arqueo.py`; T018 → `test_merma_valoracion.py`; T019/T020/T021 → `test_merma.py`; T030 → `test_indicadores_operador.py`; T031/T032/T033 → `test_deteccion_fraude.py`; T042/T043/T044 → `test_anomalias.py`; contrato T014/T026/T038/T047 → `test_contrato_caja.py`) más la unidad `test_arqueo_dominio.py` (T006) — y `tsc -b`, `eslint`, `vite build` del frontend, todo en verde. **T021, T033 y T044 permanecen `xfail`** hasta que `001` implemente T065–T071
+- [X] T054 Ejecutar `pytest tests` completo contra PostgreSQL real (puerto 5442) — las **7 suites obligatorias** (T007/T008/T009 → `test_arqueo.py`; T018 → `test_merma_valoracion.py`; T019/T020/T021 → `test_merma.py`; T030 → `test_indicadores_operador.py`; T031/T032/T033 → `test_deteccion_fraude.py`; T042/T043/T044 → `test_anomalias.py`; contrato T014/T026/T038/T047 → `test_contrato_caja.py`) más la unidad `test_arqueo_dominio.py` (T006) — y `tsc -b`, `eslint`, `vite build` del frontend, todo en verde. **Re-ejecutado tras el desbloqueo de `001` T065–T071: T021, T033 y T044 ya no llevan `xfail`; 0 `xfail` en la suite**
 - [X] T055 Verificar que **todos** los parámetros de research.md #16 viven **sólo** en `backend/rasero/config/caja.py` con sus valores de arranque, sin ninguna constante mágica dispersa (Principio V "acotada"); confirmar por `grep` que `backend/rasero/` **no importa `scipy`, `statsmodels` ni `numpy`** para nada de `006` — la línea base de los indicadores es `mediana` + razón (`dominio/indicadores_operador.py`)
 - [X] T056 [P] Verificar la frontera completa por `grep` sobre `backend/rasero/servicios/arqueos.py`, `servicios/mermas.py` y `servicios/deteccion_fraude.py`: cero escrituras (`INSERT`/`UPDATE`/`add`/`merge`) sobre `venta`, `renglon_venta`, `anulacion_venta`, `existencia`, `movimiento_inventario`, `lote`, `conteo_fisico`, `conteo_renglon`, `turno`, `operador` ni ningún precio; ninguna llamada que ejecute un conteo físico ni ajuste `existencia` (FR-032, FR-033, FR-034); ninguna operación automática sobre un operador (FR-024) — mismo espíritu que las pruebas de frontera de `003`, `004` y `005`
 
 ---
 
-## Punto de reactivación — cuando `001` implemente su User Story 5 (T065–T071)
+## Punto de reactivación — RESUELTO (`001` implementó su User Story 5, T065–T071)
 
-Estas tareas quedan **⛔ BLOQUEADAS** hasta que `001` entregue `conteo_fisico` / `conteo_renglon` (servicio + endpoints). Al hacerlo:
+`001` entregó `conteo_fisico` / `conteo_renglon` (servicio `backend/rasero/servicios/conteos.py`
++ endpoints `POST /conteos-fisicos` y `.../resolucion`). Los 7 pasos, aplicados:
 
-1. **T021** — quitar `@pytest.mark.xfail`; la prueba de la rama con `id_conteo_renglon` debe pasar.
-2. **T023** — completar la rama con `id_conteo_renglon` de `clasificar_merma` (hoy devuelve `409`); su prueba en verde del `409` pasa a verificar que ya **no** se devuelve.
-3. **T033** — quitar `@pytest.mark.xfail`; la prueba del cruce inventario-ventas debe pasar.
-4. **T036** — completar `cruce_inventario_ventas` (hoy lanza la excepción de bloqueo).
-5. **T037** — `POST /caja/cruce-operador` deja de devolver `409 caja_bloqueado_por_001`; su prueba en verde del `409` pasa a verificar que ya **no** se devuelve.
-6. **T044** — quitar `@pytest.mark.xfail`; la prueba de la anomalía de origen inventario debe pasar.
-7. Re-ejecutar **T054** (suite completa) y **T051** (escenarios 9 y 12 de `quickstart.md` dejan de ser `xfail`).
+1. **T021** — `@pytest.mark.xfail` retirado; la prueba de la rama con `id_conteo_renglon` pasa.
+2. **T023** — rama con `id_conteo_renglon` de `clasificar_merma` implementada (`_clasificar_diferencia_de_conteo`): lee `conteo_renglon.diferencia` sin recalcularla (FR-033), valida que la cantidad no exceda el faltante bruto, `conciliar_con_conteo = false`. La prueba del `409` pasó a verificar que ya **no** se devuelve.
+3. **T033** — `@pytest.mark.xfail` retirado; la prueba del cruce inventario-ventas pasa con un escenario real (conteo resuelto + `conteo_renglon` con diferencia negativa).
+4. **T036** — `cruce_inventario_ventas` implementada: faltante bruto por producto − mermas clasificadas del período − anulaciones registradas; reparto por turno; `anomalia_caja` de `origen = "inventario"` con `magnitud`, `valor_estimado` e `indicador_snapshot`; nada si `faltante_no_explicado ≤ 0`.
+5. **T037** — `POST /caja/cruce-operador` devuelve `200` con `{id_conteo_fisico, anomalias_creadas, detalle}`; ya no `409 caja_bloqueado_por_001` (la excepción `CajaBloqueadoPor001` se retiró de `errores.py`).
+6. **T044** — `@pytest.mark.xfail` retirado; la anomalía de origen inventario aparece con su `magnitud` e `indicador_snapshot`.
+7. **T054** re-ejecutado: suite completa en verde, **0 `xfail`**.
 
-El esquema (columnas, FKs, `merma.id_conteo_renglon`, `anomalia_caja.id_conteo_fisico`) ya está creado desde T001: no hay migración nueva en este punto de reactivación.
+El esquema ya estaba creado desde T001: no hubo migración nueva.
 
 ---
 
@@ -265,7 +266,7 @@ Task: "tasa_anulaciones, concentracion_bajo_lista, mediana, se_desvia, reparto_p
 4. + US3 (indicadores por operador) → probar de forma independiente (escenarios 10, 11; el 12 queda `xfail`).
 5. + US4 (anomalías sin explicación) → probar de forma independiente (escenarios 13, 14).
 6. Fase final: `quickstart.md` completo, auditoría de tokens, `DESIGN.md` actualizado, suite completa en verde (con los tres `xfail` de `001` US5).
-7. **Cuando `001` implemente su User Story 5**: seguir el "Punto de reactivación" — quitar los tres `xfail`, completar T023/T036/T037, re-ejecutar T054.
+7. **`001` implementó su User Story 5**: se siguió el "Punto de reactivación" — se quitaron los tres `xfail`, se completaron T023/T036/T037 y se re-ejecutó T054; suite en verde con 0 `xfail`.
 
 ### Estrategia de equipo en paralelo
 

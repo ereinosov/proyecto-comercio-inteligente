@@ -7,9 +7,10 @@ T035, T036, T045).
   compara contra la LÍNEA BASE de sus pares comparables (mediana + razón, sin librería —
   research.md #16). La respuesta NUNCA dice "fraude": dice "se desvía de la línea base de sus
   pares" (FR-023).
-- `cruce_inventario_ventas` (US3, T036) — **BLOQUEADA por 001 (User Story 5, T065-T071)**: hoy
-  lanza `CajaBloqueadoPor001` -> `409 caja_bloqueado_por_001`. El esquema de `merma.id_conteo_renglon`
-  y `anomalia_caja.id_conteo_fisico` ya existe; la lógica que lee `conteo_renglon` no.
+- `cruce_inventario_ventas` (US3, T036) — 001 User Story 5 (T065-T071) ya implementada: cruza el
+  faltante bruto de `conteo_renglon.diferencia` contra las mermas ya clasificadas y las
+  anulaciones registradas del período; el `faltante_no_explicado > 0` se reparte por turno y crea
+  una `anomalia_caja` de `origen = "inventario"` (FR-020, FR-025). Nunca escribe en `001`.
 - `listar_anomalias` / `obtener_anomalia` / `resolver_anomalia` (US4, T045) — el sistema NUNCA
   fuerza una clasificación ni cierra una anomalía por el paso del tiempo (FR-029); la resolución la
   asigna una persona con texto libre (FR-030, research.md #18).
@@ -17,24 +18,31 @@ T035, T036, T045).
 El servicio NO comitea: deja la transacción al endpoint.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, time, timedelta, timezone
 from decimal import Decimal
 from zoneinfo import ZoneInfo
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from rasero.config import caja as cfg
 from rasero.dominio.indicadores_operador import (
     concentracion_bajo_lista,
     mediana,
+    reparto_proporcional_faltante,
     se_desvia,
     tasa_anulaciones,
 )
-from rasero.errores import CajaBloqueadoPor001, ErrorCaja
+from rasero.dominio.seleccion_lote import ordenar_fefo
+from rasero.errores import ErrorCaja
 from rasero.persistencia.modelos import (
     AnomaliaCaja,
     AnulacionVenta,
+    ConteoFisico,
+    ConteoRenglon,
+    Lote,
+    Merma,
+    MovimientoInventario,
     Operador,
     Producto,
     ProductoPrecioSucursal,
@@ -230,7 +238,7 @@ def indicadores_operador(
 
 
 # ==========================================================================
-# US3 — cruce inventario-ventas (BLOQUEADA por 001 User Story 5)
+# US3 — cruce inventario-ventas (FR-020, FR-025)
 # ==========================================================================
 
 
@@ -242,17 +250,15 @@ def cruce_inventario_ventas(
     hasta,
     id_conteo_fisico: int | None = None,
 ) -> dict:
-    """BLOQUEADA por 001 (User Story 5, T065-T071). El `409 caja_bloqueado_por_001` es
-    comportamiento controlado y esperado, no un fallo (tasks.md T037).
+    """Cruza el faltante bruto de un conteo físico de `001` (`conteo_renglon.diferencia < 0`)
+    contra lo que ya está explicado —mermas clasificadas del período (FR-009) y anulaciones
+    registradas (`movimiento_inventario` de tipo `entrada_anulacion`)— y, por cada producto cuyo
+    `faltante_no_explicado > 0`, reparte ese faltante entre los turnos que movieron el producto y
+    crea una `anomalia_caja` de `origen = "inventario"` (FR-020). Si la merma y las anulaciones lo
+    explican por completo, no crea nada (FR-025, FR-031, SC-012). NO escribe en `001`.
 
-    Al implementar `001` User Story 5, esta función:
-    1. leerá `conteo_renglon.diferencia` del conteo (o del último resuelto de la sucursal);
-    2. descontará la merma clasificada del producto/período (`servicios/mermas`) y las anulaciones
-       registradas (`movimiento_inventario` tipo `entrada_anulacion`);
-    3. repartirá el `faltante_no_explicado > 0` por turno
-       (`dominio/indicadores_operador.reparto_proporcional_faltante`);
-    4. creará una `AnomaliaCaja` de `origen = "inventario"` con `magnitud`, `valor_estimado` e
-       `indicador_snapshot`; si `faltante_no_explicado <= 0`, no creará nada (FR-025, FR-031).
+    `id_conteo_fisico` fija el conteo a cruzar; si se omite, el último conteo resuelto de la
+    sucursal. El servicio NO comitea (lo hace el endpoint).
     """
     if id_sucursal is None:
         raise ErrorCaja(
@@ -263,8 +269,209 @@ def cruce_inventario_ventas(
             "caja_rango_invalido",
             "El rango de fechas no es válido: revisa que 'hasta' no sea anterior a 'desde'.",
         )
-    _sucursal_o_404(sesion, id_sucursal)
-    raise CajaBloqueadoPor001()
+    sucursal = _sucursal_o_404(sesion, id_sucursal)
+    zona = ZoneInfo(sucursal.zona_horaria)
+
+    if id_conteo_fisico is not None:
+        conteo = sesion.get(ConteoFisico, id_conteo_fisico)
+        if conteo is None or conteo.id_sucursal != id_sucursal:
+            raise ErrorCaja(
+                "caja_conteo_no_existe",
+                "Ese conteo físico no existe en esta sucursal.",
+                status_code=404,
+            )
+        if conteo.estado != "resuelto":
+            raise ErrorCaja(
+                "caja_conteo_no_resuelto",
+                "Ese conteo todavía no está resuelto; no hay diferencia que cruzar.",
+            )
+    else:
+        conteo = sesion.execute(
+            select(ConteoFisico)
+            .where(
+                ConteoFisico.id_sucursal == id_sucursal,
+                ConteoFisico.estado == "resuelto",
+            )
+            .order_by(ConteoFisico.instante_resolucion.desc())
+            .limit(1)
+        ).scalar_one_or_none()
+
+    if conteo is None:
+        return {
+            "id_conteo_fisico": None,
+            "anomalias_creadas": [],
+            "detalle": "No hay ningún conteo físico resuelto en esta sucursal para cruzar.",
+        }
+
+    renglones = list(
+        sesion.execute(
+            select(ConteoRenglon).where(
+                ConteoRenglon.id_conteo_fisico == conteo.id_conteo_fisico
+            )
+        ).scalars()
+    )
+    faltante_por_producto: dict[int, Decimal] = {}
+    for r in renglones:
+        if r.diferencia < 0:
+            faltante_por_producto[r.id_producto] = faltante_por_producto.get(
+                r.id_producto, Decimal(0)
+            ) + (-Decimal(r.diferencia))
+
+    inicio_utc = datetime.combine(desde, time.min, tzinfo=zona).astimezone(timezone.utc)
+    fin_utc = datetime.combine(hasta + timedelta(days=1), time.min, tzinfo=zona).astimezone(
+        timezone.utc
+    )
+    hoy_local = datetime.now(zona).date()
+    ahora = datetime.now(timezone.utc)
+
+    indicadores = indicadores_operador(
+        sesion, id_sucursal=id_sucursal, desde=desde, hasta=hasta
+    )
+    ind_por_operador = {o["id_operador"]: o for o in indicadores["operadores"]}
+
+    anomalias_creadas: list[int] = []
+    detalle: list[dict] = []
+
+    for id_producto, faltante_bruto in sorted(faltante_por_producto.items()):
+        merma_descontada = Decimal(
+            sesion.execute(
+                select(func.coalesce(func.sum(Merma.cantidad_faltante), 0)).where(
+                    Merma.id_sucursal == id_sucursal,
+                    Merma.id_producto == id_producto,
+                    Merma.estado == "clasificada",
+                    Merma.periodo_hasta >= desde,
+                    Merma.periodo_desde <= hasta,
+                )
+            ).scalar_one()
+        )
+        anulaciones_descontadas = Decimal(
+            sesion.execute(
+                select(func.coalesce(func.sum(MovimientoInventario.cantidad), 0)).where(
+                    MovimientoInventario.id_sucursal == id_sucursal,
+                    MovimientoInventario.id_producto == id_producto,
+                    MovimientoInventario.tipo == "entrada_anulacion",
+                    MovimientoInventario.instante >= inicio_utc,
+                    MovimientoInventario.instante < fin_utc,
+                )
+            ).scalar_one()
+        )
+
+        faltante_no_explicado = faltante_bruto - merma_descontada - anulaciones_descontadas
+        if faltante_no_explicado <= 0:
+            detalle.append(
+                {
+                    "id_producto": id_producto,
+                    "faltante_bruto": str(faltante_bruto),
+                    "merma_descontada": str(merma_descontada),
+                    "anulaciones_descontadas": str(anulaciones_descontadas),
+                    "faltante_no_explicado": str(faltante_no_explicado),
+                    "anomalia": None,
+                }
+            )
+            continue
+
+        unidades_por_turno = {
+            id_turno: Decimal(unidades)
+            for id_turno, unidades in sesion.execute(
+                select(
+                    Turno.id_turno,
+                    func.coalesce(func.sum(func.abs(MovimientoInventario.cantidad)), 0),
+                )
+                .join(Venta, Venta.id_venta == MovimientoInventario.id_venta)
+                .join(Turno, Turno.id_turno == Venta.id_turno)
+                .where(
+                    MovimientoInventario.id_sucursal == id_sucursal,
+                    MovimientoInventario.id_producto == id_producto,
+                    MovimientoInventario.tipo == "salida_venta",
+                    MovimientoInventario.instante >= inicio_utc,
+                    MovimientoInventario.instante < fin_utc,
+                )
+                .group_by(Turno.id_turno)
+            ).all()
+        }
+        reparto = reparto_proporcional_faltante(faltante_no_explicado, unidades_por_turno)
+
+        id_turno_top = (
+            max(reparto, key=lambda t: reparto[t]) if any(reparto.values()) else None
+        )
+        id_operador_top = None
+        if id_turno_top is not None:
+            turno_top = sesion.get(Turno, id_turno_top)
+            id_operador_top = turno_top.id_operador if turno_top is not None else None
+
+        lotes = list(
+            sesion.execute(
+                select(Lote).where(
+                    Lote.id_producto == id_producto, Lote.id_sucursal == id_sucursal
+                )
+            ).scalars()
+        )
+        costo = Decimal(ordenar_fefo(lotes)[0].costo_unitario) if lotes else None
+        valor_estimado = (
+            (faltante_no_explicado * costo).quantize(Decimal("0.01"))
+            if costo is not None
+            else None
+        )
+
+        ind_top = ind_por_operador.get(id_operador_top, {})
+        snapshot = {
+            "faltante_bruto": str(faltante_bruto),
+            "merma_descontada": str(merma_descontada),
+            "anulaciones_descontadas": str(anulaciones_descontadas),
+            "faltante_no_explicado": str(faltante_no_explicado),
+            "tasa_anulaciones": ind_top.get("tasa_anulaciones"),
+            "concentracion_bajo_lista": ind_top.get("concentracion_bajo_lista"),
+            "reparto_por_turno": [
+                {"id_turno": t, "cantidad_atribuida": str(c)} for t, c in reparto.items()
+            ],
+        }
+
+        anomalia = AnomaliaCaja(
+            origen="inventario",
+            estado="sin_explicacion",
+            id_sucursal=id_sucursal,
+            id_turno=id_turno_top,
+            id_operador=id_operador_top,
+            id_producto=id_producto,
+            id_conteo_fisico=conteo.id_conteo_fisico,
+            magnitud=faltante_no_explicado,
+            valor_estimado=valor_estimado,
+            periodo_desde=desde,
+            periodo_hasta=hasta,
+            dia_local=hoy_local,
+            indicador_snapshot=snapshot,
+            historial=[
+                {
+                    "estado": "sin_explicacion",
+                    "instante": ahora.isoformat(),
+                    "id_operador": None,
+                    "nota": (
+                        "Creada automáticamente: faltante de inventario que ni la merma "
+                        "clasificada ni las anulaciones registradas explican."
+                    ),
+                }
+            ],
+            instante_deteccion=ahora,
+        )
+        sesion.add(anomalia)
+        sesion.flush()
+        anomalias_creadas.append(anomalia.id_anomalia_caja)
+        detalle.append(
+            {
+                "id_producto": id_producto,
+                "faltante_bruto": str(faltante_bruto),
+                "merma_descontada": str(merma_descontada),
+                "anulaciones_descontadas": str(anulaciones_descontadas),
+                "faltante_no_explicado": str(faltante_no_explicado),
+                "anomalia": anomalia.id_anomalia_caja,
+            }
+        )
+
+    return {
+        "id_conteo_fisico": conteo.id_conteo_fisico,
+        "anomalias_creadas": anomalias_creadas,
+        "detalle": detalle,
+    }
 
 
 # ==========================================================================

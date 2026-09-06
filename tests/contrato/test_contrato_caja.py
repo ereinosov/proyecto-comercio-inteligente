@@ -10,7 +10,10 @@ from datetime import datetime, timedelta, timezone
 
 from fastapi.testclient import TestClient
 
+from decimal import Decimal
+
 from rasero.api.aplicacion import app
+from rasero.persistencia.modelos import ConteoFisico, ConteoRenglon
 from tests.apoyo_caja import (
     crear_lote,
     crear_operador,
@@ -161,21 +164,41 @@ def test_contrato_merma_feliz_y_fallos(sesion):
         ),
         "caja_producto_no_existe",
     )
-    # Rama con id_conteo_renglon: 409 caja_bloqueado_por_001 (comportamiento controlado).
-    _error_bien_formado(
-        cliente.post(
-            "/caja/mermas",
-            json={
-                "id_producto": producto.id_producto,
-                "id_sucursal": sucursal.id_sucursal,
-                "cantidad_faltante": 1,
-                "causa": "dano",
-                "id_operador_registro": operador.id_operador,
-                "id_conteo_renglon": 1,
-            },
-        ),
-        "caja_bloqueado_por_001",
+    # Rama con id_conteo_renglon: clasifica la diferencia bruta que 001 expone (201).
+    ahora = datetime.now(timezone.utc)
+    conteo = ConteoFisico(
+        id_sucursal=sucursal.id_sucursal,
+        estado="resuelto",
+        alcance=None,
+        instante_inicio=ahora,
+        instante_resolucion=ahora,
     )
+    sesion.add(conteo)
+    sesion.flush()
+    renglon = ConteoRenglon(
+        id_conteo_fisico=conteo.id_conteo_fisico,
+        id_producto=producto.id_producto,
+        id_lote=None,
+        cantidad_contada=Decimal("9"),
+        cantidad_esperada=Decimal("12"),
+        diferencia=Decimal("-3"),
+    )
+    sesion.add(renglon)
+    sesion.commit()
+    rama_conteo = cliente.post(
+        "/caja/mermas",
+        json={
+            "id_producto": producto.id_producto,
+            "id_sucursal": sucursal.id_sucursal,
+            "cantidad_faltante": 1,
+            "causa": "dano",
+            "id_operador_registro": operador.id_operador,
+            "id_conteo_renglon": renglon.id_conteo_renglon,
+        },
+    )
+    assert rama_conteo.status_code == 201
+    assert set(CLAVES_MERMA).issubset(rama_conteo.json())
+    assert rama_conteo.json()["id_conteo_renglon"] == renglon.id_conteo_renglon
 
     desglose = cliente.get(f"/caja/mermas?id_sucursal={sucursal.id_sucursal}")
     assert desglose.status_code == 200
@@ -200,12 +223,20 @@ def test_contrato_indicadores_y_cruce(sesion):
 
     _error_bien_formado(cliente.get("/caja/indicadores-operador"), "caja_sucursal_requerida")
 
-    bloqueado = cliente.post(
+    cruce = cliente.post(
         "/caja/cruce-operador",
         json={"id_sucursal": sucursal.id_sucursal, "desde": _DESDE, "hasta": _HASTA},
     )
-    assert bloqueado.status_code == 409
-    _error_bien_formado(bloqueado, "caja_bloqueado_por_001")
+    assert cruce.status_code == 200
+    assert {"id_conteo_fisico", "anomalias_creadas", "detalle"} <= set(cruce.json())
+
+    _error_bien_formado(
+        cliente.post(
+            "/caja/cruce-operador",
+            json={"id_sucursal": sucursal.id_sucursal, "desde": _HASTA, "hasta": _DESDE},
+        ),
+        "caja_rango_invalido",
+    )
 
 
 # --- Anomalías (T047) -------------------------------------------------------

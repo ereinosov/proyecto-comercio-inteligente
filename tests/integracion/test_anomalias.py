@@ -6,18 +6,19 @@ puerto 5442.
   NUNCA cierra una anomalía por el paso del tiempo (FR-029, SC-009).
 - T043: `POST /caja/anomalias/{id}/resolucion` exige `id_operador`, registra el estado anterior en
   `historial` y pasa a `resuelta` (FR-030); un segundo POST -> `400 caja_anomalia_ya_resuelta`.
-- T044: PRUEBA XFAIL de la anomalía de origen inventario (depende del cruce, bloqueado por 001 US5).
+- T044: la anomalía de origen inventario (001 User Story 5 ya implementada): tras
+  `POST /caja/cruce-operador`, aparece con su `magnitud` e `indicador_snapshot`.
 """
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
-import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 from rasero.api.aplicacion import app
-from rasero.persistencia.modelos import AnomaliaCaja
-from tests.apoyo_caja import crear_operador, escenario_arqueo
+from rasero.persistencia.modelos import AnomaliaCaja, ConteoFisico, ConteoRenglon
+from tests.apoyo_caja import crear_operador, crear_producto, crear_sucursal, escenario_arqueo
 
 cliente = TestClient(app)
 _MARCA = datetime.now(timezone.utc).isoformat()
@@ -131,16 +132,34 @@ def test_resolucion_vacia_es_400(sesion):
 # --- T044 -----------------------------------------------------------------------
 
 
-@pytest.mark.xfail(reason="bloqueado por 001 US5 T065-T071", strict=True)
 def test_anomalia_de_inventario_tras_el_cruce(sesion):
-    """XFAIL hasta 001 User Story 5: tras `POST /caja/cruce-operador`, una anomalía de origen
-    inventario debe aparecer con su `magnitud` e `indicador_snapshot`.
+    """Tras `POST /caja/cruce-operador`, una anomalía de origen inventario aparece con su
+    `magnitud` e `indicador_snapshot`, en estado `sin_explicacion` (001 User Story 5).
     """
-    from tests.apoyo_caja import crear_sucursal
-
     sucursal = crear_sucursal(sesion)
+    producto = crear_producto(sesion)
+    conteo = ConteoFisico(
+        id_sucursal=sucursal.id_sucursal,
+        estado="resuelto",
+        alcance=None,
+        instante_inicio=datetime.now(timezone.utc) - timedelta(days=1),
+        instante_resolucion=datetime.now(timezone.utc),
+    )
+    sesion.add(conteo)
+    sesion.flush()
+    sesion.add(
+        ConteoRenglon(
+            id_conteo_fisico=conteo.id_conteo_fisico,
+            id_producto=producto.id_producto,
+            id_lote=None,
+            cantidad_contada=Decimal("18"),
+            cantidad_esperada=Decimal("25"),
+            diferencia=Decimal("-7"),
+        )
+    )
     sesion.commit()
-    cliente.post(
+
+    respuesta = cliente.post(
         "/caja/cruce-operador",
         json={
             "id_sucursal": sucursal.id_sucursal,
@@ -148,8 +167,13 @@ def test_anomalia_de_inventario_tras_el_cruce(sesion):
             "hasta": "2026-09-30",
         },
     )
+    assert respuesta.status_code == 200
+
     anomalias = cliente.get(
         f"/caja/anomalias?id_sucursal={sucursal.id_sucursal}&origen=inventario"
     ).json()
-    assert len(anomalias) >= 1
-    assert anomalias[0]["magnitud"] is not None
+    assert len(anomalias) == 1
+    assert anomalias[0]["magnitud"] == 7
+    assert anomalias[0]["estado"] == "sin_explicacion"
+    assert anomalias[0]["indicador_snapshot"] is not None
+    assert anomalias[0]["historial"][0]["estado"] == "sin_explicacion"
