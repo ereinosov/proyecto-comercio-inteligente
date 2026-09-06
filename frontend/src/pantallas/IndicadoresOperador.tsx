@@ -17,7 +17,13 @@ import {
   obtenerIndicadoresOperador,
   type IndicadoresRespuesta,
 } from "../servicios/caja";
+import { formatearNumero, formatearPorcentaje } from "../utilidades/formato";
 import estilos from "./CajaFraude.module.css";
+
+/** Mediana de pares: porcentaje si hay valor, o el texto explícito de "sin pares". */
+function medianaPares(valor: string | null): string {
+  return valor === null ? "sin pares comparables" : formatearPorcentaje(valor);
+}
 
 function haceUnasSemanas(dias: number): string {
   const d = new Date();
@@ -83,12 +89,11 @@ export function IndicadoresOperador({ idSucursal }: { idSucursal: number }) {
         {datos && (
           <p className={estilos.nota}>
             Línea base de pares — anulaciones:{" "}
-            <strong>{datos.mediana_pares_tasa_anulaciones ?? "sin pares comparables"}</strong> ·
-            bajo precio de lista:{" "}
-            <strong>
-              {datos.mediana_pares_concentracion_bajo_lista ?? "sin pares comparables"}
-            </strong>
-            . Un operador se señala al superar {datos.factor_desviacion_anulaciones}× esa mediana.
+            <strong>{medianaPares(datos.mediana_pares_tasa_anulaciones)}</strong> · bajo precio
+            de lista:{" "}
+            <strong>{medianaPares(datos.mediana_pares_concentracion_bajo_lista)}</strong>. Un
+            operador se señala al superar {formatearNumero(datos.factor_desviacion_anulaciones, 1)}×
+            esa mediana.
           </p>
         )}
       </section>
@@ -103,8 +108,10 @@ export function IndicadoresOperador({ idSucursal }: { idSucursal: number }) {
                 <span className={estilos.valor}>{o.ventas_periodo} ventas</span>
               </div>
               <div className={estilos.metricas}>
-                <span>Anulaciones: {o.tasa_anulaciones}</span>
-                <span>Bajo precio de lista: {o.concentracion_bajo_lista}</span>
+                <span>Anulaciones: {formatearPorcentaje(o.tasa_anulaciones)}</span>
+                <span>
+                  Bajo precio de lista: {formatearPorcentaje(o.concentracion_bajo_lista)}
+                </span>
               </div>
               {!o.comparable && (
                 <p className={estilos.nota}>
@@ -129,7 +136,7 @@ export function IndicadoresOperador({ idSucursal }: { idSucursal: number }) {
         <h2 className={estilos.subtitulo}>Cruce con el faltante de inventario</h2>
         <p className={estilos.notaBloqueada}>
           <span className={estilos.puntoHueco} aria-hidden="true" />
-          Requiere el conteo físico de inventario de 001, que todavía no está disponible.
+          Requiere el conteo físico de inventario, que todavía no está disponible.
         </p>
         <button className={estilos.boton} type="button" onClick={intentarCruce}>
           Ejecutar cruce inventario-ventas

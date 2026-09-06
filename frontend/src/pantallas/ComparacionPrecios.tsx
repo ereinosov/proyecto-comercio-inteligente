@@ -10,6 +10,7 @@ import { ErrorApi } from "../servicios/clienteHttp";
 import { listarProductos, type Producto } from "../servicios/productos";
 import { compararPrecios, type ComparacionPrecios as Comparacion } from "../servicios/competencia";
 import { AntiguedadDato } from "../componentes/AntiguedadDato";
+import { formatearMoneda } from "../utilidades/formato";
 import estilos from "./Competencia.module.css";
 
 interface Props {
@@ -89,7 +90,7 @@ export function ComparacionPrecios({ idSucursal }: Props) {
               <div className={estilos.bloqueObs} key={o.id_observacion_precio}>
                 <span className={estilos.canal}>{o.canal}</span>
                 <span className={estilos.cifras}>
-                  Observado: ${o.precio_observado} · {o.presentacion}
+                  Observado: {formatearMoneda(o.precio_observado)} · {o.presentacion}
                 </span>
                 {o.comparable ? (
                   <span className={estilos.cifras}>

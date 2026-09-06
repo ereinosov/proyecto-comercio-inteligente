@@ -7,6 +7,7 @@
 import { useEffect, useState } from "react";
 import { listarProductos, type Producto } from "../servicios/productos";
 import { listarCapitalInmovilizado, type CapitalInmovilizado as Fila } from "../servicios/inventario";
+import { formatearMoneda } from "../utilidades/formato";
 import estilos from "./Inventario.module.css";
 
 interface Props {
@@ -69,7 +70,7 @@ export function CapitalInmovilizado({ idSucursal }: Props) {
                 </td>
                 <td className={estilos.num}>
                   {f.valor_calculable ? (
-                    `$${f.valor_inmovilizado}`
+                    formatearMoneda(f.valor_inmovilizado)
                   ) : (
                     <span className={estilos.noCalculable}>no calculable</span>
                   )}

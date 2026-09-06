@@ -8,6 +8,7 @@ import { useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarProductos, type Producto } from "../servicios/productos";
 import { registrarEntrada } from "../servicios/inventario";
+import { formatearMoneda } from "../utilidades/formato";
 import estilos from "./Inventario.module.css";
 
 interface Props {
@@ -48,7 +49,7 @@ export function EntradaInventario({ idSucursal }: Props) {
       setConfirmacion(
         `Lote #${lote.id_lote}: ${lote.cantidad_restante} ${
           producto?.es_granel ? "g" : "u"
-        } a ${lote.costo_unitario}`,
+        } a ${formatearMoneda(lote.costo_unitario)} c/u`,
       );
       setCantidad("");
       setCosto("");

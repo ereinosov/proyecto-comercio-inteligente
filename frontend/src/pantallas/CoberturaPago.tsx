@@ -19,6 +19,7 @@ import {
   type MedioPago,
   type ResumenCobertura,
 } from "../servicios/pagos";
+import { etiquetaMedioPago, formatearPorcentaje } from "../utilidades/formato";
 import estilos from "./CoberturaPago.module.css";
 
 export function CoberturaPago({ idSucursal, idOperador }: { idSucursal: number; idOperador: number }) {
@@ -108,7 +109,7 @@ export function CoberturaPago({ idSucursal, idOperador }: { idSucursal: number; 
                 <option value="">Elegir…</option>
                 {medios.map((m) => (
                   <option key={m.id_medio_pago} value={m.id_medio_pago}>
-                    {m.nombre.replaceAll("_", " ")}
+                    {etiquetaMedioPago(m.nombre)}
                   </option>
                 ))}
               </select>
@@ -156,7 +157,7 @@ export function CoberturaPago({ idSucursal, idOperador }: { idSucursal: number; 
                 <option value="">Elegir…</option>
                 {medios.map((m) => (
                   <option key={m.id_medio_pago} value={m.id_medio_pago}>
-                    {m.nombre.replaceAll("_", " ")}
+                    {etiquetaMedioPago(m.nombre)}
                   </option>
                 ))}
               </select>
@@ -184,12 +185,14 @@ export function CoberturaPago({ idSucursal, idOperador }: { idSucursal: number; 
               <tbody>
                 {resumen.medios.map((m) => (
                   <tr key={m.id_medio_pago}>
-                    <td>{m.nombre.replaceAll("_", " ")}</td>
+                    <td>{etiquetaMedioPago(m.nombre)}</td>
                     <td className={m.cubierto ? estilos.cubierto : estilos.noCubierto}>
                       {m.cubierto ? "sí" : "no"}
                     </td>
                     <td>{m.intencion_no_atendida}</td>
-                    <td className={estilos.estimado}>{m.cuota_no_atendida}</td>
+                    <td className={estilos.estimado}>
+                      {formatearPorcentaje(m.cuota_no_atendida)}
+                    </td>
                   </tr>
                 ))}
               </tbody>

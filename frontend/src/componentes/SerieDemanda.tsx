@@ -16,6 +16,7 @@
 import { useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { obtenerSerieDemanda, type PuntoSerie } from "../servicios/pronostico";
+import { formatearMoneda } from "../utilidades/formato";
 import estilos from "./SerieDemanda.module.css";
 
 function textoRespaldo(respaldo: PuntoSerie["respaldo_quiebre"]): string {
@@ -33,7 +34,7 @@ function NotasPeriodo({ punto }: { punto: PuntoSerie }) {
   if (correccionPrecio !== 0 && punto.precio_vigente_periodo) {
     const signo = correccionPrecio > 0 ? "+" : "";
     notas.push(
-      `precio del período $${punto.precio_vigente_periodo} → ${signo}${correccionPrecio.toFixed(0)} al normalizar (ε ${punto.elasticidad_usada})`
+      `precio del período ${formatearMoneda(punto.precio_vigente_periodo)} → ${signo}${correccionPrecio.toFixed(0)} al normalizar (ε ${punto.elasticidad_usada})`
     );
   }
   if (punto.excluido_por_promocion) {

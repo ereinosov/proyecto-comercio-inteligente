@@ -37,6 +37,7 @@ import {
 } from "../servicios/administracion";
 import { listarCategorias, type Categoria } from "../servicios/productos";
 import { listarSucursales, type Sucursal } from "../servicios/sucursales";
+import { etiquetaMedioPago, formatearMoneda } from "../utilidades/formato";
 import estilos from "./Administracion.module.css";
 
 interface Props {
@@ -62,11 +63,21 @@ const ENTIDADES_CON_BUSCADOR: ReadonlySet<EntidadMaestra> = new Set([
   "categorias",
 ]);
 
-const VISTAS: { valor: EntidadMaestra; etiqueta: string; singular: string; campos: Campo[] }[] = [
+// `nuevo`: la frase completa del botón de creación, con la concordancia de género correcta
+// ("Nueva sucursal", "Nuevo producto"). No se deriva de `singular` para no arrastrar el bug
+// de "+ Nuevo sucursal".
+const VISTAS: {
+  valor: EntidadMaestra;
+  etiqueta: string;
+  singular: string;
+  nuevo: string;
+  campos: Campo[];
+}[] = [
   {
     valor: "sucursales",
     etiqueta: "Sucursales",
     singular: "sucursal",
+    nuevo: "Nueva sucursal",
     campos: [
       { clave: "nombre", etiqueta: "Nombre", tipo: "texto" },
       { clave: "zona_horaria", etiqueta: "Zona horaria (IANA, p. ej. America/Guayaquil)", tipo: "texto" },
@@ -76,6 +87,7 @@ const VISTAS: { valor: EntidadMaestra; etiqueta: string; singular: string; campo
     valor: "productos",
     etiqueta: "Productos",
     singular: "producto",
+    nuevo: "Nuevo producto",
     campos: [
       { clave: "nombre", etiqueta: "Nombre", tipo: "texto" },
       { clave: "id_categoria", etiqueta: "Categoría", tipo: "categoria", opcional: true },
@@ -88,6 +100,7 @@ const VISTAS: { valor: EntidadMaestra; etiqueta: string; singular: string; campo
     valor: "categorias",
     etiqueta: "Categorías",
     singular: "categoría",
+    nuevo: "Nueva categoría",
     campos: [
       { clave: "nombre", etiqueta: "Nombre", tipo: "texto" },
       {
@@ -102,6 +115,7 @@ const VISTAS: { valor: EntidadMaestra; etiqueta: string; singular: string; campo
     valor: "zonas",
     etiqueta: "Zonas de exhibición",
     singular: "zona de exhibición",
+    nuevo: "Nueva zona de exhibición",
     campos: [
       { clave: "id_sucursal", etiqueta: "Sucursal", tipo: "sucursal" },
       { clave: "nombre", etiqueta: "Nombre", tipo: "texto" },
@@ -112,6 +126,7 @@ const VISTAS: { valor: EntidadMaestra; etiqueta: string; singular: string; campo
     valor: "medios",
     etiqueta: "Medios de pago",
     singular: "medio de pago",
+    nuevo: "Nuevo medio de pago",
     campos: [
       { clave: "nombre", etiqueta: "Nombre", tipo: "texto" },
       { clave: "requiere_terminal", etiqueta: "Requiere terminal de pago", tipo: "bool" },
@@ -343,7 +358,7 @@ export function Administracion({ idOperador, esEncargado }: Props) {
         </label>
         {esEncargado ? (
           <button className={estilos.botonNuevo} onClick={() => abrirModal()}>
-            + Nuevo {vista.singular}
+            + {vista.nuevo}
           </button>
         ) : (
           <span className={estilos.soloLectura}>
@@ -367,7 +382,7 @@ export function Administracion({ idOperador, esEncargado }: Props) {
           descripcion={
             conBuscador && busqueda.trim()
               ? "Prueba con otra parte del nombre; la búsqueda ignora mayúsculas."
-              : `Aquí aparecerá cada ${vista.singular} del sistema, con su estado y las acciones para editarlo o desactivarlo. Usa «+ Nuevo ${vista.singular}» para crear el primero.`
+              : `Aquí aparecerá cada ${vista.singular} del sistema, con su estado y las acciones para editarlo o desactivarlo. Usa «+ ${vista.nuevo}» para crear el primero.`
           }
         />
       ) : (
@@ -558,13 +573,17 @@ function celdasFila(
           {String(f.nombre)}
         </span>,
         nombreCat ?? "(sin categoría)",
-        String(f.precio_vigente),
+        formatearMoneda(f.precio_vigente as string | number),
         f.es_granel ? "Sí" : "No",
       ];
     }
     case "zonas":
       return [ayuda.nombreSucursal(f.id_sucursal as number), String(f.nombre), String(f.grado_privilegio)];
     case "medios":
-      return [String(f.nombre), f.requiere_terminal ? "Sí" : "No", f.admite_tokenizacion ? "Sí" : "No"];
+      return [
+        etiquetaMedioPago(String(f.nombre)),
+        f.requiere_terminal ? "Sí" : "No",
+        f.admite_tokenizacion ? "Sí" : "No",
+      ];
   }
 }

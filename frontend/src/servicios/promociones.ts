@@ -20,6 +20,8 @@ export interface Cupon {
   id_cupon: number;
   id_campania: number;
   id_cliente: number;
+  /** Resuelto por el backend en el listado; `null` si el cliente no tiene nombre registrado. */
+  nombre_cliente: string | null;
   motivo: string;
   fecha_objetivo: string;
   valido_desde: string;

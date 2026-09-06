@@ -15,6 +15,7 @@ import {
   type Cupon,
   type ResultadoGeneracion,
 } from "../servicios/promociones";
+import { nombreClienteODefecto } from "../utilidades/formato";
 import { Paginador, TAMANO_PAGINA } from "./Paginador";
 import estilos from "./GeneracionCupones.module.css";
 
@@ -131,7 +132,7 @@ export function GeneracionCupones() {
             {cupones.map((c) => (
               <tr key={c.id_cupon}>
                 <td>{c.id_cupon}</td>
-                <td>{c.id_cliente}</td>
+                <td>{nombreClienteODefecto(c.nombre_cliente, c.id_cliente)}</td>
                 <td>{c.fecha_objetivo}</td>
                 <td>
                   {c.valido_desde} — {c.valido_hasta}

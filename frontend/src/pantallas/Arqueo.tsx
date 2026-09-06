@@ -13,12 +13,13 @@ import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarArqueos, registrarArqueo, type Arqueo } from "../servicios/caja";
 import type { Turno } from "../servicios/turnos";
+import { formatearCaja, formatearMoneda } from "../utilidades/formato";
 import estilos from "./Arqueo.module.css";
 
 function Diferencia({ valor, motivo }: { valor: string; motivo: string | null }) {
   const numero = Number(valor);
   if (numero === 0) {
-    return <span className={estilos.cuadrado}>0.00 — cuadrado</span>;
+    return <span className={estilos.cuadrado}>{formatearMoneda(0)} — cuadrado</span>;
   }
   const signo = numero > 0 ? "+" : "";
   // Diferencia con motivo conocido anotado: atención (dato en seguimiento, no crítico).
@@ -29,7 +30,7 @@ function Diferencia({ valor, motivo }: { valor: string; motivo: string | null })
     <span className={clase}>
       <span className={motivo ? estilos.puntoMedio : estilos.puntoHueco} aria-hidden="true" />
       {signo}
-      {valor} — {texto}
+      {formatearMoneda(valor)} — {texto}
     </span>
   );
 }
@@ -62,8 +63,7 @@ export function Arqueo({ turno }: { turno: Turno }) {
   const totalFaltante = useMemo(
     () =>
       arqueos
-        .reduce((suma, a) => suma + Math.min(0, Number(a.diferencia)), 0)
-        .toFixed(2),
+        .reduce((suma, a) => suma + Math.min(0, Number(a.diferencia)), 0),
     [arqueos]
   );
 
@@ -95,7 +95,7 @@ export function Arqueo({ turno }: { turno: Turno }) {
       <div className={estilos.encabezado}>
         <h1 className={estilos.titulo}>Arqueo de caja</h1>
         <span className={estilos.resumen}>
-          Faltante acumulado del período: <strong>{totalFaltante}</strong>
+          Faltante acumulado del período: <strong>{formatearMoneda(totalFaltante)}</strong>
         </span>
       </div>
 
@@ -103,7 +103,7 @@ export function Arqueo({ turno }: { turno: Turno }) {
         <span className={estilos.campo}>
           Turno abierto
           <strong className={estilos.entrada}>
-            #{turno.id_turno} · caja {turno.caja}
+            Turno #{turno.id_turno} · {formatearCaja(turno.caja)}
           </strong>
         </span>
         <label className={estilos.campo}>
@@ -155,8 +155,8 @@ export function Arqueo({ turno }: { turno: Turno }) {
                 <tr key={a.id_arqueo}>
                   <td>{a.id_turno}</td>
                   <td>{a.dia_local}</td>
-                  <td className={estilos.der}>{a.monto_esperado}</td>
-                  <td className={estilos.der}>{a.monto_contado}</td>
+                  <td className={estilos.der}>{formatearMoneda(a.monto_esperado)}</td>
+                  <td className={estilos.der}>{formatearMoneda(a.monto_contado)}</td>
                   <td>
                     <Diferencia valor={a.diferencia} motivo={a.motivo_conocido} />
                   </td>

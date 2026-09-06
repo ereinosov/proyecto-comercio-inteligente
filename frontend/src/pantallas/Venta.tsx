@@ -31,6 +31,7 @@ import {
   type PromocionSeleccionada,
 } from "../componentes/AplicarPromocionVenta";
 import { ValorClienteResumen } from "../componentes/ValorClienteResumen";
+import { formatearMoneda } from "../utilidades/formato";
 import estilos from "./Venta.module.css";
 
 interface RenglonTicket {
@@ -238,7 +239,7 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
       <div className={estilos.pantallaConfirmada}>
         <div className={estilos.resumenConfirmado}>
           <p>{ventaConfirmada.anulada ? "Venta anulada" : "Venta registrada"}</p>
-          <span className={estilos.total}>${ventaConfirmada.total}</span>
+          <span className={estilos.total}>{formatearMoneda(ventaConfirmada.total)}</span>
           {ventaConfirmada.advertencias.length > 0 && (
             <p className={estilos.advertencia}>
               <svg width="10" height="10" viewBox="0 0 10 10" aria-hidden="true">
@@ -344,8 +345,8 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
                     ? `${(r.cantidadGramos / 1000).toFixed(3)} kg`
                     : `${r.cantidadUnidades} u`}
                 </td>
-                <td className={estilos.num}>{r.producto.precio_efectivo}</td>
-                <td className={estilos.num}>{r.importeEstimado}</td>
+                <td className={estilos.num}>{formatearMoneda(r.producto.precio_efectivo)}</td>
+                <td className={estilos.num}>{formatearMoneda(r.importeEstimado)}</td>
               </tr>
             ))}
 
@@ -426,7 +427,7 @@ export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
       <div className={estilos.pie}>
         <span>
           <span className={estilos.totalEtiqueta}>Total</span>
-          <span className={estilos.total}>${total}</span>
+          <span className={estilos.total}>{formatearMoneda(total)}</span>
         </span>
         <button
           className={`${estilos.botonCobrar} ${confirmado ? estilos.confirmado : ""}`}

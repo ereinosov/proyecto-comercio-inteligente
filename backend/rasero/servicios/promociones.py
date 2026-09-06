@@ -43,6 +43,7 @@ from rasero.errores import (
 from rasero.persistencia.modelos import (
     AsignacionExperimento,
     Campania,
+    Cliente,
     Cupon,
     IntervaloCompra,
     OfertaRecompra,
@@ -173,11 +174,14 @@ def generar_cupones(
     }
 
 
-def _cupon_a_respuesta(c: Cupon) -> dict:
+def _cupon_a_respuesta(c: Cupon, *, nombre_cliente: str | None = None) -> dict:
     return {
         "id_cupon": c.id_cupon,
         "id_campania": c.id_campania,
         "id_cliente": c.id_cliente,
+        # Nombre resuelto por JOIN en el listado (US1 de este bloque). Aditivo: los consumidores
+        # que sólo leían id_cliente lo ignoran. `None` si el cliente no tiene nombre registrado.
+        "nombre_cliente": nombre_cliente,
         "motivo": c.motivo,
         "fecha_objetivo": c.fecha_objetivo,
         "valido_desde": c.valido_desde,
@@ -208,7 +212,19 @@ def listar_cupones(
             Cupon.valido_desde <= hoy,
             Cupon.valido_hasta >= hoy,
         )
-    return [_cupon_a_respuesta(c) for c in sesion.execute(stmt).scalars()]
+    cupones = list(sesion.execute(stmt).scalars())
+    ids = {c.id_cliente for c in cupones}
+    nombres: dict[int, str | None] = (
+        {
+            fila.id_cliente: fila.nombre
+            for fila in sesion.execute(
+                select(Cliente.id_cliente, Cliente.nombre).where(Cliente.id_cliente.in_(ids))
+            )
+        }
+        if ids
+        else {}
+    )
+    return [_cupon_a_respuesta(c, nombre_cliente=nombres.get(c.id_cliente)) for c in cupones]
 
 
 # ==========================================================================

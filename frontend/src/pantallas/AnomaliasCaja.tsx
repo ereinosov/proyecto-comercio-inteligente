@@ -15,6 +15,7 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarAnomalias, resolverAnomalia, type AnomaliaCaja } from "../servicios/caja";
+import { formatearMoneda } from "../utilidades/formato";
 import estilos from "./CajaFraude.module.css";
 
 export function AnomaliasCaja({
@@ -98,7 +99,7 @@ export function AnomaliasCaja({
                 </span>
                 <span className={estilos.resumenAnomalia}>
                   {a.origen === "efectivo"
-                    ? `efectivo · ${a.monto}`
+                    ? `efectivo · ${formatearMoneda(a.monto)}`
                     : `inventario · ${a.magnitud} u`}
                 </span>
               </button>
@@ -131,7 +132,7 @@ export function AnomaliasCaja({
               {seleccionada.origen === "efectivo" && (
                 <div>
                   <dt>Monto</dt>
-                  <dd>{seleccionada.monto}</dd>
+                  <dd>{formatearMoneda(seleccionada.monto)}</dd>
                 </div>
               )}
               {seleccionada.origen === "inventario" && (

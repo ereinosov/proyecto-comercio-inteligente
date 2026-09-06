@@ -140,7 +140,7 @@ export function Mermas({ idSucursal, idOperador }: { idSucursal: number; idOpera
         <h2 className={estilos.subtitulo}>Clasificar diferencias de conteo físico</h2>
         <p className={estilos.notaBloqueada}>
           <span className={estilos.puntoHueco} aria-hidden="true" />
-          Requiere el conteo físico de inventario de 001, que todavía no está disponible.
+          Requiere el conteo físico de inventario, que todavía no está disponible.
         </p>
       </section>
 
