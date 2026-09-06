@@ -8,7 +8,7 @@
 
 import estilos from "./EstadoVacio.module.css";
 
-type Glifo = "lista" | "seleccion" | "caja";
+type Glifo = "lista" | "seleccion" | "caja" | "grafico";
 
 function IconoVacio({ glifo }: { glifo: Glifo }) {
   return (
@@ -39,6 +39,12 @@ function IconoVacio({ glifo }: { glifo: Glifo }) {
         <>
           <path d="M6 13 L20 7 L34 13 L20 19 Z" />
           <path d="M6 13 V27 L20 33 M34 13 V27 L20 33 M20 19 V33" />
+        </>
+      )}
+      {glifo === "grafico" && (
+        <>
+          <path d="M8 8 V32 H33" />
+          <path d="M13 26 L19 19 L24 23 L31 13" />
         </>
       )}
     </svg>

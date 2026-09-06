@@ -1,0 +1,41 @@
+/* Tarjeta contenedora de todo gráfico (Bloque A). Borde de 2px (La Regla del Filo), sin
+   sombra, sin gradiente. El radio lo fija el registro de la pantalla. */
+
+.tarjeta {
+  background: var(--color-superficie-alta);
+  border: 2px solid var(--color-borde);
+  padding: 16px 18px;
+}
+
+.operacion {
+  border-radius: var(--radio-operacion);
+}
+
+.analisis {
+  border-radius: var(--radio-analisis);
+}
+
+.titulo {
+  margin: 0 0 4px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-tinta);
+}
+
+.tituloAnalisis {
+  font-family: var(--tipografia-analisis);
+}
+
+.tituloOperacion {
+  font-family: var(--tipografia-operacion);
+}
+
+.subtitulo {
+  margin: 0 0 12px;
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+}
+
+.cuerpo {
+  width: 100%;
+}

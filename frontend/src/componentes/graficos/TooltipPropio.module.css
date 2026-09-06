@@ -1,0 +1,35 @@
+/* Tooltip propio de los gráficos — NUNCA el default de Recharts (trae box-shadow). Superficie
+   Alta, borde de 2px (La Regla del Filo), sin sombra. El radio lo pone el registro. */
+
+.caja {
+  background: var(--color-superficie-alta);
+  border: 2px solid var(--color-borde);
+  padding: 8px 10px;
+  font-size: 12px;
+}
+
+.operacion {
+  border-radius: var(--radio-operacion);
+  font-family: var(--tipografia-operacion);
+}
+
+.analisis {
+  border-radius: var(--radio-analisis);
+  font-family: var(--tipografia-analisis);
+}
+
+.etiqueta {
+  margin: 0 0 4px;
+  color: var(--color-tinta-suave);
+}
+
+.fila {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  color: var(--color-tinta);
+}
+
+.fila .valor {
+  font-variant-numeric: tabular-nums;
+}
