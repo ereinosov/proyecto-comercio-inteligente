@@ -10,6 +10,24 @@ Módulo base de Rasero: registra los hechos de venta e inventario de los que dep
 módulos. Se construye como servicio web con backend Python/FastAPI sobre PostgreSQL 16 y frontend
 React/Vite sin librería de componentes de terceros.
 
+**User Story 10 (P10, roles de operador, sucursal fija y autorización centralizada)** — ejerce el
+Principio VI, añadido a la constitución por la enmienda **v2.3.0** (territorio nuevo, no una
+contradicción). Cambia el esquema de `operador`: gana `id_sucursal` (FK → `sucursal`, NOT NULL,
+uno-a-uno) y su booleano `es_encargado` se reemplaza por `rol` (ENUM `cajero`/`encargado`/`admin`).
+La verificación de rol se centraliza en `backend/rasero/seguridad.py::requiere_rol` (y su
+dependency de FastAPI), reemplazando las tres funciones `_encargado_o_error` duplicadas en
+`administracion.py`, `cobertura_pago.py` y `terminales_pago.py`. La apertura de turno se restringe
+a `operador.id_sucursal` para `cajero`/`encargado` (defensa en profundidad en backend con
+`{codigo, mensaje}`), libre para `admin`. Frontend: un hook único `useRol`; la navegación
+**oculta** —no deshabilita— lo que el rol no puede usar; la gestión de operadores es una 6.ª
+pestaña de Administración visible sólo para `admin`, con `ModalAdministrable` para el alta/edición.
+Requiere migración de datos de Alembic (documentada, reversible: `es_encargado=false→cajero`,
+`true→encargado`, ningún `admin` automático). Es **autorización**, no autenticación: el PIN + hash
+(FR-006) no cambia, sin JWT ni sesión de servidor. Ver `spec.md` User Story 10 (FR-054 a FR-064),
+`data-model.md` (`operador`, `turno`), `tasks.md` Phase 12 (T096–T122) y la fila VI de la
+Constitution Check. Riesgo vigilado: toca `operador`/`turno` certificadas de US1 — línea base de
+pruebas antes y después de la migración (T096, T121).
+
 **User Story 9 (P9, corregir el carrito antes de cobrar)** — añadida por auditoría de uso tras la
 certificación de US1. Es puramente de frontend: el carrito de `Venta.tsx` vive en `useState`
 (`renglones`) y no se persiste hasta "Cobrar" (verificado en el código). US9 solo añade lógica de

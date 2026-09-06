@@ -150,6 +150,24 @@ corto, otro de no perecedero con umbral largo.
 global de respaldo. Un lote sin costo registrado aparece con valor **no calculable**, nunca cero. El
 sistema no propone ninguna acción sobre lo señalado.
 
+### 11. Roles, sucursal fija y autorización centralizada (FR-054 a FR-064, SC-012 a SC-014)
+
+Con la semilla migrada: `Ana Cajera` (`cajero`, Quevedo Centro), `Luis Encargado` (`encargado`,
+Quevedo Centro), `Marta Administradora` (`admin`, Quevedo Centro).
+
+**Esperado**:
+- `Ana` abre turno sin ver selector de sucursal (se fija a Quevedo Centro); un `POST /turnos` con
+  otra sucursal responde `422` `codigo: "turno_sucursal_no_asignada"` y no crea turno.
+- `Marta` ve el selector y puede abrir turno en Buena Fe.
+- Con turno de `Ana`, el nav no muestra "Administración" ni el atajo "+ Crear producto"; un
+  `POST /pagos/terminales` directo se rechaza por rol.
+- Con turno de `Luis`, Administración muestra las 5 pestañas de maestros pero no "Operadores".
+- Con turno de `Marta`, aparece la 6.ª pestaña "Operadores"; puede crear un `cajero` nuevo y
+  cambiarle la sucursal. Un `PUT /operadores/{id}` firmado por `Luis` que suba a alguien a
+  `encargado` se rechaza.
+- `grep -r es_encargado backend/ frontend/src/` no devuelve nada; `requiere_rol` es la única vía
+  de verificación de rol en el backend.
+
 ## Comprobaciones de diseño
 
 No llevan prueba automatizada —la interfaz está exenta por el Principio III— pero se verifican a

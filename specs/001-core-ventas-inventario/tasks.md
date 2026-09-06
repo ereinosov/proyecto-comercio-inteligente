@@ -256,6 +256,77 @@ lo que quedó en pantalla.
 
 ---
 
+## Phase 12: User Story 10 - Roles de operador, sucursal fija y autorización centralizada (Priority: P10)
+
+**Goal**: `operador` gana `id_sucursal` (FK, uno-a-uno) y `rol` (ENUM `cajero`/`encargado`/`admin`)
+en reemplazo de `es_encargado`; la autorización pasa por un mecanismo central de backend
+(`requiere_rol`) y un hook único de frontend (`useRol`); la navegación oculta lo que el rol no
+puede usar; `admin` gestiona operadores.
+
+**Independent Test**: ver User Story 10 de spec.md (escenarios 1–9).
+
+> Ejerce el Principio VI (enmienda constitucional **v2.3.0**). Toca `operador` y `turno`,
+> entidades certificadas de US1 — de ahí las tareas de línea base de pruebas antes y después de
+> la migración. Es autorización, no autenticación: el PIN + hash (FR-006) no cambia.
+
+### Línea base (antes de tocar el modelo)
+
+- [ ] T096 [US10] Correr la suite completa (`backend/.venv/Scripts/pytest tests`) y registrar el resultado como línea base en el mensaje de commit / PR: qué pasa hoy, antes del cambio de esquema
+- [ ] T097 [US10] Grep de línea base: listar toda referencia a `es_encargado` y a `_encargado_o_error` en `backend/` y `frontend/src/`, y todo endpoint sin ningún control de identidad de operador, para el resumen final (FR-057, spec §B4)
+
+### Migración de datos
+
+- [ ] T098 [US10] Migración de Alembic en `backend/migraciones/versions/` que: añade `operador.id_sucursal` (FK → `sucursal`, NOT NULL) y `operador.rol` (`TEXT NOT NULL CHECK (rol IN ('cajero','encargado','admin'))`); convierte datos con **comentario explícito de la regla**: `es_encargado=FALSE → 'cajero'`, `es_encargado=TRUE → 'encargado'`, ningún `admin`; deriva `id_sucursal` del último turno del operador o de la primera sucursal activa; elimina la columna `es_encargado`; incluye `downgrade()` que revierte (recrea `es_encargado`, `'encargado'/'admin' → TRUE`, resto `FALSE`, elimina `rol` e `id_sucursal`) (FR-054, FR-055, FR-056)
+- [ ] T099 [US10] Actualizar `backend/rasero/persistencia/modelos.py`: `Operador` gana `id_sucursal: Mapped[int]` (FK, nullable=False) y `rol: Mapped[str]` con `CheckConstraint`; se retira `es_encargado` (depende de T098)
+
+### Backend — mecanismo central
+
+- [ ] T100 [US10] Extender `backend/rasero/seguridad.py` (NO duplicarlo) con `RANGO_ROL` (jerarquía `cajero`<`encargado`<`admin`) y `requiere_rol(sesion, id_operador, rol_minimo) -> Operador`: resuelve el operador, valida existencia y `activo`, valida `rol >= rol_minimo`; levanta el `ErrorDominio` apropiado con los códigos ya existentes del sistema (reutiliza `ErrorAdministracion` / `ErrorPagos` según el router; no inventa tipo nuevo) (FR-057; depende de T099)
+- [ ] T101 [US10] Factory de dependency de FastAPI en `backend/rasero/seguridad.py` (o `api/dependencias.py` si encaja mejor con el patrón): `exige_rol(rol_minimo)` devuelve una dependency que lee `id_operador` del cuerpo/query igual que hoy y llama `requiere_rol` (FR-057; depende de T100)
+- [ ] T102 [P] [US10] Reemplazar `_encargado_o_error` en `backend/rasero/servicios/administracion.py` por `requiere_rol(..., "encargado")`; eliminar la función local (FR-057, FR-058; depende de T100)
+- [ ] T103 [P] [US10] Ídem en `backend/rasero/servicios/cobertura_pago.py` (FR-057, FR-058; depende de T100)
+- [ ] T104 [P] [US10] Ídem en `backend/rasero/servicios/terminales_pago.py` (FR-057, FR-058; depende de T100)
+- [ ] T105 [US10] `backend/rasero/servicios/ventas.py` / anulación: la anulación de venta de turno cerrado pasa a `requiere_rol(..., "encargado")` (data-model.md, regla de autorización FR-049; depende de T100)
+- [ ] T106 [US10] Restricción de sucursal en `backend/rasero/servicios/turnos.py::abrir_turno`: si `operador.rol` ∈ {`cajero`,`encargado`} y `id_sucursal != operador.id_sucursal` → `ErrorDominio` `{codigo: "turno_sucursal_no_asignada", mensaje: "Este operador está asignado a [sucursal], no puede abrir turno en otra sucursal."}`; `admin` sin restricción (FR-060, FR-061; depende de T099)
+
+### Backend — gestión de operadores (admin-only)
+
+- [ ] T107 [US10] `backend/rasero/servicios/operadores.py`: `crear_operador`, `actualizar_operador` (nombre, rol, id_sucursal), `fijar_activo_operador`, todos tras `requiere_rol(..., "admin")`; valida sucursal existente y rol del ENUM; `listar_operadores_activos` devuelve `rol` e `id_sucursal` (no `pin_hash`) (FR-059; depende de T100)
+- [ ] T108 [US10] `backend/rasero/api/operadores.py`: `GET /operadores` devuelve `rol`/`id_sucursal`; `POST /operadores`, `PUT /operadores/{id}`, `POST /operadores/{id}/activo` con la dependency `exige_rol("admin")` (FR-059; depende de T101, T107)
+
+### Backend — pruebas obligatorias (contrato + transición de estado, Principio III)
+
+- [ ] T109 [US10] `tests/integracion/test_autorizacion.py`: `requiere_rol` acepta/rechaza por jerarquía; un `cajero` y un `encargado` son rechazados en acciones de admin; un `encargado` puede administrar maestros; operador inactivo rechazado (FR-057, FR-058, FR-059)
+- [ ] T110 [US10] `tests/integracion/test_turno_sucursal.py`: `cajero`/`encargado` sólo abren turno en su sucursal (código y mensaje exactos); `admin` abre en cualquiera (FR-060, FR-061)
+- [ ] T111 [US10] `tests/integracion/test_migracion_operador.py` (o extensión de una suite existente): tras migrar la semilla, `Ana Cajera → cajero`, `Luis Encargado → encargado`, 0 `admin` automáticos, toda `id_sucursal` no nula (FR-056, SC-012)
+- [ ] T112 [US10] Actualizar las suites que asumían el modelo viejo (`tests/integracion/test_administracion.py`, `test_cobertura.py`, `test_terminales.py`, `tests/apoyo*.py`, `test_quickstart_001.py`): `Operador(es_encargado=…)` → `Operador(rol=…, id_sucursal=…)`. Documentar en el commit cuáles se tocaron y por qué (test que asumía el modelo viejo, no regresión)
+
+### Frontend — hook y ocultamiento
+
+- [ ] T113 [US10] `frontend/src/hooks/useRol.ts`: consume la fuente de verdad existente del operador del turno (hoy `App.tsx` estado `esEncargado`); expone `rol`, `puedeVer(rolMinimo)`, `esAdmin()`, `esEncargadoOMas()`. Migrar `App.tsx` para exponer `rol`/`id_sucursal` del operador en vez de `esEncargado` (FR-062)
+- [ ] T114 [US10] `frontend/src/servicios/operadores.ts`: tipo `Operador` con `rol`/`id_sucursal` (quitar `es_encargado`); funciones `crearOperador`, `actualizarOperador`, `fijarActivoOperador` (FR-059, FR-062)
+- [ ] T115 [P] [US10] Migrar toda lectura de `es_encargado` en `frontend/src/`: `App.tsx` (nav "Administración"), `pantallas/Administracion.tsx`, `componentes/CrearProductoModal.tsx` y el atajo "+ Crear producto" en `pantallas/Venta.tsx` → consumir `useRol` (`esEncargadoOMas()`) (FR-062, SC-013)
+- [ ] T116 [US10] Nav global: ítem "Administración" oculto si `!esEncargadoOMas()`; ningún ítem de encargado/admin renderizado para `cajero` (FR-062, SC-014)
+- [ ] T117 [US10] `frontend/src/pantallas/AperturaTurno.tsx`: selector de sucursal sólo visible si `esAdmin()`; para `cajero`/`encargado` la sucursal se fija a `operador.id_sucursal` (nombre mostrado como texto, no selector) (FR-060)
+
+### Frontend — 6.ª pestaña de Administración (admin-only)
+
+- [ ] T118 [US10] `frontend/src/pantallas/Administracion.tsx`: 6.ª pestaña segmentada "Operadores", presente en el segmentado **sólo si** `esAdmin()` (para `encargado` no aparece). Lista de operadores con rol y sucursal, acciones Editar/Desactivar (FR-059, FR-062)
+- [ ] T119 [US10] Alta/edición de operador con `frontend/src/componentes/ModalAdministrable.tsx` (componente existente, La Regla del Modal Administrable): campos nombre, selector de sucursal (obligatorio) y selector de rol `cajero`/`encargado`/`admin` (obligatorio) (FR-059)
+
+### Semilla
+
+- [ ] T120 [US10] `backend/rasero/semilla.py`: `Ana Cajera` con `rol="cajero"`, `id_sucursal=quevedo`; `Luis Encargado` con `rol="encargado"`, `id_sucursal=quevedo`; **nuevo** `Marta Administradora` con `rol="admin"`, `id_sucursal=quevedo`, `pin_hash` como los demás. Actualizar los `print` del resumen. Ídem cualquier `Operador(...)` en `semilla_reactivacion.py` u otras semillas
+
+### Cierre
+
+- [ ] T121 [US10] Volver a correr la suite completa; comparar con la línea base de T096. Todo lo que pasaba antes pasa después, o está documentado como test actualizado (T112) — ninguna regresión real sin corregir
+- [ ] T122 [US10] Grep final: `es_encargado` no aparece en ningún archivo de `backend/` ni `frontend/src/`; `_encargado_o_error` eliminada; `requiere_rol` es la única vía de verificación de rol en backend (SC-013)
+
+**Checkpoint**: User Story 10 funcional junto con las anteriores; US1 y el resto intactos; migración reversible verificada.
+
+---
+
 ## Phase Final: Polish & Cross-Cutting Concerns
 
 **Propósito**: validación de extremo a extremo y cumplimiento transversal.
@@ -346,7 +417,7 @@ Con más de una persona disponible:
 - La etiqueta [Story] traza cada tarea a su historia de usuario en spec.md.
 - Las 6 suites obligatorias del Principio III están marcadas y deben pasar antes de fusionar; no hay pruebas de interfaz, maquetación ni componentes visuales.
 - Backend en `backend/`, frontend en `frontend/`, pruebas en `tests/` — las tres en la raíz. Ninguna tarea genera código en `specs/` ni crea `src/` en la raíz del repositorio.
-- Fuera de alcance de este desglose: autenticación más allá del PIN de operador, roles y permisos, devolución de mercancía con reembolso, contenedores Docker y despliegue.
+- Fuera de alcance de este desglose: autenticación más allá del PIN de operador, devolución de mercancía con reembolso, contenedores Docker y despliegue. **Roles y permisos ya NO están fuera de alcance**: la enmienda constitucional v2.3.0 (Principio VI) los incorporó como User Story 10 / Phase 12 (autorización por rol `cajero`/`encargado`/`admin`, sucursal fija por operador, mecanismo central `requiere_rol`). La autenticación (PIN + hash) sigue sin cambios.
 
 ### Adiciones y desviaciones registradas durante la implementación del Bloque B (US2–US8)
 

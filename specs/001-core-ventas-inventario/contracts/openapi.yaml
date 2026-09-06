@@ -34,7 +34,14 @@ paths:
     post:
       tags: [turnos]
       summary: Abrir turno de operador
-      description: El operador se elige de una lista y confirma su PIN de cuatro dígitos.
+      description: |
+        El operador se elige de una lista y confirma su PIN de cuatro dígitos.
+
+        **Autorización de sucursal (User Story 10, Principio VI)**: para un operador con rol
+        `cajero` o `encargado`, `id_sucursal` DEBE coincidir con `operador.id_sucursal`; el
+        frontend ya no muestra selector para esos roles. Un `admin` puede abrir turno en
+        cualquier sucursal activa. Un `cajero`/`encargado` que envíe otra sucursal recibe `422`
+        con `codigo: "turno_sucursal_no_asignada"` y no se crea turno.
       requestBody:
         required: true
         content:
@@ -58,6 +65,13 @@ paths:
               schema: { $ref: '#/components/schemas/Turno' }
         '401':
           description: PIN incorrecto
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: |
+            El operador (`cajero`/`encargado`) intentó abrir turno en una sucursal distinta a
+            la asignada (`codigo: "turno_sucursal_no_asignada"`).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
@@ -169,7 +183,8 @@ paths:
       description: |
         Añadido durante /speckit-implement de User Story 1: FR-005 exige que el operador se
         identifique "eligiéndose de una lista" al abrir turno, y el contrato no exponía ninguna
-        lectura de `operador`. Nunca expone `pin_hash`.
+        lectura de `operador`. Nunca expone `pin_hash`. User Story 10: cada elemento incluye
+        `rol` (`cajero`|`encargado`|`admin`) e `id_sucursal`.
       responses:
         '200':
           description: Operadores activos
@@ -178,6 +193,88 @@ paths:
               schema:
                 type: array
                 items: { $ref: '#/components/schemas/Operador' }
+    post:
+      tags: [turnos]
+      summary: Alta de operador (User Story 10, sólo rol admin)
+      description: |
+        Exclusivo del rol `admin` (Principio VI, FR-059). `id_operador` del solicitante viaja
+        en el cuerpo, igual que en el resto del sistema. Un `encargado` recibe rechazo.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperadorNuevo' }
+      responses:
+        '201':
+          description: Operador creado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Operador' }
+        '403':
+          description: El solicitante no es `admin`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /operadores/{id_operador}:
+    put:
+      tags: [turnos]
+      summary: Editar nombre, rol o sucursal de un operador (User Story 10, sólo rol admin)
+      description: |
+        Exclusivo del rol `admin` (FR-059). Ningún `encargado` puede ascender a otro operador.
+      parameters:
+        - name: id_operador
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OperadorNuevo' }
+      responses:
+        '200':
+          description: Operador actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Operador' }
+        '403':
+          description: El solicitante no es `admin`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /operadores/{id_operador}/activo:
+    post:
+      tags: [turnos]
+      summary: Activar o desactivar un operador (User Story 10, sólo rol admin)
+      description: Nunca borra (Principio IV); fija `activo`.
+      parameters:
+        - name: id_operador
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [activo, id_operador_solicitante]
+              properties:
+                activo: { type: boolean }
+                id_operador_solicitante: { type: integer }
+      responses:
+        '200':
+          description: Estado actualizado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Operador' }
+        '403':
+          description: El solicitante no es `admin`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
 
   /productos:
     get:
@@ -731,10 +828,34 @@ components:
 
     Operador:
       type: object
+      description: |
+        User Story 10 (Principio VI, enmienda v2.3.0): `es_encargado` (boolean) se retiró y se
+        reemplazó por `rol` (ENUM cerrado). `id_sucursal` es la sucursal fija del operador.
       properties:
         id_operador: { type: integer }
         nombre: { type: string }
-        es_encargado: { type: boolean }
+        rol:
+          type: string
+          enum: [cajero, encargado, admin]
+        id_sucursal: { type: integer }
+
+    OperadorNuevo:
+      type: object
+      required: [nombre, rol, id_sucursal, id_operador_solicitante]
+      properties:
+        nombre: { type: string }
+        rol:
+          type: string
+          enum: [cajero, encargado, admin]
+        id_sucursal: { type: integer }
+        pin:
+          type: string
+          pattern: '^[0-9]{4}$'
+          writeOnly: true
+          description: Requerido en el alta; opcional en la edición (si se omite, el PIN no cambia).
+        id_operador_solicitante:
+          type: integer
+          description: Operador que ejecuta la acción; debe tener rol `admin` (FR-059).
 
     Producto:
       type: object

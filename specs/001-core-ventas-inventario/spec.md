@@ -307,6 +307,62 @@ registrada contiene exactamente los renglones y cantidades resultantes.
 
 ---
 
+### User Story 10 - Roles de operador, sucursal fija y autorización centralizada (Priority: P10)
+
+Hoy un `operador` es global (sin sucursal asignada) y su única distinción de capacidad es el
+booleano `es_encargado`, cuyo chequeo está copiado en tres servicios distintos. Esta historia
+convierte eso en un modelo de autorización real: cada operador pertenece a una sucursal fija y
+tiene uno de tres roles (`cajero` < `encargado` < `admin`); la verificación de rol vive en un
+único mecanismo de backend y un único hook de frontend; y la interfaz **oculta** —no
+deshabilita— lo que el rol activo no puede hacer. Un rol nuevo, `admin`, gana en exclusiva la
+gestión de operadores.
+
+Esto ejerce el **Principio VI** de la constitución (enmienda **v2.3.0**), que también cambia el
+esquema de la entidad `operador` de este módulo. Es **autorización**, no autenticación: el PIN
++ hash (FR-006) no cambia, no se introduce JWT ni sesión de servidor, y `id_operador` sigue
+viajando explícito.
+
+**Why this priority**: es un cambio de arquitectura sobre `operador` y `turno`, entidades ya
+certificadas de US1. Se numera P10 porque depende de que exista el flujo de turno (US1) y toca
+datos de sesión ya en producción; su migración de datos debe correr contra el esquema vivo. No
+altera ningún cálculo de dinero, existencias ni el contrato de `POST /ventas`.
+
+**Independent Test**: crear un operador `cajero` atado a la sucursal A; iniciar sesión con él y
+verificar que (a) la apertura de turno se resuelve a la sucursal A sin selector, (b) los ítems
+de nav de encargado/admin no aparecen, (c) un intento directo por API de una acción de
+encargado se rechaza con `{codigo, mensaje}`. Repetir con un `admin` y verificar que ve el
+selector de sucursal, la pestaña de gestión de operadores, y puede crear/editar operadores.
+
+**Acceptance Scenarios**:
+
+1. **Given** un operador con rol `cajero` y sucursal asignada A, **When** abre turno, **Then**
+   el turno se crea en la sucursal A sin que se le muestre ningún selector de sucursal.
+2. **Given** ese mismo `cajero`, **When** por API directa intenta abrir turno en la sucursal B,
+   **Then** el backend lo rechaza con `{codigo: "turno_sucursal_no_asignada", mensaje: "Este
+   operador está asignado a [A], no puede abrir turno en otra sucursal."}` y no se crea turno.
+3. **Given** un operador con rol `admin`, **When** abre turno, **Then** se le muestra el
+   selector de sucursal y puede elegir cualquiera de las sucursales activas.
+4. **Given** un turno abierto por un `cajero`, **When** carga cualquier pantalla, **Then** el
+   ítem de nav "Administración", el atajo "+ Crear producto nuevo" y todo botón de
+   Editar/Desactivar de listas administrables **no se renderizan** (no aparecen deshabilitados).
+5. **Given** un turno abierto por un `encargado`, **When** entra a Administración, **Then** ve
+   las 5 pestañas de datos maestros y sus acciones de crear/editar/desactivar, pero **no** la
+   pestaña de gestión de operadores.
+6. **Given** un turno abierto por un `admin`, **When** entra a Administración, **Then** ve una
+   6.ª pestaña "Operadores" donde puede dar de alta un operador (con sucursal y rol
+   obligatorios), cambiar el rol o la sucursal de otro, y desactivarlo.
+7. **Given** un `encargado`, **When** por API directa intenta cambiar el rol de otro operador a
+   `encargado` o `admin`, **Then** el backend lo rechaza: ascender operadores es exclusivo de
+   `admin`.
+8. **Given** cualquier operador (incluido `cajero`), **When** edita un `cliente`, **Then** la
+   acción se permite: la edición de cliente sigue sin restricción de rol.
+9. **Given** la base de datos anterior a esta historia, **When** corre la migración, **Then**
+   cada operador con `es_encargado=false` queda con `rol='cajero'`, cada uno con
+   `es_encargado=true` queda con `rol='encargado'`, ninguno queda como `admin`, y cada uno
+   recibe una `id_sucursal` no nula.
+
+---
+
 ### Edge Cases
 
 - **Peso cero o negativo en báscula**: un renglón de granel con cantidad menor o igual a cero se
@@ -342,6 +398,22 @@ registrada contiene exactamente los renglones y cantidades resultantes.
   igual que hoy trata US1 una cantidad no válida.
 - **Editar el único renglón del carrito hasta dejarlo inválido**: no se borra el carrito; la acción
   de cobrar simplemente no está disponible mientras no haya un renglón válido.
+- **Operador existente sin turnos previos al migrar**: recibe como `id_sucursal` la primera
+  sucursal activa por orden de `id_sucursal`; queda anotado para que un `admin` lo revise, nunca
+  se deja nulo.
+- **`admin` que abre turno sin elegir sucursal**: el selector no tiene valor por defecto; el
+  turno no se abre hasta que elige una. Su `operador.id_sucursal` no se usa como valor
+  preseleccionado para no sugerir una restricción que no existe.
+- **Desactivar al único `admin`**: la gestión de operadores no lo impide, pero muestra una
+  advertencia de que quedará sin ningún operador capaz de gestionar operadores; la decisión es
+  del `admin` que la ejecuta (mismo criterio que el resto de desactivaciones: informar con datos
+  reales, nunca bloquear).
+- **Cambiar la sucursal de un operador con turno abierto**: se permite; el turno en curso
+  conserva su `id_sucursal` original (las ventas ya atribuidas no se reatribuyen), y la nueva
+  sucursal aplica a partir del siguiente turno.
+- **Frontend que oculta una opción y backend que igual la recibe**: defensa en profundidad. Que
+  el nav no ofrezca una acción no exime al backend de rechazarla con `{codigo, mensaje}` si
+  llega por API directa.
 
 ## Requirements *(mandatory)*
 
@@ -512,6 +584,56 @@ registrada contiene exactamente los renglones y cantidades resultantes.
   edición, sin efecto sobre FEFO (FR-048), el saldo negativo visible (FR-047) ni ningún otro
   requisito de US1.
 
+**Roles de operador, sucursal fija y autorización centralizada (User Story 10 — Principio VI,
+enmienda constitucional v2.3.0)**
+
+- **FR-054**: Cada `operador` DEBE pertenecer a exactamente una `sucursal` (`operador.id_sucursal`,
+  FK, NOT NULL). Es una relación uno-a-uno; una tabla de asociación operador↔sucursal está
+  PROHIBIDA salvo caso de uso demostrado de rotación.
+- **FR-055**: Cada `operador` DEBE tener exactamente un rol de un conjunto cerrado: `cajero`,
+  `encargado` o `admin`. La columna booleana `es_encargado` se retira. La jerarquía es
+  acumulativa: `cajero` < `encargado` < `admin`.
+- **FR-056**: La migración de datos DEBE convertir `es_encargado=false → rol='cajero'` y
+  `es_encargado=true → rol='encargado'`, sin promover ningún operador a `admin`. El script de
+  migración DEBE llevar la regla de conversión como comentario explícito y su procedimiento de
+  reversión. `id_sucursal` de cada operador existente se deriva de su último turno, o de la
+  primera sucursal activa si no tiene turnos.
+- **FR-057**: La verificación de rol DEBE realizarse en un único mecanismo de backend
+  —`requiere_rol(sesion, id_operador, rol_minimo)` en `backend/rasero/seguridad.py`, expuesto
+  además como dependency reutilizable de FastAPI parametrizable por rol mínimo—. Replicar el
+  chequeo de rol por servicio, router o pantalla está PROHIBIDO. Las tres funciones
+  `_encargado_o_error` actuales (`administracion.py`, `cobertura_pago.py`, `terminales_pago.py`)
+  DEBEN eliminarse y reemplazarse por ese mecanismo. El código de error reutiliza los tipos ya
+  existentes del sistema; no se introduce un tipo de error nuevo si uno cubre el caso.
+- **FR-058**: Toda acción que hoy requiere `es_encargado` (administración de datos maestros,
+  terminales de pago, cobertura de medios de pago) DEBE requerir rol `encargado` o superior —
+  igual de accesible para `encargado` y `admin`.
+- **FR-059**: La gestión de operadores —alta, edición, desactivación— y la asignación de rol y
+  de sucursal de otros operadores DEBE ser exclusiva del rol `admin`. Ningún `encargado` puede
+  ascender a otro operador a `encargado` ni a `admin`.
+- **FR-060**: Al abrir turno, para un operador `cajero` o `encargado` la sucursal DEBE resolverse
+  automáticamente a `operador.id_sucursal`, sin selector visible. Para `admin` el selector DEBE
+  permanecer visible y permitir cualquier sucursal activa (su `id_sucursal` es dato de registro,
+  no restricción).
+- **FR-061**: El backend DEBE rechazar (defensa en profundidad) todo intento de que un `cajero`
+  o `encargado` abra turno en una sucursal distinta a la asignada, con
+  `{codigo: "turno_sucursal_no_asignada", mensaje: "Este operador está asignado a [sucursal], no
+  puede abrir turno en otra sucursal."}` — mismo formato `{codigo, mensaje}` del resto del
+  sistema. No se crea turno.
+- **FR-062**: El frontend DEBE **ocultar** —no deshabilitar— toda opción de navegación y toda
+  acción que el rol activo no pueda usar: el ítem "Administración", el atajo "+ Crear producto
+  nuevo" desde Venta, los botones de Editar/Desactivar de listas administrables y la pestaña de
+  gestión de operadores. El patrón es el ya establecido para el atajo de creación de producto:
+  "nunca lleva a un error de permisos, simplemente no se ofrece". La lectura del rol DEBE
+  centralizarse en un único hook de frontend (`useRol`) que reutiliza la fuente de verdad
+  existente del operador del turno; leer `es_encargado` directamente en un componente está
+  PROHIBIDO.
+- **FR-063**: La edición de `cliente` NO tiene restricción de rol y esta historia NO la
+  introduce: cualquier `cajero` puede editarla (decisión explícita ya documentada).
+- **FR-064**: Esta historia es de **autorización**, no de autenticación. NO introduce JWT, sesión
+  de servidor ni ningún mecanismo de autenticación nuevo; `id_operador` sigue viajando explícito
+  y el PIN + hash (FR-006) no cambia.
+
 ### Key Entities
 
 Entidades ya asignadas a este módulo por la constitución vigente:
@@ -538,8 +660,13 @@ Entidades ya asignadas a este módulo por la constitución vigente:
 Entidades **incorporadas a este módulo por la enmienda v2.1.0** de la constitución, a raíz de esta
 misma especificación — ver "Dependencias Constitucionales":
 
-- **operador**: persona que ejecuta ventas y conteos, con su PIN. No es un sistema de usuarios.
-- **turno**: periodo de trabajo de un operador en una caja y sucursal.
+- **operador**: persona que ejecuta ventas y conteos, con su PIN. **Enmienda v2.3.0 (User Story
+  10)**: gana `id_sucursal` (FK → `sucursal`, NOT NULL, uno-a-uno) y su booleano `es_encargado`
+  se reemplaza por `rol` (ENUM cerrado `cajero` | `encargado` | `admin`). La autorización por rol
+  es un mecanismo central (`requiere_rol`), no un chequeo por servicio.
+- **turno**: periodo de trabajo de un operador en una caja y sucursal. **Enmienda v2.3.0**: para
+  `cajero`/`encargado` la sucursal se resuelve a `operador.id_sucursal` (sin selector); `admin`
+  elige libremente.
 - **traspaso**: operación que enlaza la salida en origen con la entrada en destino y es dueña de la
   mercancía en tránsito.
 - **conteo_fisico**: conteo programado y sus renglones contados, con la diferencia resultante.
@@ -584,6 +711,15 @@ detectadas al escribir `data-model.md` — ver "Dependencias Constitucionales":
 - **SC-011**: Un cajero que agregó un renglón equivocado corrige la cantidad o lo quita del carrito
   en menos de 10 segundos y sin reiniciar la venta; el total mostrado refleja el cambio de
   inmediato, y la venta cobrada coincide exactamente con lo que quedó en pantalla.
+- **SC-012**: Tras la migración de la User Story 10, el 100 % de los operadores existentes tiene
+  un rol (`cajero` o `encargado`, según su antiguo `es_encargado`) y una `id_sucursal` no nula,
+  y **cero** operadores quedaron como `admin` sin haberse creado explícitamente.
+- **SC-013**: La cadena de texto `es_encargado` no aparece en ningún archivo de `backend/` ni de
+  `frontend/src/` tras la User Story 10 —ni como columna, ni como campo de respuesta, ni como
+  lectura de componente— y la única vía de verificación de rol en el backend es `requiere_rol`.
+- **SC-014**: Un `cajero` no ve en ninguna pantalla —ni deshabilitada— una sola opción que
+  requiera `encargado` o `admin`; un intento por API directa de cualquiera de esas acciones se
+  rechaza con `{codigo, mensaje}`.
 
 ## Dependencias Constitucionales
 
