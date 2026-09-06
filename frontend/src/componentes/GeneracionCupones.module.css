@@ -41,15 +41,22 @@
   padding: 8px 10px;
 }
 
+/* Acción primaria del registro de Análisis: mismo patrón que "Abrir turno" (fondo claro, borde
+   y texto en Tinta). Sin Verde Rasero: esta pantalla no compromete dinero (Regla del Registro
+   Sin Dinero); sin fondo Tinta sólido tampoco, para no imitar el peso del botón de cobro. */
 .boton {
   font-family: var(--tipografia-analisis);
   font-size: 14px;
-  color: var(--color-superficie-alta);
-  background: var(--color-tinta);
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
   border-radius: var(--radio-analisis);
   padding: 9px 18px;
   cursor: pointer;
+}
+
+.boton:not(:disabled):hover {
+  background: var(--color-superficie-base);
 }
 
 .boton:disabled {
@@ -99,8 +106,11 @@
   color: var(--color-tinta);
 }
 
+/* "Redimido" es un hecho registrado, no la acción de cobro: va en Tinta, nunca en Verde Rasero
+   (Regla de la Sola Voz + Regla del Registro Sin Dinero). El texto es el portador. */
 .estado_redimido {
-  color: var(--color-marca);
+  color: var(--color-tinta);
+  font-weight: 600;
 }
 
 .estado_vencido {

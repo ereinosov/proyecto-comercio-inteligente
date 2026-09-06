@@ -177,7 +177,9 @@ export function ResultadoExperimento() {
               <span className={estilos.inferenciaTexto}>{inferencia.texto}</span>
             </p>
           )}
-          <p className={estilos.veredicto}>
+          <p
+            className={`${estilos.veredicto} ${estilos[`veredicto_${experimento.veredicto}`] ?? ""}`}
+          >
             Veredicto: <strong>{experimento.veredicto.replace("_", " ")}</strong>
           </p>
         </div>

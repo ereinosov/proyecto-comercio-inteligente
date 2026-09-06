@@ -22,15 +22,21 @@
   flex-wrap: wrap;
 }
 
+/* Acción primaria del registro de Análisis: fondo claro, borde y texto en Tinta (patrón de
+   "Abrir turno"). Sin Verde Rasero ni fondo Tinta sólido (Regla del Registro Sin Dinero). */
 .boton {
   font-family: var(--tipografia-analisis);
   font-size: 14px;
-  color: var(--color-superficie-alta);
-  background: var(--color-tinta);
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
   border-radius: var(--radio-analisis);
   padding: 9px 18px;
   cursor: pointer;
+}
+
+.boton:not(:disabled):hover {
+  background: var(--color-superficie-base);
 }
 
 .botonSecundario {
@@ -154,9 +160,21 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Veredicto: color semántico por estado, siempre acompañado del texto explícito y de la forma
+   de `.inferencia` (Regla de los Tres Portadores). `efectivo` y `no_efectivo` quedan en
+   `estimado` — son lecturas de una inferencia, no un hecho medido, y el Verde Rasero está
+   reservado a la caja (Regla de la Sola Voz). `muestra_insuficiente` pide atención (ámbar). */
 .veredicto {
   font-size: 15px;
   color: var(--color-estimado);
   margin: 0;
   text-transform: capitalize;
+}
+
+.veredicto_muestra_insuficiente {
+  color: var(--color-atencion);
+}
+
+.veredicto_en_curso {
+  color: var(--color-estimado);
 }

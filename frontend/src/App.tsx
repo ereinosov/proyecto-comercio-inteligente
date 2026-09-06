@@ -6,6 +6,8 @@ import { Precios } from "./pantallas/Precios";
 import { Pronostico } from "./pantallas/Pronostico";
 import { Promociones } from "./pantallas/Promociones";
 import { cerrarTurno, type Turno } from "./servicios/turnos";
+import marcaSistema from "./activos/marca/rasero-wordmark-512w.png";
+import marcaNegocio from "./activos/marca/despensa-icon-verde-512.png";
 import estilos from "./App.module.css";
 
 type Pantalla = "venta" | "clientes" | "precios" | "pronostico" | "promociones";
@@ -30,6 +32,13 @@ export function App() {
   return (
     <div className={estilos.aplicacion}>
       <nav className={estilos.navegacion}>
+        <img
+          className={estilos.marcaSistema}
+          src={marcaSistema}
+          alt="Rasero"
+          width={106}
+          height={26}
+        />
         <button
           className={pantalla === "venta" ? estilos.pestanaActiva : estilos.pestanaInactiva}
           onClick={() => setPantalla("venta")}
@@ -60,6 +69,14 @@ export function App() {
         >
           Promociones
         </button>
+        <img
+          className={estilos.marcaNegocio}
+          src={marcaNegocio}
+          alt="Despensa Los Ríos"
+          title="Datos de: Despensa Los Ríos"
+          width={30}
+          height={30}
+        />
       </nav>
       <div className={estilos.contenido}>
         {pantalla === "venta" && <Venta turno={turno} onCerrarTurno={manejarCierre} />}

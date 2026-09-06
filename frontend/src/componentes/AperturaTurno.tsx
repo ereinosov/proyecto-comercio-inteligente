@@ -6,6 +6,7 @@
 import { useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { type Turno, abrirTurno } from "../servicios/turnos";
+import marcaSistema from "../activos/marca/rasero-wordmark-512w.png";
 import estilos from "./AperturaTurno.module.css";
 
 interface Operador {
@@ -57,6 +58,13 @@ export function AperturaTurno({ onTurnoAbierto }: Props) {
 
   return (
     <div className={estilos.contenedor}>
+      <img
+        className={estilos.marca}
+        src={marcaSistema}
+        alt="Rasero"
+        width={220}
+        height={54}
+      />
       <form className={estilos.panel} onSubmit={confirmar}>
         <h1 className={estilos.titulo}>Abrir turno</h1>
         <p className={estilos.subtitulo}>Quevedo Centro · {CAJA}</p>

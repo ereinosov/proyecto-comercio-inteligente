@@ -14,12 +14,14 @@
   margin: 0;
 }
 
+/* Acción primaria del registro de Análisis: fondo claro, borde y texto en Tinta (patrón de
+   "Abrir turno"). Sin Verde Rasero ni fondo Tinta sólido (Regla del Registro Sin Dinero). */
 .boton {
   align-self: flex-start;
   font-family: var(--tipografia-analisis);
   font-size: 14px;
-  color: var(--color-superficie-alta);
-  background: var(--color-tinta);
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
   border-radius: var(--radio-analisis);
   padding: 9px 18px;
@@ -29,6 +31,10 @@
 .boton:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.boton:not(:disabled):hover {
+  background: var(--color-superficie-base);
 }
 
 .resumen {
@@ -90,10 +96,13 @@
   color: var(--color-tinta);
 }
 
+/* "Comprado" es un desenlace registrado, no la acción de cobro: Tinta, nunca Verde Rasero
+   (Regla de la Sola Voz + Regla del Registro Sin Dinero). El texto explícito es el portador. */
 .desenlace_comprado {
   font-family: var(--tipografia-operacion);
   font-size: 12px;
-  color: var(--color-marca);
+  color: var(--color-tinta);
+  font-weight: 600;
 }
 
 .desenlace_no_comprado,

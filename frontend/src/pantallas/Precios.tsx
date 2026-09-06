@@ -21,8 +21,14 @@ import { listarMargenes, type MargenProducto } from "../servicios/precios";
 import { listarProductos, type Producto } from "../servicios/productos";
 import estilos from "./Precios.module.css";
 
+// Umbral de margen saludable (fracción). Por debajo, el margen pide atención (ámbar); por
+// debajo de cero es una pérdida (crítico). Un margen sano NO se marca en Verde Rasero: ese
+// color queda reservado a la caja (DESIGN.md, Regla de la Sola Voz / Registro Sin Dinero).
+const MARGEN_SALUDABLE = 0.15;
+
 function IndicadorMargen({ margen }: { margen: MargenProducto | undefined }) {
   if (!margen || margen.margen === null) {
+    // Dato faltante, no un juicio de valor: gris/neutral, nunca un semántico (DESIGN.md).
     return <span className={estilos.margenNoCalculable}>Margen no calculable</span>;
   }
 
@@ -39,7 +45,35 @@ function IndicadorMargen({ margen }: { margen: MargenProducto | undefined }) {
     );
   }
 
+  if (margen.margen < 0) {
+    return (
+      <span className={estilos.margenNegativo}>
+        <span className={estilos.puntoHueco} aria-hidden="true" />
+        {porcentaje}% — pérdida
+      </span>
+    );
+  }
+
+  if (margen.margen < MARGEN_SALUDABLE) {
+    return (
+      <span className={estilos.margenBajo}>
+        <span className={estilos.puntoMedio} aria-hidden="true" />
+        {porcentaje}% — margen bajo
+      </span>
+    );
+  }
+
   return <span className={estilos.margenValor}>{porcentaje}%</span>;
+}
+
+// Borde izquierdo del bloque de lista según el semántico del margen — hace la lista escaneable
+// de un vistazo sin abrir cada producto (tinte de apoyo, no fondo completo). Neutro cuando el
+// margen no es calculable o es sano: el color aparece solo cuando significa algo.
+function claseBordeMargen(margen: MargenProducto | undefined): string {
+  if (!margen || margen.margen === null || !margen.confiable) return "";
+  if (margen.margen < 0) return estilos.bordeNegativo;
+  if (margen.margen < MARGEN_SALUDABLE) return estilos.bordeBajo;
+  return "";
 }
 
 export function Precios({ idSucursal }: { idSucursal: number }) {
@@ -84,11 +118,11 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
               {productos.map((producto) => (
                 <li key={producto.id_producto}>
                   <button
-                    className={
-                      idSeleccionado === producto.id_producto
-                        ? `${estilos.bloque} ${estilos.bloqueSeleccionado}`
-                        : estilos.bloque
-                    }
+                    className={[
+                      estilos.bloque,
+                      claseBordeMargen(margenes.get(producto.id_producto)),
+                      idSeleccionado === producto.id_producto ? estilos.bloqueSeleccionado : "",
+                    ].join(" ")}
                     onClick={() => setIdSeleccionado(producto.id_producto)}
                   >
                     <span className={estilos.nombreProducto}>{producto.nombre}</span>
