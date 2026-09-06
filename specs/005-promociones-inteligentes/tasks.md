@@ -170,6 +170,23 @@ description: "Task list template for feature implementation"
 
 ---
 
+## Phase 6: User Story 5 - Visualizar el resultado del experimento de reactivación (Priority: P5)
+
+**Propósito**: dos barras control vs. tratamiento + el texto de inferencia ya existente
+(FR-040..FR-042). Lectura pura sobre el experimento de US3; no reabre el checkpoint de US1–US4.
+Añadida 2026-09-07. **Puerta de propiedad de datos**: no introduce ni modifica ninguna entidad
+ni contrato — consume `GET /promociones/experimentos/{id}` (US3) tal cual; no requiere enmienda
+constitucional (verificado contra la entrada de 005 en la tabla de Propiedad de Datos).
+
+- [X] T054 [US5] Fuente de datos: `GET /promociones/experimentos/{id}` (US3) ya devuelve `retorno_control`, `retorno_tratamiento` (nullables), `estadistico_z`, `valor_p`, `incrementalidad`, `veredicto`, `motivo_muestra_insuficiente`. El gráfico consume ese contrato sin cambios.
+- [X] T055 [P] [US5] `frontend/src/componentes/graficos/ExperimentoReactivacionGrafico.tsx`: `<BarChart>` de Recharts de 2 barras (Control / Tratamiento) sobre `GraficoContenedor` (registro Análisis). Ambas barras color Estimado (#1F5673), sin significado semántico entre sí — nunca verde/rojo. Cuando `retorno_control`/`retorno_tratamiento` son `null` (muestra insuficiente / en curso), estado vacío con el motivo real, sin forzar veredicto (FR-042). `TooltipPropio`.
+- [X] T056 [US5] Integrar el gráfico en `frontend/src/componentes/ResultadoExperimento.tsx` sobre las tasas de texto y el texto de inferencia con sus portadores de forma (▲/▬/◇), que no cambian.
+- [X] T057 [US5] Verificación `tsc -b`, `eslint`, `vite build` sin errores.
+
+**Checkpoint US5**: el resultado del experimento muestra el gráfico de 2 barras; el texto de la prueba y sus portadores de forma siguen igual; muestra insuficiente se muestra con honestidad.
+
+---
+
 ## Phase Final: Polish & Cross-Cutting Concerns
 
 **Propósito**: validación de extremo a extremo y cumplimiento transversal.

@@ -23,6 +23,7 @@ import {
   obtenerExperimento,
   type Experimento,
 } from "../servicios/promociones";
+import { ExperimentoReactivacionGrafico } from "./graficos/ExperimentoReactivacionGrafico";
 import estilos from "./ResultadoExperimento.module.css";
 
 function pct(proporcion: string | null): string {
@@ -157,6 +158,8 @@ export function ResultadoExperimento() {
               <dd>{experimento.semilla}</dd>
             </div>
           </dl>
+
+          <ExperimentoReactivacionGrafico experimento={experimento} />
 
           <div className={estilos.tasas}>
             <div className={estilos.tasa}>

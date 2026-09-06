@@ -240,6 +240,36 @@ producto sin ninguna promoción en ese período no aparece marcado.
 
 ---
 
+### User Story 5 - Visualizar el resultado del experimento de reactivación (Priority: P5)
+
+El encargado, tras cerrar la ventana de un experimento de reactivación, ve dos barras que
+comparan el retorno observado del grupo de control con el del grupo de tratamiento, junto a la
+lectura de la prueba (incrementalidad, z, p, veredicto) con sus portadores de forma. Así la
+diferencia —o su ausencia— se ve de un vistazo, sin leer cuatro números.
+
+**Why this priority**: es una lectura pura sobre el experimento que User Story 3 ya calcula. No
+escribe ni recalcula nada, no cambia ningún contrato; es aditiva y no reabre el checkpoint de
+User Stories 1–4.
+
+**Independent Test**: para un experimento cerrado con muestra suficiente se verifica que el
+gráfico muestra dos barras (control y tratamiento) con sus tasas, y que el texto de la inferencia
+sigue mostrando z, p y veredicto con su forma; para un experimento con muestra insuficiente o en
+curso se verifica que el gráfico NO dibuja barras ni fuerza un veredicto, sino que dice
+explícitamente por qué no hay tasas.
+
+**Acceptance Scenarios**:
+
+1. **Given** un experimento cerrado con muestra suficiente, **When** el encargado abre su
+   resultado, **Then** ve un gráfico de dos barras (retorno de control y de tratamiento) y, junto
+   a él, el texto de la prueba con su portador de forma (▲/▬/◇) — el mismo patrón ya usado.
+2. **Given** que las dos barras no tienen significado semántico entre sí, **When** se renderiza
+   el gráfico, **Then** ambas usan el mismo color de serie (Estimado), nunca verde ni rojo.
+3. **Given** un experimento cuya muestra activa es insuficiente (o sigue en curso), **When** se
+   abre su resultado, **Then** el gráfico muestra un estado vacío que explica el motivo, sin
+   dibujar barras ni afirmar un veredicto que los datos no sostienen.
+
+---
+
 ### Edge Cases
 
 - **Cliente sin `fecha_nacimiento`** (nunca se capturó, o se anonimizó tras fuga confirmada en
@@ -415,6 +445,19 @@ producto sin ninguna promoción en ese período no aparece marcado.
 - **FR-039**: El sistema DEBE permitir operar y demostrar cada mecanismo por separado; ninguno
   depende de la existencia de otro para funcionar, más allá de la base compartida de registro de
   envío y de redención.
+
+**Visualización del experimento (User Story 5)**
+
+- **FR-040**: El sistema DEBE ofrecer, en el resultado de un experimento de reactivación, un
+  gráfico de dos barras con el retorno observado del grupo de control y del grupo de tratamiento,
+  junto al texto de la inferencia (incrementalidad, z, p, veredicto) que ya existe.
+- **FR-041**: Las dos barras NO tienen significado semántico entre sí: DEBEN usar el mismo color
+  de serie (Estimado, #1F5673) y distinguirse por su etiqueta. Usar verde, rojo o una paleta
+  decorativa está PROHIBIDO.
+- **FR-042**: Cuando el experimento no tiene tasas de retorno medibles (muestra insuficiente o
+  ventana en curso), el gráfico NO DEBE dibujar barras ni afirmar un veredicto: DEBE mostrar un
+  estado vacío que explique el motivo, con la misma honestidad que el texto de la inferencia
+  (FR-020, FR-021).
 
 ### Key Entities *(include if feature involves data)*
 
