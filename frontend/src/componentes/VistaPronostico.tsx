@@ -13,6 +13,7 @@
 import { useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { obtenerPronostico, type Pronostico } from "../servicios/pronostico";
+import { DemandaPronosticoGrafico } from "./graficos/DemandaPronosticoGrafico";
 import estilos from "./VistaPronostico.module.css";
 
 type Horizonte = "corto" | "medio";
@@ -63,6 +64,14 @@ export function VistaPronostico({
 
       {cargando && <p className={estilos.instruccion}>Generando pronóstico…</p>}
       {error && <p className={estilos.error}>{error}</p>}
+
+      {!error && (
+        <DemandaPronosticoGrafico
+          idProducto={idProducto}
+          idSucursal={idSucursal}
+          pronostico={pronostico}
+        />
+      )}
 
       {pronostico && datosInsuficientes && (
         <p className={estilos.instruccion}>

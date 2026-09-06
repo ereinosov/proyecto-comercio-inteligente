@@ -225,6 +225,24 @@ description: "Task list template for feature implementation"
 
 ---
 
+## Phase 9: User Story 7 - Visualizar demanda pronosticada vs. histórica censurada (Priority: P7)
+
+**Propósito**: gráfico de líneas de dos series (FR-041..FR-043). Lectura pura sobre
+`demanda_observada` / `demanda_corregida` (US1–US5) y `serie_pronosticada` (US3); no reabre el
+checkpoint de US1–US6. Añadida 2026-09-07. **Puerta de propiedad de datos**: no introduce ni
+modifica ninguna entidad ni contrato — reutiliza `GET /demanda` y `GET /productos/{id}/pronostico`
+tal cual; no requiere enmienda constitucional (verificado contra la entrada de 004 en la tabla de
+Propiedad de Datos).
+
+- [X] T069 [US7] Fuente de datos: `GET /demanda` ya devuelve `demanda_observada` + `demanda_corregida` por día (US1, esquema `PuntoSerie`), y `GET /productos/{id}/pronostico` ya devuelve `serie_pronosticada` (US3). El gráfico consume ambos sin cambio de contrato ni endpoint nuevo — verificado contra `backend/rasero/api/pronostico.py`.
+- [X] T070 [P] [US7] `frontend/src/componentes/graficos/DemandaPronosticoGrafico.tsx`: `<LineChart>` de Recharts sobre `GraficoContenedor` (registro Análisis, borde 2px). Serie "Demanda observada" en Tinta (`connectNulls={false}`), serie "Corregida / pronosticada" en Estimado (#1F5673), prolongada por el horizonte de pronóstico vigente. `TooltipPropio`. Estados cargando/vacío del contenedor.
+- [X] T071 [US7] Integrar el gráfico en `frontend/src/componentes/VistaPronostico.tsx` encima de la tabla de la proyección; la tabla no cambia.
+- [X] T072 [US7] Verificación `tsc -b`, `eslint`, `vite build` sin errores.
+
+**Checkpoint US7**: la vista de Pronóstico muestra el gráfico de dos series; la tabla sigue igual.
+
+---
+
 ## Phase Final: Polish & Cross-Cutting Concerns
 
 **Propósito**: validación de extremo a extremo y cumplimiento transversal.

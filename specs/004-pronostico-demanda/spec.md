@@ -283,6 +283,38 @@ período) sin descontar ningún volumen automáticamente.
 
 ---
 
+### User Story 7 - Visualizar la demanda pronosticada vs. la histórica censurada (Priority: P7)
+
+El encargado, al abrir la vista de Pronóstico de un producto, ve una línea de tiempo con dos
+series superpuestas: la **demanda observada** día a día (el dato crudo, con sus quiebres) y la
+**demanda corregida y pronosticada** (la serie descensurada por los cuatro ejes más el horizonte
+de pronóstico que la continúa). Así puede juzgar de un vistazo cuánto corrigió el método y hacia
+dónde proyecta, en vez de leer dos tablas de números.
+
+**Why this priority**: es una lectura pura sobre datos que User Stories 1–5 ya producen
+(`demanda_observada`, `demanda_corregida`) y sobre el `serie_pronosticada` de User Story 3. No
+escribe ningún dato ni cambia ningún contrato; es aditiva y no reabre el checkpoint de las
+historias previas.
+
+**Independent Test**: para un producto con historial de demanda y al menos un intervalo de
+quiebre corregido, se abre la vista de Pronóstico y se verifica que el gráfico muestra la serie
+observada y, encima, la serie corregida (más alta en los períodos de quiebre) y que la línea
+corregida se prolonga con el horizonte de pronóstico cuando este es vigente.
+
+**Acceptance Scenarios**:
+
+1. **Given** un producto con serie de demanda observada y corregida, **When** el encargado abre
+   la vista de Pronóstico, **Then** ve un gráfico de líneas con "Demanda observada" en Tinta y
+   "Corregida / pronosticada" en el color Estimado, y la tabla de la proyección sigue debajo.
+2. **Given** un pronóstico vigente, **When** se renderiza el gráfico, **Then** la línea estimada
+   se prolonga sobre el horizonte de días futuros, sin línea observada en ese tramo (no hay dato
+   futuro que dibujar).
+3. **Given** un producto sin ninguna venta registrada todavía, **When** se abre su vista de
+   Pronóstico, **Then** el gráfico muestra un estado vacío que explica qué aparecerá ahí, nunca
+   un lienzo en blanco.
+
+---
+
 ### Edge Cases
 
 - **Censura total del histórico**: un producto agotado durante todo el histórico disponible y sin
@@ -466,6 +498,19 @@ período) sin descontar ningún volumen automáticamente.
   propiedad de este módulo. `sustitucion_producto` fue añadida a la tabla de Propiedad de Datos de
   la constitución por la enmienda **v2.2.4** (antes de este `/speckit-plan`), a raíz de FR-032,
   User Story 6 y FR-009 (b) — ver Dependencias entre módulos y plan.md.
+
+**Visualización (User Story 7)**
+
+- **FR-041**: El sistema DEBE ofrecer, en la vista de Pronóstico de un producto, un gráfico de
+  líneas con dos series a lo largo del tiempo: "Demanda observada" (el valor de
+  `demanda_observada` por período) y "Demanda corregida / pronosticada" (el valor de
+  `demanda_corregida` por período, prolongado por `pronostico.serie_pronosticada` cuando el
+  pronóstico es vigente). No reemplaza la tabla de la proyección.
+- **FR-042**: La serie observada usa el color Tinta (dato); la serie corregida/pronosticada usa
+  el color Estimado (#1F5673, valor calculado), consistente con La Regla de los Tres Portadores
+  del módulo. NO DEBE usar el color de marca ni una paleta decorativa.
+- **FR-043**: El gráfico es puramente de lectura: NO calcula ni escribe ningún dato nuevo. Un
+  producto sin serie de demanda muestra un estado vacío explicativo, nunca un lienzo en blanco.
 
 ### Key Entities *(include if feature involves data)*
 
