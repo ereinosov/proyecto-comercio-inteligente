@@ -1,0 +1,792 @@
+openapi: 3.1.0
+
+info:
+  title: Rasero — Caja, Mermas y Fraude
+  version: 0.1.0
+  description: |
+    Contrato del módulo 006-caja-mermas-fraude. **Tres fenómenos con lógica de detección distinta**
+    (FR-037), cada uno con su recurso:
+
+    - `/caja/arqueos` — cuadre de efectivo por **cierre de turno**. Diferencia entre lo contado y
+      `SUM(venta.total)` del turno, atribuida al operador y al día local (FR-001 a FR-008).
+      IDEMPOTENTE por `id_turno`.
+    - `/caja/mermas` — clasificación de la causa de una diferencia de conteo físico de 001, o
+      declaración de una merma fuera de conteo; valoración al costo del lote FEFO (FR-009 a FR-017).
+    - `/caja/alertas-caducidad` — consulta derivada sobre `lote.fecha_caducidad` de 001 (FR-014).
+    - `/caja/cruce-operador` — cruce del faltante de inventario no explicado por merma contra las
+      ventas registradas, repartido por turno; genera anomalías de origen inventario (FR-020, FR-021).
+    - `/caja/indicadores-operador` — consulta derivada: tasa de anulaciones y concentración de
+      ventas bajo precio de lista por operador, como **desviación respecto de la línea base de pares**
+      (FR-018, FR-019, FR-022, FR-023).
+    - `/caja/anomalias` — toda diferencia (de efectivo o de inventario) que ninguna causa conocida
+      explica; el encargado las trabaja y las resuelve (FR-027 a FR-031).
+
+    Reglas transversales que aplican a todo el contrato:
+
+    - **La Lectura Crítica n.º 1 de la constitución es el principio rector**: el arqueo de efectivo,
+      por sí solo, NUNCA es señal del fraude de "cobrar 5, registrar 3", y una diferencia de arqueo
+      igual a cero NUNCA se presenta como evidencia de ausencia de fraude (FR-008). Ese fraude se
+      detecta SOLO cruzando salida de inventario contra venta registrada, tasa de anulaciones por
+      operador y concentración de ventas bajo precio de lista.
+    - Este contrato NUNCA participa en `POST /ventas` de 001 ni es camino crítico de un cobro
+      (Principio II). El arqueo se registra DESPUÉS del cierre del turno, por una llamada aparte e
+      idempotente por `id_turno` (mismo patrón que `POST /clientes/{id}/visitas` de 002).
+    - 006 SOLO LEE de 001. NUNCA escribe en `venta`, `renglon_venta`, `anulacion_venta`,
+      `existencia`, `movimiento_inventario`, `lote`, `conteo_fisico`, `conteo_renglon`, `turno`,
+      `operador` ni ningún precio (FR-032). NUNCA ejecuta un conteo físico (FR-033). NUNCA bloquea,
+      suspende ni sanciona a un operador de forma automática (FR-024, FR-040).
+    - El sistema NUNCA fuerza la clasificación de una anomalía ni la cierra por el paso del tiempo
+      (FR-029). Una anomalía permanece visible hasta que una persona la resuelve.
+    - Montos como cadena decimal con 2 decimales; cantidades (unidades o gramos) como entero;
+      razones y tasas de los indicadores como cadena decimal con hasta 4 decimales. Nunca coma
+      flotante.
+    - Instantes en RFC 3339 con desplazamiento; el servidor los normaliza a UTC. `desde`/`hasta` y
+      los períodos son `YYYY-MM-DD` (día local de la sucursal).
+    - Toda operación se identifica por `id_sucursal`; `GET /caja/arqueos`, `GET /caja/mermas` y
+      `GET /caja/anomalias` lo EXIGEN (salvo que se pase un identificador puntual) y NUNCA agregan
+      dos sucursales sin discriminar (FR-038).
+    - Formato de error unificado con 001-005: `{ codigo, mensaje }`, el mensaje redactado para el
+      operador con la acción correctiva, nunca una traza técnica.
+
+    **Estado de dependencias (verificado contra el repositorio, research.md #10, #17)**: 001 User
+    Story 1 está completa (`venta`, `renglon_venta`, `turno`, `operador`, `anulacion_venta` — T032).
+    `conteo_fisico` / `conteo_renglon` (001 User Story 5, T065–T071) tienen ESQUEMA pero NO SERVICIO.
+    Las operaciones marcadas `x-bloqueado-por: 001 T065-T071` (la rama de `POST /caja/mermas` con
+    `id_conteo_renglon`, la parte de faltante de inventario de `POST /caja/cruce-operador`, y las
+    anomalías de `origen = inventario`) devuelven `409 caja_bloqueado_por_001` hasta que 001
+    implemente su User Story 5.
+
+servers:
+  - url: http://localhost:8000
+    description: Desarrollo local. Mismo servidor y misma base que 001-005 (puerto 5442).
+
+tags:
+  - name: arqueos
+  - name: mermas
+  - name: alertas-caducidad
+  - name: cruce-operador
+  - name: indicadores-operador
+  - name: anomalias
+
+paths:
+
+  /caja/arqueos:
+    post:
+      tags: [arqueos]
+      summary: Registrar el arqueo de caja de un turno cerrado
+      description: |
+        FR-001 a FR-007. Calcula `monto_esperado` = `SUM(venta.total)` de las ventas del turno
+        (consulta a 001) y lo CONGELA en la fila. `diferencia = monto_contado − monto_esperado`, con
+        signo. IDEMPOTENTE: un segundo `POST` con el mismo `id_turno` devuelve `200` con el arqueo
+        existente, sin crear un duplicado (`UNIQUE (id_turno)`, FR-005). Un turno sin ventas produce
+        `monto_esperado = "0.00"`, no un error (FR-007). Si `|diferencia| > TOLERANCIA_CUADRE_ARQUEO`
+        y no se anota `motivo_conocido`, crea en la misma transacción una `anomalia_caja` de
+        `origen = "efectivo"` (FR-004, FR-027) — su `id` viene en la respuesta.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_turno, monto_contado, marca_tiempo_origen]
+              properties:
+                id_turno: { type: integer }
+                monto_contado:
+                  type: string
+                  description: Efectivo + comprobantes contados al cierre. Decimal con 2 decimales.
+                motivo_conocido:
+                  type: string
+                  nullable: true
+                  description: >
+                    Motivo conocido de la diferencia ("mal dado el cambio", "pago no registrado").
+                    Su presencia evita que la diferencia genere una anomalía (FR-004).
+                marca_tiempo_origen:
+                  type: string
+                  format: date-time
+                  description: Reportada por el dispositivo; base del desempate offline (FR-006).
+      responses:
+        '201':
+          description: Arqueo registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Arqueo' }
+        '200':
+          description: El turno ya estaba arqueado (idempotencia) — se devuelve el arqueo existente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Arqueo' }
+        '400':
+          description: >
+            `caja_turno_abierto` (el turno aún no cerró), `caja_monto_invalido` (no decimal o
+            negativo).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: '`caja_turno_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      tags: [arqueos]
+      summary: Listar arqueos por sucursal y período
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: false
+          schema: { type: integer }
+          description: Obligatorio salvo que se pase `id_turno`. Nunca se agregan dos sucursales (FR-038).
+        - name: id_turno
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: desde
+          in: query
+          required: false
+          schema: { type: string, format: date }
+          description: Día local de la sucursal.
+        - name: hasta
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: solo_descuadrados
+          in: query
+          required: false
+          schema: { type: boolean, default: false }
+          description: Si es `true`, solo los arqueos con `diferencia != "0.00"`.
+      responses:
+        '200':
+          description: Lista de arqueos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/Arqueo' }
+        '400':
+          description: '`caja_sucursal_requerida` (falta `id_sucursal` y no se pasó `id_turno`)'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /caja/arqueos/{id_arqueo}:
+    get:
+      tags: [arqueos]
+      summary: Detalle de un arqueo
+      parameters:
+        - name: id_arqueo
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Detalle del arqueo, con sus ajustes
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Arqueo' }
+        '404':
+          description: '`caja_arqueo_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    patch:
+      tags: [arqueos]
+      summary: Registrar una corrección del monto contado de un arqueo
+      description: |
+        Añade una entrada a `ajustes` (JSONB). NUNCA reescribe `monto_esperado`; recalcula
+        `diferencia` con el nuevo `monto_contado`. El conteo anterior queda en el historial de
+        ajustes (Principio IV).
+      parameters:
+        - name: id_arqueo
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [monto_contado_nuevo, id_operador, nota]
+              properties:
+                monto_contado_nuevo: { type: string }
+                id_operador: { type: integer }
+                nota: { type: string }
+      responses:
+        '200':
+          description: Ajuste registrado
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Arqueo' }
+        '404':
+          description: '`caja_arqueo_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /caja/mermas:
+    post:
+      tags: [mermas]
+      summary: Clasificar una diferencia de conteo como merma, o declarar una merma fuera de conteo
+      description: |
+        FR-009 a FR-015. Dos ramas según el cuerpo:
+
+        - **Con `id_conteo_renglon`**: clasifica la `diferencia` que 001 ya expone en esa línea de
+          conteo. NO recalcula la diferencia bruta (FR-033).
+          **`x-bloqueado-por: 001 T065-T071`** — devuelve `409 caja_bloqueado_por_001` mientras 001
+          no implemente su User Story 5.
+        - **Sin `id_conteo_renglon`**: declara una merma fuera de conteo (rotura, vencimiento en
+          estantería, FR-012). Marca `conciliar_con_conteo = true`; 006 NO ajusta `existencia`
+          (FR-034).
+
+        La `valoracion` se calcula como `cantidad_faltante × lote.costo_unitario` del lote FEFO de
+        001 (por kilogramo si el producto es granel). Sin costo de lote ⇒ `valoracion = null` ("no
+        calculable"), NUNCA `"0.00"` (FR-010, SC-005). La merma NUNCA lleva un operador imputado
+        (FR-011).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_producto, id_sucursal, cantidad_faltante, causa, id_operador_registro]
+              properties:
+                id_conteo_renglon:
+                  type: integer
+                  nullable: true
+                  description: Línea de conteo de 001 a clasificar. Ausente = merma fuera de conteo.
+                id_producto: { type: integer }
+                id_lote:
+                  type: integer
+                  nullable: true
+                id_sucursal: { type: integer }
+                cantidad_faltante:
+                  type: integer
+                  description: Unidades o gramos, según `producto.es_granel`. Estrictamente positiva.
+                causa:
+                  type: string
+                  enum: [vencimiento, dano, robo_externo, error_conteo, merma_granel, pendiente_clasificar]
+                id_operador_registro:
+                  type: integer
+                  description: Quién registra. NO es una imputación de la pérdida (FR-011).
+                nota:
+                  type: string
+                  nullable: true
+      responses:
+        '201':
+          description: Merma registrada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Merma' }
+        '400':
+          description: >
+            `caja_cantidad_invalida` (<= 0), `caja_causa_invalida`,
+            `caja_conteo_renglon_ya_clasificado`.
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: '`caja_producto_no_existe`, `caja_conteo_renglon_no_existe`, `caja_lote_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: >
+            `caja_bloqueado_por_001` — la rama con `id_conteo_renglon` requiere que 001 implemente su
+            User Story 5 (`conteo_fisico` / `conteo_renglon`, T065–T071).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+    get:
+      tags: [mermas]
+      summary: Listar y desglosar mermas por sucursal, causa y producto
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: causa
+          in: query
+          required: false
+          schema:
+            type: string
+            enum: [vencimiento, dano, robo_externo, error_conteo, merma_granel, pendiente_clasificar]
+        - name: id_producto
+          in: query
+          required: false
+          schema: { type: integer }
+        - name: desde
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: hasta
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Lista de mermas con su desglose y el total del período
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  total_valorado:
+                    type: string
+                    description: Suma de `valoracion` de las mermas calculables del período.
+                  con_valor_no_calculable:
+                    type: integer
+                    description: Cuántas mermas del período no tienen costo de lote.
+                  mermas:
+                    type: array
+                    items: { $ref: '#/components/schemas/Merma' }
+        '400':
+          description: '`caja_sucursal_requerida`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /caja/alertas-caducidad:
+    get:
+      tags: [alertas-caducidad]
+      summary: Lotes próximos a caducar o ya caducados (consulta derivada sobre 001)
+      description: |
+        FR-014. Lista los `lote` de 001 con `fecha_caducidad` dentro de la ventana y
+        `existencia.cantidad > 0`, con su valor en riesgo. Marca aparte los ya caducados. Es
+        informativa: 006 NO da de baja, descuenta ni traspasa nada.
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: dentro_de_dias
+          in: query
+          required: false
+          schema: { type: integer }
+          description: Por defecto `VENTANA_ALERTA_CADUCIDAD_DIAS` (config, arranque 14).
+      responses:
+        '200':
+          description: Alertas de caducidad
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AlertaCaducidad' }
+        '400':
+          description: '`caja_sucursal_requerida`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /caja/cruce-operador:
+    post:
+      tags: [cruce-operador]
+      summary: Cruzar el faltante de inventario no explicado contra las ventas registradas, por turno
+      description: |
+        FR-020, FR-021, FR-025. Para cada producto de un conteo físico de 001:
+        `faltante_no_explicado = faltante_bruto − merma clasificada − anulaciones registradas`,
+        repartido entre los turnos con movimiento `salida_venta` del producto en el período,
+        proporcional a las unidades movidas. Cuando `faltante_no_explicado > 0`, crea una
+        `anomalia_caja` de `origen = "inventario"` con el desglose en `indicador_snapshot`. Si la
+        merma y las anulaciones explican el faltante, NO crea nada (FR-025, FR-031).
+
+        Cadencia (FR-021, ya decidida): a cada conteo físico periódico de 001, y bajo demanda cuando
+        un indicador de `GET /caja/indicadores-operador` se desvía. NO por venta, NO diario.
+
+        **`x-bloqueado-por: 001 T065-T071`** — devuelve `409 caja_bloqueado_por_001` mientras 001 no
+        implemente su User Story 5.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_sucursal, desde, hasta]
+              properties:
+                id_sucursal: { type: integer }
+                desde: { type: string, format: date }
+                hasta: { type: string, format: date }
+                id_conteo_fisico:
+                  type: integer
+                  nullable: true
+                  description: El conteo que ancla el cruce. Si se omite, el último conteo resuelto de la sucursal.
+      responses:
+        '200':
+          description: Resultado del cruce, con las anomalías creadas
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  anomalias_creadas:
+                    type: array
+                    items: { $ref: '#/components/schemas/AnomaliaCaja' }
+                  productos_sin_faltante_no_explicado:
+                    type: integer
+                    description: Productos cuyo faltante quedó explicado por merma y/o anulaciones.
+                  productos_no_contados:
+                    type: array
+                    items: { type: integer }
+                    description: Productos fuera del `alcance` del conteo; quedan sin cruzar (se marca, no se oculta).
+        '400':
+          description: '`caja_rango_invalido`, `caja_sucursal_requerida`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '409':
+          description: >
+            `caja_bloqueado_por_001` — requiere que 001 implemente su User Story 5
+            (`conteo_fisico` / `conteo_renglon`, T065–T071).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /caja/indicadores-operador:
+    get:
+      tags: [indicadores-operador]
+      summary: Tasa de anulaciones y concentración de ventas bajo precio de lista, por operador
+      description: |
+        FR-018, FR-019, FR-022, FR-023. Consulta DERIVADA sobre 001 (`venta`, `anulacion_venta`,
+        `renglon_venta`); no hay ninguna tabla de indicadores (research.md #2, #7). Cada operador se
+        compara contra la LÍNEA BASE de sus pares: la mediana de los operadores comparables
+        (>= `UMBRAL_MINIMO_VENTAS_INDICADOR` ventas) de la misma sucursal y período. Un operador se
+        SEÑALA si su valor >= `RAZON_DESVIACION_* ×` esa mediana. La respuesta NUNCA dice "fraude":
+        dice "se desvía de la línea base de sus pares", con los datos que lo sustentan (FR-023).
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: desde
+          in: query
+          required: true
+          schema: { type: string, format: date }
+        - name: hasta
+          in: query
+          required: true
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Indicadores por operador con la línea base y qué operadores se desvían
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  periodo: { type: string, description: '"desde a hasta" en día local' }
+                  mediana_pares_tasa_anulaciones: { type: string, nullable: true }
+                  mediana_pares_concentracion_bajo_lista: { type: string, nullable: true }
+                  factor_desviacion_anulaciones: { type: string, description: 'RAZON_DESVIACION_ANULACIONES (config)' }
+                  factor_desviacion_precio_bajo_lista: { type: string }
+                  operadores:
+                    type: array
+                    items: { $ref: '#/components/schemas/IndicadorOperador' }
+        '400':
+          description: '`caja_sucursal_requerida`, `caja_rango_invalido`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /caja/anomalias:
+    get:
+      tags: [anomalias]
+      summary: Listar anomalías de caja
+      description: |
+        FR-028. El encargado trabaja las de `estado = "sin_explicacion"`. El sistema NUNCA las cierra
+        por el paso del tiempo (FR-029).
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: estado
+          in: query
+          required: false
+          schema: { type: string, enum: [sin_explicacion, resuelta] }
+        - name: origen
+          in: query
+          required: false
+          schema: { type: string, enum: [efectivo, inventario] }
+        - name: desde
+          in: query
+          required: false
+          schema: { type: string, format: date }
+        - name: hasta
+          in: query
+          required: false
+          schema: { type: string, format: date }
+      responses:
+        '200':
+          description: Lista de anomalías
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: '#/components/schemas/AnomaliaCaja' }
+        '400':
+          description: '`caja_sucursal_requerida`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /caja/anomalias/{id_anomalia_caja}:
+    get:
+      tags: [anomalias]
+      summary: Detalle de una anomalía, con su historial y su indicador_snapshot
+      parameters:
+        - name: id_anomalia_caja
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        '200':
+          description: Detalle de la anomalía
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnomaliaCaja' }
+        '404':
+          description: '`caja_anomalia_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /caja/anomalias/{id_anomalia_caja}/resolucion:
+    post:
+      tags: [anomalias]
+      summary: Una persona asigna una resolución a una anomalía sin explicación
+      description: |
+        FR-030. Registra `estado_anterior`, quién resolvió y cuándo en `historial` (JSONB), y pasa
+        `estado` a `resuelta`. `resolucion` es texto libre — NO un ENUM cerrado (FR-029 prohíbe
+        imponer una clasificación). El sistema NUNCA hace esta transición por su cuenta.
+      parameters:
+        - name: id_anomalia_caja
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [resolucion, id_operador]
+              properties:
+                resolucion:
+                  type: string
+                  description: 'p. ej. "error operativo confirmado", "escalado a fraude", "ajuste aceptado".'
+                id_operador: { type: integer }
+                nota:
+                  type: string
+                  nullable: true
+      responses:
+        '200':
+          description: Anomalía resuelta
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/AnomaliaCaja' }
+        '400':
+          description: '`caja_anomalia_ya_resuelta`, `caja_resolucion_vacia`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '404':
+          description: '`caja_anomalia_no_existe`, `caja_operador_no_existe`'
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+components:
+  schemas:
+
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje:
+          type: string
+          description: Redactado para el operador, con la acción correctiva. Nunca una traza técnica.
+
+    Arqueo:
+      type: object
+      required:
+        [id_arqueo, id_turno, id_operador, id_sucursal, dia_local, monto_esperado, monto_contado,
+         diferencia, ajustes, instante_cierre_arqueo]
+      properties:
+        id_arqueo: { type: integer }
+        id_turno: { type: integer }
+        id_operador: { type: integer }
+        id_sucursal: { type: integer }
+        dia_local: { type: string, format: date }
+        monto_esperado:
+          type: string
+          description: SUM(venta.total) del turno, congelado. "0.00" si el turno no tuvo ventas (FR-007).
+        monto_contado: { type: string }
+        diferencia:
+          type: string
+          description: 'monto_contado − monto_esperado, con signo (negativo = faltante).'
+        motivo_conocido: { type: string, nullable: true }
+        genero_anomalia:
+          type: boolean
+          description: 'true si se creó una anomalia_caja de origen efectivo (FR-004, FR-027).'
+        id_anomalia_caja: { type: integer, nullable: true }
+        ajustes:
+          type: array
+          items:
+            type: object
+            properties:
+              instante: { type: string, format: date-time }
+              id_operador: { type: integer }
+              monto_contado_anterior: { type: string }
+              monto_contado_nuevo: { type: string }
+              nota: { type: string }
+        instante_cierre_arqueo: { type: string, format: date-time }
+
+    Merma:
+      type: object
+      required:
+        [id_merma, id_producto, id_sucursal, cantidad_faltante, causa, estado, periodo_desde,
+         periodo_hasta, conciliar_con_conteo, id_operador_registro, instante_registro]
+      properties:
+        id_merma: { type: integer }
+        id_conteo_renglon:
+          type: integer
+          nullable: true
+          description: 'null = merma declarada fuera de conteo (FR-012).'
+        id_producto: { type: integer }
+        id_lote: { type: integer, nullable: true }
+        id_sucursal: { type: integer }
+        cantidad_faltante:
+          type: integer
+          description: Unidades o gramos, según producto.es_granel de 001.
+        causa:
+          type: string
+          enum: [vencimiento, dano, robo_externo, error_conteo, merma_granel, pendiente_clasificar]
+        valoracion:
+          type: string
+          nullable: true
+          description: 'cantidad_faltante × lote.costo_unitario FEFO. null = "no calculable", NUNCA "0.00" (FR-010).'
+        moneda: { type: string, default: USD }
+        periodo_desde: { type: string, format: date }
+        periodo_hasta: { type: string, format: date }
+        estado: { type: string, enum: [pendiente_clasificar, clasificada] }
+        conciliar_con_conteo:
+          type: boolean
+          description: 'true para una merma fuera de conteo: 001 ajustará existencia en el próximo conteo (FR-034).'
+        id_operador_registro:
+          type: integer
+          description: Quién la registró. NO es imputación de la pérdida (FR-011).
+        instante_registro: { type: string, format: date-time }
+        nota: { type: string, nullable: true }
+
+    AlertaCaducidad:
+      type: object
+      required: [id_lote, id_producto, id_sucursal, fecha_caducidad, existencia_restante, ya_caducado]
+      properties:
+        id_lote: { type: integer }
+        id_producto: { type: integer }
+        nombre_producto: { type: string }
+        id_sucursal: { type: integer }
+        fecha_caducidad: { type: string, format: date }
+        dias_para_caducar:
+          type: integer
+          description: Negativo si ya caducó.
+        ya_caducado:
+          type: boolean
+          description: 'true ⇒ color crítico en la interfaz; false y dentro de la ventana ⇒ color atención.'
+        existencia_restante: { type: integer }
+        valor_en_riesgo:
+          type: string
+          nullable: true
+          description: 'existencia_restante × lote.costo_unitario. null = "no calculable".'
+
+    IndicadorOperador:
+      type: object
+      required:
+        [id_operador, nombre, ventas_periodo, comparable, tasa_anulaciones, concentracion_bajo_lista,
+         se_desvia]
+      properties:
+        id_operador: { type: integer }
+        nombre: { type: string }
+        ventas_periodo: { type: integer }
+        comparable:
+          type: boolean
+          description: 'false si ventas_periodo < UMBRAL_MINIMO_VENTAS_INDICADOR (no entra en la mediana ni recibe señal).'
+        tasa_anulaciones:
+          type: string
+          description: 'anulaciones ejecutadas por el operador / ventas de sus turnos, en el período.'
+        concentracion_bajo_lista:
+          type: string
+          description: 'renglones con precio_aplicado < precio_efectivo / total de renglones de sus turnos.'
+        se_desvia:
+          type: boolean
+          description: >
+            true si tasa_anulaciones >= factor × mediana de pares, o concentracion_bajo_lista >=
+            factor × mediana de pares. NUNCA significa "fraude": significa "se desvía de la línea
+            base de sus pares" (FR-023).
+        detalle_desviacion:
+          type: array
+          nullable: true
+          items: { type: string }
+          description: 'p. ej. ["tasa de anulaciones 0,18 vs mediana de pares 0,04 (×4,5)"].'
+
+    AnomaliaCaja:
+      type: object
+      required:
+        [id_anomalia_caja, origen, estado, id_sucursal, dia_local, historial, instante_deteccion]
+      properties:
+        id_anomalia_caja: { type: integer }
+        origen: { type: string, enum: [efectivo, inventario] }
+        estado: { type: string, enum: [sin_explicacion, resuelta] }
+        id_sucursal: { type: integer }
+        id_arqueo: { type: integer, nullable: true }
+        id_turno: { type: integer, nullable: true }
+        id_operador:
+          type: integer
+          nullable: true
+          description: Atribución del cálculo, NUNCA una acusación (FR-023).
+        id_producto: { type: integer, nullable: true }
+        id_conteo_fisico: { type: integer, nullable: true }
+        monto:
+          type: string
+          nullable: true
+          description: 'origen efectivo: la diferencia del arqueo, con signo.'
+        magnitud:
+          type: integer
+          nullable: true
+          description: 'origen inventario: faltante no explicado (unidades/gramos).'
+        valor_estimado:
+          type: string
+          nullable: true
+          description: 'origen inventario: magnitud × costo del lote FEFO. null = "no calculable".'
+        periodo_desde: { type: string, format: date, nullable: true }
+        periodo_hasta: { type: string, format: date, nullable: true }
+        dia_local: { type: string, format: date }
+        indicador_snapshot:
+          type: object
+          nullable: true
+          description: >
+            origen inventario: indicadores congelados en el momento de generarse
+            (tasa_anulaciones, concentracion_bajo_lista, faltante_bruto, merma_descontada,
+            anulaciones_descontadas, faltante_no_explicado, reparto_por_turno). null para efectivo.
+        historial:
+          type: array
+          items:
+            type: object
+            properties:
+              estado: { type: string }
+              instante: { type: string, format: date-time }
+              id_operador: { type: integer, nullable: true }
+              nota: { type: string, nullable: true }
+        resolucion:
+          type: string
+          nullable: true
+          description: Texto libre asignado por una persona. NO un ENUM cerrado (FR-029).
+        id_operador_resolucion:
+          type: integer
+          nullable: true
+          description: No nulo si y solo si estado = "resuelta".
+        instante_resolucion:
+          type: string
+          format: date-time
+          nullable: true
+        instante_deteccion: { type: string, format: date-time }
