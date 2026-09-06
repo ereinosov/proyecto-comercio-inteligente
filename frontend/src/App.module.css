@@ -20,13 +20,42 @@
   border-bottom: 1px solid var(--color-borde);
 }
 
-/* Wordmark de Rasero: marca de sistema pequeña y discreta, al ras del borde izquierdo. */
-.marcaSistema {
-  height: 24px;
-  width: auto;
-  display: block;
+/* La Regla de la Marca Persistente (DESIGN.md v1.3.1): ícono del comercio + wordmark de Rasero
+   conviven al mismo nivel visual, a la izquierda del nav, separados por el espaciado del nav. */
+.marca {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
   margin: 0 18px 6px 0;
   align-self: center;
+}
+
+/* Ícono del comercio: 24px, ya trae su propio fondo verde-app-icon — sin tinte ni filtro. */
+.iconoComercio {
+  height: 24px;
+  width: 24px;
+  display: block;
+  border-radius: var(--radio-operacion);
+}
+
+.marcaSistema {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+
+/* Footer persistente: franja delgada, Superficie Base, borde superior 1px en Borde
+   (La Regla del Filo — nunca sombra). Nombre de la sucursal activa, Tinta Suave. */
+.pie {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  padding: 6px 20px;
+  background: var(--color-superficie-base);
+  border-top: 1px solid var(--color-borde);
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-tinta-suave);
 }
 
 .pestanaActiva,

@@ -1,6 +1,36 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.2.8 → 2.2.9
+Tipo de cambio: MENOR — añade una regla al sistema de diseño. Como v2.2.7 y
+v2.2.8, la enmienda vive enteramente en `DESIGN.md`; no toca ningún principio,
+ni la tabla de Propiedad de Datos, ni ningún artefacto de funcionalidad.
+
+Motivo: añade La Regla de la Marca Persistente — el ícono del comercio
+(`despensa-icon-verde-512.png`, configurable por `VITE_ICONO_COMERCIO`) aparece
+en el nav global al mismo nivel visual que el wordmark de Rasero, y un footer
+nuevo muestra el nombre de la sucursal activa. Cierra la brecha de que la marca
+del comercio sólo se veía en la pantalla de apertura de turno, un riesgo para la
+defensa de la distinción "Rasero = herramienta / Despensa Los Ríos = negocio".
+
+Principios modificados: ninguno.
+Secciones añadidas: ninguna.
+Secciones eliminadas: ninguna.
+
+Regla nueva en `DESIGN.md` v1.3.1: La Regla de la Marca Persistente (aditiva; no
+modifica ni elimina ninguna regla previa).
+
+Puerta de sincronización de enmiendas (v2.2.0): esta enmienda no cita versiones
+en artefactos de funcionalidad porque no cambia ninguna regla que ellos citen;
+la única sincronización es `DESIGN.md` ↔ este historial, ya hecha en el mismo
+cambio.
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.2.7 → 2.2.8
 Tipo de cambio: MENOR — reescribe una regla del sistema de diseño. Como v2.2.7,
 la enmienda vive enteramente en `DESIGN.md`; no toca ningún principio, ni la
@@ -220,6 +250,11 @@ Historial de versiones:
     otra regla; no toca ningún principio ni la tabla de Propiedad de Datos.
     (`DESIGN.md` v1.2.1, PARCHE del mismo día, aclaró "Identificar cliente
     (Operación)" sin cambio de regla.)
+  - 2.2.9 (2026-09-07) — añade La Regla de la Marca Persistente: el ícono del
+    comercio en el nav global al mismo nivel que el wordmark de Rasero, y un
+    footer con el nombre de la sucursal activa. Registrada en `DESIGN.md`
+    v1.3.1 (regla nueva, aditiva). No modifica ni elimina ninguna regla
+    previa; no toca ningún principio ni la tabla de Propiedad de Datos.
 
 Artefactos de funcionalidad afectados: las citas que reclaman una versión
 vigente de la constitución ("constitución vX.Y.Z", "verificación contra la
@@ -689,4 +724,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.2.8 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-06
+**Versión**: 2.2.9 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-07

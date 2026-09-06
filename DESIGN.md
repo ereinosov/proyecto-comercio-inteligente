@@ -447,6 +447,26 @@ comercio ancla la pantalla en "esta es tu tienda" y, debajo, el nombre de sucurs
 confirman de un vistazo *en qué sucursal y caja está entrando*, que es el dato que ata todas sus
 ventas del turno.
 
+**La Regla de la Marca Persistente.** Fuera de la apertura de turno —el momento ceremonial de
+La Regla de la Identidad del Comercio—, la marca del comercio no desaparece: vive **discreta y
+constante** en dos lugares del armazón de la app, sin competir nunca con el trabajo de la
+pantalla. (1) En el **nav global**: el ícono del comercio (autónomo, ya trae su propio fondo de
+app-icon —sin tinte, sin filtro, sin el fondo blanco especial de la apertura—) a 24px al extremo
+izquierdo, y **al mismo nivel visual** el wordmark de Rasero inmediatamente a su derecha,
+separados por el espaciado normal del nav. Ninguno de los dos se agranda ni se jerarquiza sobre
+el otro: Rasero es la herramienta, el comercio es el negocio, y en el uso diario conviven a la
+par. (2) En un **footer** nuevo: franja delgada al pie de toda pantalla post-apertura, Superficie
+Base, borde superior de 1px en Borde (La Regla del Filo — nunca sombra), con el **nombre de la
+sucursal activa** de la sesión en Tinta Suave a 12px. Sin ícono en el footer: la marca visual ya
+vive en el nav, no se duplica en el mismo viewport. El ícono del comercio se configura por
+`VITE_ICONO_COMERCIO` (mismo patrón que `VITE_LOGO_COMERCIO` de la apertura); el nombre de
+sucursal sale del contexto de sesión (`sucursal.nombre` real), nunca de un literal. **Razón**:
+la apertura de turno da la marca del comercio en grande una vez al día; el resto de la jornada el
+operador necesita una confirmación periférica —"sigo en Despensa Los Ríos, sucursal Quevedo
+Centro"— sin que eso reste espacio ni atención a la caja. La jerarquía resultante es explícita:
+apertura = logo a color en grande; nav + footer = ícono + nombre discretos y permanentes; mono
+(`despensa-logo-mono-800w.png`) = reservado a reportes y dashboards. Ningún uso se solapa.
+
 **La Regla del Hueco que Enseña.** Todo estado vacío —ninguna selección hecha, ninguna fila que
 mostrar— se compone de tres partes y nunca de una sola línea de texto plano: (1) un ícono propio
 en SVG de línea simple (stroke, sin relleno, color Borde o Tinta Suave), nunca un ícono de librería
@@ -587,5 +607,11 @@ una aclaración sin cambio de significado.
   demostración por defecto); ningún dato de marca en literal de JSX ni en tabla. No elimina
   ninguna regla; ninguna otra regla cambia. Sincronizada con la enmienda **v2.2.8** de la
   constitución.
+- **1.3.1** (2026-09-07) — MENOR (aditiva): **La Regla de la Marca Persistente**, nueva. El
+  ícono del comercio (`despensa-icon-verde-512.png`, 24px, configurable por
+  `VITE_ICONO_COMERCIO`) aparece en el nav global al mismo nivel visual que el wordmark de
+  Rasero, y un footer nuevo muestra el nombre de la sucursal activa en Tinta Suave. Cierra la
+  brecha de que la marca del comercio sólo se veía en la apertura de turno. No modifica ni
+  elimina ninguna regla previa. Sincronizada con la enmienda **v2.2.9** de la constitución.
 
-**Versión**: 1.3.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-06
+**Versión**: 1.3.1 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07

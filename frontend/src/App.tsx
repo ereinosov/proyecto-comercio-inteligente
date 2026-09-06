@@ -16,8 +16,15 @@ import { TerminalesPago } from "./pantallas/TerminalesPago";
 import { Pagos } from "./pantallas/Pagos";
 import { Administracion } from "./pantallas/Administracion";
 import { cerrarTurno, listarOperadores, type Turno } from "./servicios/turnos";
+import { listarSucursales } from "./servicios/sucursales";
 import marcaSistema from "./activos/marca/rasero-wordmark-512w.png";
+import iconoComercioPorDefecto from "./activos/marca/despensa-icon-verde-512.png";
 import estilos from "./App.module.css";
+
+// La Regla de la Marca Persistente (DESIGN.md v1.3.1): el ícono del comercio vive en el nav
+// global junto al wordmark de Rasero, al mismo nivel visual. Configurable por entorno igual que
+// el logo a color de la apertura de turno.
+const ICONO_COMERCIO: string = import.meta.env.VITE_ICONO_COMERCIO ?? iconoComercioPorDefecto;
 
 type Pantalla =
   | "venta"
@@ -150,6 +157,7 @@ export function App() {
   const [pantalla, setPantalla] = useState<Pantalla>("venta");
   const [nombreOperador, setNombreOperador] = useState<string>("");
   const [esEncargado, setEsEncargado] = useState(false);
+  const [nombreSucursal, setNombreSucursal] = useState<string>("");
 
   useEffect(() => {
     if (!turno) return;
@@ -160,6 +168,14 @@ export function App() {
         setEsEncargado(Boolean(op?.es_encargado));
       })
       .catch(() => setNombreOperador(`Operador ${turno.id_operador}`));
+    // Nombre de sucursal para el footer (Regla de la Marca Persistente). `incluir_inactivas`
+    // por si la sucursal del turno se desactivó después de abrirlo — no perder el dato.
+    listarSucursales(true)
+      .then((lista) => {
+        const s = lista.find((x) => x.id_sucursal === turno.id_sucursal);
+        setNombreSucursal(s?.nombre ?? "");
+      })
+      .catch(() => setNombreSucursal(""));
   }, [turno]);
 
   if (!turno) {
@@ -178,13 +194,22 @@ export function App() {
   return (
     <div className={estilos.aplicacion}>
       <nav className={estilos.navegacion}>
-        <img
-          className={estilos.marcaSistema}
-          src={marcaSistema}
-          alt="Rasero"
-          width={106}
-          height={26}
-        />
+        <span className={estilos.marca}>
+          <img
+            className={estilos.iconoComercio}
+            src={ICONO_COMERCIO}
+            alt=""
+            width={24}
+            height={24}
+          />
+          <img
+            className={estilos.marcaSistema}
+            src={marcaSistema}
+            alt="Rasero"
+            width={106}
+            height={26}
+          />
+        </span>
         <button
           className={pantalla === "venta" ? estilos.pestanaActiva : estilos.pestanaInactiva}
           onClick={() => setPantalla("venta")}
@@ -251,6 +276,11 @@ export function App() {
           <Administracion idOperador={turno.id_operador} esEncargado={esEncargado} />
         )}
       </div>
+      {nombreSucursal && (
+        <footer className={estilos.pie}>
+          <span>{nombreSucursal}</span>
+        </footer>
+      )}
     </div>
   );
 }
