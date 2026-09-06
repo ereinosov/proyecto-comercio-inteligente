@@ -17,6 +17,7 @@ from fastapi import APIRouter, Depends, Query, Response, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from rasero.api.paginacion import paginar
 from rasero.persistencia.sesion import obtener_sesion
 from rasero.servicios import experimentos as servicio_experimentos
 from rasero.servicios import promociones as servicio_promociones
@@ -58,16 +59,19 @@ def generar_cupones(cuerpo: GeneracionCupones, sesion: Session = Depends(obtener
 
 @router.get("/cupones")
 def listar_cupones(
+    response: Response,
     id_cliente: int | None = None,
     estado: str | None = None,
     vigentes: bool = False,
+    pagina: int | None = None,
+    tamano_pagina: int | None = None,
     sesion: Session = Depends(obtener_sesion),
 ) -> list[dict]:
     filas = servicio_promociones.listar_cupones(
         sesion, id_cliente=id_cliente, estado=estado, vigentes=vigentes
     )
     sesion.commit()
-    return filas
+    return paginar(filas, pagina=pagina, tamano_pagina=tamano_pagina, response=response)
 
 
 @router.post("/redenciones")

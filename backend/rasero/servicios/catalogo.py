@@ -18,8 +18,13 @@ from rasero.dominio.resolucion_precio import resolver_precio_efectivo
 from rasero.persistencia.modelos import Producto, ProductoPrecioSucursal
 
 
-def listar_catalogo(sesion: Session, *, id_sucursal: int | None) -> list[dict]:
-    productos = sesion.execute(select(Producto)).scalars().all()
+def listar_catalogo(
+    sesion: Session, *, id_sucursal: int | None, incluir_inactivos: bool = False
+) -> list[dict]:
+    consulta = select(Producto)
+    if not incluir_inactivos:
+        consulta = consulta.where(Producto.activo.is_(True))
+    productos = sesion.execute(consulta).scalars().all()
 
     overrides: dict[int, Decimal] = {}
     if id_sucursal is not None:
@@ -44,6 +49,8 @@ def listar_catalogo(sesion: Session, *, id_sucursal: int | None) -> list[dict]:
                 "lleva_caducidad": producto.lleva_caducidad,
                 "precio_efectivo": precio_efectivo,
                 "moneda": producto.moneda,
+                "id_categoria": producto.id_categoria,
+                "activo": producto.activo,
             }
         )
     return resultado

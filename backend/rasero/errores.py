@@ -209,6 +209,19 @@ class ErrorPagos(ErrorDominio):
         super().__init__(mensaje)
 
 
+class ErrorAdministracion(ErrorDominio):
+    """Error de dominio de la administración de datos maestros (sucursal, producto, categoria,
+    zona de exhibición, medio de pago). Lleva su propio `codigo` y `status_code` por instancia;
+    los prefijos `admin_` mantienen los códigos del contrato agrupados y legibles — mismo patrón
+    que `ErrorCaja` (006) y `ErrorPagos` (007).
+    """
+
+    def __init__(self, codigo: str, mensaje: str, *, status_code: int = 400):
+        self.codigo = codigo
+        self.status_code = status_code
+        super().__init__(mensaje)
+
+
 class PanDetectado(ErrorPagos):
     """Se recibió un número de tarjeta completo donde no correspondía. Se rechaza y se registra en
     la bitácora SIN el número (FR-018, SC-008). El PAN nunca se almacena, registra ni transmite.

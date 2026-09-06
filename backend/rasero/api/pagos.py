@@ -18,6 +18,7 @@ from fastapi import APIRouter, Depends, Response, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
+from rasero.api.paginacion import paginar
 from rasero.persistencia.sesion import obtener_sesion
 from rasero.servicios import bitacora_pagos as servicio_bitacora
 from rasero.servicios import cobertura_pago as servicio_cobertura
@@ -268,11 +269,14 @@ def consultar_pago_de_venta(
 
 @router.get("/bitacora")
 def consultar_bitacora(
+    response: Response,
     id_sucursal: int | None = None,
     id_terminal_pago: int | None = None,
     tipo_evento: str | None = None,
     desde: date | None = None,
     hasta: date | None = None,
+    pagina: int | None = None,
+    tamano_pagina: int | None = None,
     sesion: Session = Depends(obtener_sesion),
 ) -> list[dict]:
     entradas = servicio_bitacora.consultar_bitacora(
@@ -283,4 +287,5 @@ def consultar_bitacora(
         desde=desde,
         hasta=hasta,
     )
-    return [servicio_bitacora.entrada_a_respuesta(e) for e in entradas]
+    respuestas = [servicio_bitacora.entrada_a_respuesta(e) for e in entradas]
+    return paginar(respuestas, pagina=pagina, tamano_pagina=tamano_pagina, response=response)

@@ -40,6 +40,32 @@ def registrar_cliente(
     return cliente
 
 
+def actualizar_cliente(
+    sesion: Session,
+    *,
+    id_cliente: int,
+    nombre: str,
+    fecha_nacimiento: date,
+    contacto: str | None = None,
+) -> Cliente:
+    """Edición de un cliente ya registrado (Parte 3). NO requiere `es_encargado`: cualquier
+    cajero puede editar un cliente, igual que ya puede crearlo desde la venta. Un cliente
+    anonimizado (FR-015/FR-016 de 002) no se edita: sus datos personales ya no existen.
+    """
+    cliente = sesion.get(Cliente, id_cliente)
+    if cliente is None:
+        raise RecursoNoEncontrado(f"El cliente {id_cliente} no existe.")
+    if cliente.anonimizado:
+        raise RecursoNoEncontrado(
+            "Este cliente fue anonimizado y sus datos personales ya no pueden editarse."
+        )
+    cliente.nombre = nombre
+    cliente.fecha_nacimiento = fecha_nacimiento
+    cliente.contacto = contacto
+    sesion.commit()
+    return cliente
+
+
 def _recalcular_intervalo_compra(sesion: Session, *, id_cliente: int) -> None:
     instantes = list(
         sesion.execute(

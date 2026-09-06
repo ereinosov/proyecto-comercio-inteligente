@@ -14,6 +14,7 @@ from fastapi import APIRouter, Depends, Response, status
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
+from rasero.api.paginacion import paginar
 from rasero.errores import RecursoNoEncontrado
 from rasero.persistencia.modelos import Visita
 from rasero.persistencia.sesion import obtener_sesion
@@ -30,6 +31,12 @@ class ClienteNuevo(BaseModel):
 
 class VisitaNueva(BaseModel):
     id_venta: int
+
+
+class ClienteEditado(BaseModel):
+    nombre: str
+    fecha_nacimiento: date
+    contacto: str | None = None
 
 
 def _cliente_a_respuesta(cliente) -> dict:
@@ -76,9 +83,16 @@ def registrar_cliente(cuerpo: ClienteNuevo, sesion: Session = Depends(obtener_se
 
 
 @router.get("/clientes")
-def listar_clientes(orden: str = "valor", sesion: Session = Depends(obtener_sesion)) -> list[dict]:
+def listar_clientes(
+    response: Response,
+    orden: str = "valor",
+    pagina: int | None = None,
+    tamano_pagina: int | None = None,
+    sesion: Session = Depends(obtener_sesion),
+) -> list[dict]:
     filas = servicio_clientes.listar_valor_clientes(sesion, orden=orden)
-    return [_resumen_a_respuesta(f) for f in filas]
+    respuestas = [_resumen_a_respuesta(f) for f in filas]
+    return paginar(respuestas, pagina=pagina, tamano_pagina=tamano_pagina, response=response)
 
 
 @router.get("/clientes/busqueda")
@@ -112,6 +126,20 @@ def obtener_cliente(id_cliente: int, sesion: Session = Depends(obtener_sesion)) 
     respuesta["valor"] = detalle["valor"]
     respuesta["fuga"] = detalle.get("fuga")
     return respuesta
+
+
+@router.put("/clientes/{id_cliente:int}")
+def editar_cliente(
+    id_cliente: int, cuerpo: ClienteEditado, sesion: Session = Depends(obtener_sesion)
+) -> dict:
+    cliente = servicio_clientes.actualizar_cliente(
+        sesion,
+        id_cliente=id_cliente,
+        nombre=cuerpo.nombre,
+        fecha_nacimiento=cuerpo.fecha_nacimiento,
+        contacto=cuerpo.contacto,
+    )
+    return _cliente_a_respuesta(cliente)
 
 
 @router.post("/clientes/{id_cliente:int}/visitas")

@@ -40,6 +40,7 @@ class Sucursal(Base):
     id_sucursal: Mapped[int] = mapped_column(Integer, primary_key=True)
     nombre: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     zona_horaria: Mapped[str] = mapped_column(String, nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
 class Categoria(Base):
@@ -48,6 +49,7 @@ class Categoria(Base):
     id_categoria: Mapped[int] = mapped_column(Integer, primary_key=True)
     nombre: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     dias_umbral_inmovilizado: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
 class Producto(Base):
@@ -60,6 +62,7 @@ class Producto(Base):
     precio_vigente: Mapped[Decimal] = mapped_column(Numeric(12, 4), nullable=False)
     lleva_caducidad: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     moneda: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
 class ProductoPrecioSucursal(Base):
@@ -80,6 +83,7 @@ class ZonaExhibicion(Base):
     id_sucursal: Mapped[int] = mapped_column(ForeignKey("sucursal.id_sucursal"), nullable=False)
     nombre: Mapped[str] = mapped_column(String, nullable=False)
     grado_privilegio: Mapped[int] = mapped_column(SmallInteger, nullable=False)
+    activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
 
 # --------------------------------------------------------------------------

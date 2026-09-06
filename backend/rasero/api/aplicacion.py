@@ -67,6 +67,7 @@ def registrar_rutas() -> None:
     from rasero.api.promociones import router as router_promociones
     from rasero.api.caja import router as router_caja
     from rasero.api.pagos import router as router_pagos
+    from rasero.api.administracion import router as router_administracion
 
     app.include_router(router_turnos)
     app.include_router(router_ventas)
@@ -85,6 +86,7 @@ def registrar_rutas() -> None:
     app.include_router(router_promociones)
     app.include_router(router_caja)
     app.include_router(router_pagos)
+    app.include_router(router_administracion)
 
 
 registrar_rutas()
