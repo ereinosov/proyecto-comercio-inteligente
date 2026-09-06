@@ -172,7 +172,7 @@ mensaje explícito; un cliente sin cédula se registra igual, sin fricción.
 
 ---
 
-### User Story 6 - Visualizar la curva de fuga por segmento (Priority: P6)
+### User Story 5 - Visualizar la curva de fuga por segmento (Priority: P5)
 
 El negocio abre la pantalla de Clientes y ve, antes de recorrer la lista, un gráfico de barras
 con cuántos clientes están hoy en cada segmento de fuga —sin señal, datos insuficientes, en
@@ -180,7 +180,7 @@ riesgo, fuga confirmada, resuelta—, de modo que el tamaño del problema se ve 
 
 **Why this priority**: es una lectura pura sobre `senal_fuga` e `intervalo_compra`, que User
 Story 3 ya calcula. No escribe ni recalcula nada; es aditiva y no reabre el checkpoint de las
-historias 1–5. `senal_fuga` no guarda un histórico periódico, así que es una foto del estado
+historias 1–4. `senal_fuga` no guarda un histórico periódico, así que es una foto del estado
 actual, no una serie temporal — no se inventa un histórico que no existe.
 
 **Independent Test**: con un conjunto de clientes en distintos segmentos (al menos uno en riesgo

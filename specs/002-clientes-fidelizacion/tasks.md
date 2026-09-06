@@ -152,23 +152,23 @@ cerrado; esto no lo reabre. Añadida el 2026-09-06.
 
 ---
 
-## Phase US6: Visualizar la curva de fuga por segmento (Priority: P6)
+## Phase US5: Visualizar la curva de fuga por segmento (Priority: P5)
 
 **Propósito**: gráfico de barras con la distribución instantánea de clientes por segmento de
 fuga (FR-018..FR-020). Lectura pura sobre `senal_fuga` / `intervalo_compra` (US3); no reabre el
-checkpoint de US1–US5. Añadida 2026-09-07. **Puerta de propiedad de datos**: no introduce ni
+checkpoint de US1–US4. Añadida 2026-09-07. **Puerta de propiedad de datos**: no introduce ni
 modifica ninguna entidad — sólo añade un endpoint de lectura; no requiere enmienda constitucional
 (verificado contra la entrada de 002 en la tabla de Propiedad de Datos: `cliente`, `visita`,
 `intervalo_compra`, `senal_fuga`, todas ya suyas).
 
-- [X] T050 [US6] Servicio `resumen_fuga_por_segmento(sesion) -> dict[str, int]` en `backend/rasero/servicios/clientes.py`: cuenta clientes no anonimizados por segmento (`sin_senal`/`datos_insuficientes`/`activa`/`confirmada`/`resuelta`) con la MISMA clasificación que `_fuga_a_respuesta`; una consulta con subquery de la última señal por cliente, sin N+1. Es un snapshot, no una serie temporal (`senal_fuga` no guarda histórico periódico).
-- [X] T051 [US6] Endpoint `GET /clientes/fuga/resumen` en `backend/rasero/api/clientes.py` (ruta con segmento literal `fuga/resumen`, nunca capturada por `/clientes/{id_cliente:int}`); `contracts/openapi.yaml` actualizado.
-- [X] T052 [P] [US6] Prueba de integración en `tests/integracion/test_resumen_fuga.py`: con clientes sembrados en distintos segmentos, el endpoint devuelve las cinco claves con los conteos correctos y excluye anonimizados.
-- [X] T053 [P] [US6] Cliente HTTP `obtenerResumenFuga()` + tipo `ResumenFuga` en `frontend/src/servicios/clientes.ts`.
-- [X] T054 [US6] `frontend/src/componentes/graficos/FugaPorSegmentoGrafico.tsx`: `<BarChart>` de Recharts sobre `GraficoContenedor` (registro Análisis, borde 2px). Color por barra igual a `InsigniaFuga` de `Clientes.tsx` (Atención para `activa`, Crítico para `confirmada`, neutro para el resto), `TooltipPropio`, estado vacío del contenedor. Integrado en `Clientes.tsx` sobre la lista/detalle.
-- [X] T055 [US6] Verificación `pytest tests/integracion/test_resumen_fuga.py`, `tsc -b`, `eslint`, `vite build` sin errores.
+- [X] T050 [US5] Servicio `resumen_fuga_por_segmento(sesion) -> dict[str, int]` en `backend/rasero/servicios/clientes.py`: cuenta clientes no anonimizados por segmento (`sin_senal`/`datos_insuficientes`/`activa`/`confirmada`/`resuelta`) con la MISMA clasificación que `_fuga_a_respuesta`; una consulta con subquery de la última señal por cliente, sin N+1. Es un snapshot, no una serie temporal (`senal_fuga` no guarda histórico periódico).
+- [X] T051 [US5] Endpoint `GET /clientes/fuga/resumen` en `backend/rasero/api/clientes.py` (ruta con segmento literal `fuga/resumen`, nunca capturada por `/clientes/{id_cliente:int}`); `contracts/openapi.yaml` actualizado.
+- [X] T052 [P] [US5] Prueba de integración en `tests/integracion/test_resumen_fuga.py`: con clientes sembrados en distintos segmentos, el endpoint devuelve las cinco claves con los conteos correctos y excluye anonimizados.
+- [X] T053 [P] [US5] Cliente HTTP `obtenerResumenFuga()` + tipo `ResumenFuga` en `frontend/src/servicios/clientes.ts`.
+- [X] T054 [US5] `frontend/src/componentes/graficos/FugaPorSegmentoGrafico.tsx`: `<BarChart>` de Recharts sobre `GraficoContenedor` (registro Análisis, borde 2px). Color por barra igual a `InsigniaFuga` de `Clientes.tsx` (Atención para `activa`, Crítico para `confirmada`, neutro para el resto), `TooltipPropio`, estado vacío del contenedor. Integrado en `Clientes.tsx` sobre la lista/detalle.
+- [X] T055 [US5] Verificación `pytest tests/integracion/test_resumen_fuga.py`, `tsc -b`, `eslint`, `vite build` sin errores.
 
-**Checkpoint US6**: Clientes muestra el gráfico de segmentos de fuga; la lista y el detalle siguen igual.
+**Checkpoint US5**: Clientes muestra el gráfico de segmentos de fuga; la lista y el detalle siguen igual.
 
 ---
 
