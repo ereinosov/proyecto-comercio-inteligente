@@ -231,3 +231,46 @@ sistema de diseño existe para evitar.
 por defecto pero no los elimina, y la deriva reaparece en cada componente nuevo—; Tailwind —no es
 librería de componentes y sería admisible, pero duplicaría la escala de tokens ya definida en la
 constitución—.
+
+---
+
+## 11. "Lote sin costo" del capital inmovilizado — centinela `0.00`, no `NULL`
+
+**Decisión** (interpretación registrada durante la implementación del Bloque B, no retroactiva
+sobre entradas anteriores): FR-035 y el esquema `CapitalInmovilizado` del contrato exigen un
+estado "lote sin costo registrado → `valor_calculable: false`, `valor_inmovilizado: null`, nunca
+cero". Pero `lote.costo_unitario` es `NUMERIC(12,4) NOT NULL` en `data-model.md` y en la migración
+`0001`. Se resuelve tratando **`costo_unitario = 0.0000` como el centinela de "sin costo
+registrado"**: el listado de capital inmovilizado devuelve `valor_calculable: false` y
+`valor_inmovilizado: null` para esos lotes.
+
+**Razón**: introducir `NULL` en un campo financiero `NUMERIC(12,4)` obligaría a revisar cada
+consumidor existente de `lote.costo_unitario` (`003-precios-margenes/servicios/margenes.py`,
+`006-caja-mermas-fraude/servicios/mermas.py` y `.../deteccion_fraude.py`) para manejar el nuevo
+`None`, sin ningún beneficio funcional sobre el centinela. En este negocio `0.00` nunca es un costo
+de compra real —una compra a proveedor siempre tiene un costo—, así que no hay ambigüedad con un
+costo genuinamente cero. La redacción de FR-035 ("nunca como cero") apunta justamente a que el
+peligro a evitar es mostrar `$0.00` como valor inmovilizado.
+
+**Alternativas descartadas**: migración `0008` que haga `costo_unitario` nulo —cambio de esquema y
+revisión de 3 módulos por un caso de borde—; declarar `valor_calculable` siempre `true` y quitar el
+caso de T080/quickstart —tocaría el contrato y el quickstart ya aprobados—.
+
+---
+
+## 12. Umbrales de antigüedad de una observación de competencia (`indicador_forma`)
+
+**Decisión**: el paso de una observación de precio de `indicador_forma: "lleno"` (reciente) a
+`"medio"` a `"hueco"` (vieja) usa umbrales en días, en `backend/rasero/config/competencia.py`,
+sobrescribibles por variable de entorno (mismo patrón que `config/pronostico.py` de 004,
+`config/promociones.py` de 005 y `config/caja.py` de 006). Valores de arranque:
+
+- `lleno`: antigüedad ≤ **7** días
+- `medio`: **8**–**21** días
+- `hueco`: > **21** días
+
+**Razón**: FR-002 de la User Story 4 fija el criterio cualitativo —"un precio de hace dos semanas no
+puede pesar como uno de hoy"—; ningún artefacto daba cifras. El corte de `lleno` en 7 días y el de
+`hueco` en 21 dejan una observación de "hace dos semanas" (14 días) ya fuera de `lleno` y todavía en
+`medio`, coherente con ese enunciado. Es presentación pura: `indicador_forma` no entra en ningún
+cálculo ni decisión del sistema (FR-028: el sistema no ajusta ningún precio).

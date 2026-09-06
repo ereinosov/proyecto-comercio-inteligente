@@ -115,12 +115,12 @@ description: "Task list template for feature implementation"
 
 **Independent Test**: registrar una compra de tres productos, uno perecedero, y verificar que se crean los lotes con costo y caducidad, y que las existencias suben.
 
-- [ ] T044 [P] [US2] Prueba de integración: una entrada crea el lote con costo y caducidad y sube la existencia, en `tests/integracion/test_entrada_inventario.py`
-- [ ] T045 [US2] Servicio de registro de entrada de inventario, crea o alimenta lote, solo costo, nunca margen, en `backend/rasero/servicios/inventario.py` (depende de T009)
-- [ ] T046 [US2] Endpoint `POST /entradas-inventario` en `backend/rasero/api/inventario.py` (depende de T045)
-- [ ] T047 [P] [US2] Endpoint `GET /existencias`, exponiendo el saldo incluido negativo, en `backend/rasero/api/inventario.py` (depende de T009)
-- [ ] T048 [P] [US2] Pantalla de registro de entrada (producto, cantidad, costo, caducidad opcional) en `frontend/src/pantallas/EntradaInventario.tsx` (depende de T015, T013)
-- [ ] T049 [US2] Servicio de cliente para `POST /entradas-inventario` en `frontend/src/servicios/inventario.ts` (depende de T015, T016, T046)
+- [X] T044 [P] [US2] Prueba de integración: una entrada crea el lote con costo y caducidad y sube la existencia, en `tests/integracion/test_entrada_inventario.py`
+- [X] T045 [US2] Servicio de registro de entrada de inventario, crea o alimenta lote, solo costo, nunca margen, en `backend/rasero/servicios/inventario.py` (depende de T009)
+- [X] T046 [US2] Endpoint `POST /entradas-inventario` en `backend/rasero/api/inventario.py` (depende de T045)
+- [X] T047 [P] [US2] Endpoint `GET /existencias`, exponiendo el saldo incluido negativo, en `backend/rasero/api/inventario.py` (depende de T009)
+- [X] T048 [P] [US2] Pantalla de registro de entrada (producto, cantidad, costo, caducidad opcional) en `frontend/src/pantallas/EntradaInventario.tsx` (depende de T015, T013)
+- [X] T049 [US2] Servicio de cliente para `POST /entradas-inventario` en `frontend/src/servicios/inventario.ts` (depende de T015, T016, T046)
 
 **Checkpoint**: User Story 2 funcional junto con User Story 1.
 
@@ -147,17 +147,17 @@ description: "Task list template for feature implementation"
 
 **Independent Test**: capturar tres observaciones de canales distintos, una en otra presentación, y verificar la comparación normalizada con antigüedad por observación.
 
-- [ ] T054 [P] [US4] Prueba unitaria de normalización a precio por unidad de medida y de `comparable = false` cuando no aplica, en `tests/unidad/test_normalizacion_precio.py`
-- [ ] T055 [P] [US4] Prueba de integración: el catálogo de canales evita duplicados por nombre normalizado, en `tests/integracion/test_canal_competencia.py`
-- [ ] T056 [P] [US4] Servicio de catálogo de canales de competencia (crear o devolver existente) en `backend/rasero/servicios/competencia.py` (depende de T009)
-- [ ] T057 [US4] Servicio de captura de observación de precio, `origen_captura` limitado a manual/archivo, en `backend/rasero/servicios/competencia.py` (depende de T056)
-- [ ] T058 [P] [US4] Regla de dominio de normalización y antigüedad calculada al leer en `backend/rasero/dominio/comparacion_precios.py` (implementa T054)
-- [ ] T059 [US4] Endpoint `GET/POST /canales-competencia` en `backend/rasero/api/competencia.py` (depende de T056)
-- [ ] T060 [US4] Endpoint `POST /observaciones-precio` en `backend/rasero/api/competencia.py` (depende de T057)
-- [ ] T061 [US4] Endpoint `GET /productos/{id_producto}/comparacion-precios` con `id_sucursal` obligatorio, resolviendo el precio propio con la regla de T022, en `backend/rasero/api/competencia.py` (depende de T022, T058)
-- [ ] T062 [P] [US4] Pantalla de captura de observación de precio en `frontend/src/pantallas/ObservacionPrecio.tsx` (depende de T015, T013)
-- [ ] T063 [US4] Componente de antigüedad con tres portadores (color, forma, texto), nunca solo color, en `frontend/src/componentes/AntiguedadDato.tsx` (depende de T015, T013)
-- [ ] T064 [US4] Pantalla de comparación de precios, registro de Análisis, radio 6px, Source Serif 4, sin ajustar precios, en `frontend/src/pantallas/ComparacionPrecios.tsx` (depende de T015, T061, T063)
+- [X] T054 [P] [US4] Prueba unitaria de normalización a precio por unidad de medida y de `comparable = false` cuando no aplica, en `tests/unidad/test_normalizacion_precio.py`
+- [X] T055 [P] [US4] Prueba de integración: el catálogo de canales evita duplicados por nombre normalizado, en `tests/integracion/test_canal_competencia.py`
+- [X] T056 [P] [US4] Servicio de catálogo de canales de competencia (crear o devolver existente) en `backend/rasero/servicios/competencia.py` (depende de T009)
+- [X] T057 [US4] Servicio de captura de observación de precio, `origen_captura` limitado a manual/archivo, en `backend/rasero/servicios/competencia.py` (depende de T056)
+- [X] T058 [P] [US4] Regla de dominio de normalización y antigüedad calculada al leer en `backend/rasero/dominio/comparacion_precios.py` (implementa T054)
+- [X] T059 [US4] Endpoint `GET/POST /canales-competencia` en `backend/rasero/api/competencia.py` (depende de T056)
+- [X] T060 [US4] Endpoint `POST /observaciones-precio` en `backend/rasero/api/competencia.py` (depende de T057)
+- [X] T061 [US4] Endpoint `GET /productos/{id_producto}/comparacion-precios` con `id_sucursal` obligatorio, resolviendo el precio propio con la regla de T022, en `backend/rasero/api/competencia.py` (depende de T022, T058)
+- [X] T062 [P] [US4] Pantalla de captura de observación de precio en `frontend/src/pantallas/ObservacionPrecio.tsx` (depende de T015, T013)
+- [X] T063 [US4] Componente de antigüedad con tres portadores (color, forma, texto), nunca solo color, en `frontend/src/componentes/AntiguedadDato.tsx` (depende de T015, T013)
+- [X] T064 [US4] Pantalla de comparación de precios, registro de Análisis, radio 6px, Source Serif 4, sin ajustar precios, en `frontend/src/pantallas/ComparacionPrecios.tsx` (depende de T015, T061, T063)
 
 **Checkpoint**: User Story 4 funcional junto con las anteriores.
 
@@ -187,14 +187,14 @@ description: "Task list template for feature implementation"
 
 **Independent Test**: despachar un traspaso, verificar que el inventario total no cambia mientras está en tránsito, y confirmar la recepción.
 
-- [ ] T072 [P] [US6] Prueba de integración: la existencia total del sistema es idéntica antes y después de despachar un traspaso, en `tests/integracion/test_traspaso_invariante.py`
-- [ ] T073 [P] [US6] Prueba de integración: una recepción distinta de lo despachado expone la discrepancia por producto sin clasificarla, en `tests/integracion/test_traspaso_discrepancia.py`
-- [ ] T074 [US6] Servicio de despacho: crea `traspaso` y sus movimientos `salida_traspaso` en `backend/rasero/servicios/traspasos.py` (depende de T009)
-- [ ] T075 [US6] Servicio de recepción: crea movimientos `entrada_traspaso` conservando costo y caducidad del lote de origen, calcula discrepancia, en `backend/rasero/servicios/traspasos.py` (depende de T074)
-- [ ] T076 [US6] Endpoint `POST /traspasos` en `backend/rasero/api/traspasos.py` (depende de T074)
-- [ ] T077 [US6] Endpoint `POST /traspasos/{id_traspaso}/recepcion` en `backend/rasero/api/traspasos.py` (depende de T075)
-- [ ] T078 [P] [US6] Pantalla de despacho de traspaso en `frontend/src/pantallas/DespachoTraspaso.tsx` (depende de T015, T013)
-- [ ] T079 [US6] Pantalla de recepción de traspaso, mostrando la discrepancia cuando exista, en `frontend/src/pantallas/RecepcionTraspaso.tsx` (depende de T015, T077)
+- [X] T072 [P] [US6] Prueba de integración: la existencia total del sistema es idéntica antes y después de despachar un traspaso, en `tests/integracion/test_traspaso_invariante.py`
+- [X] T073 [P] [US6] Prueba de integración: una recepción distinta de lo despachado expone la discrepancia por producto sin clasificarla, en `tests/integracion/test_traspaso_discrepancia.py`
+- [X] T074 [US6] Servicio de despacho: crea `traspaso` y sus movimientos `salida_traspaso` en `backend/rasero/servicios/traspasos.py` (depende de T009)
+- [X] T075 [US6] Servicio de recepción: crea movimientos `entrada_traspaso` conservando costo y caducidad del lote de origen, calcula discrepancia, en `backend/rasero/servicios/traspasos.py` (depende de T074)
+- [X] T076 [US6] Endpoint `POST /traspasos` en `backend/rasero/api/traspasos.py` (depende de T074)
+- [X] T077 [US6] Endpoint `POST /traspasos/{id_traspaso}/recepcion` en `backend/rasero/api/traspasos.py` (depende de T075)
+- [X] T078 [P] [US6] Pantalla de despacho de traspaso en `frontend/src/pantallas/DespachoTraspaso.tsx` (depende de T015, T013)
+- [X] T079 [US6] Pantalla de recepción de traspaso, mostrando la discrepancia cuando exista, en `frontend/src/pantallas/RecepcionTraspaso.tsx` (depende de T015, T077)
 
 **Checkpoint**: User Story 6 funcional junto con las anteriores.
 
@@ -206,10 +206,10 @@ description: "Task list template for feature implementation"
 
 **Independent Test**: con lotes de categorías y antigüedades distintas, verificar que el listado señala exactamente los que superan el umbral de su categoría.
 
-- [ ] T080 [P] [US7] Prueba de integración: umbral corto señala, umbral largo no señala, categoría sin umbral hereda el global, lote sin costo aparece no calculable, en `tests/integracion/test_capital_inmovilizado.py`
-- [ ] T081 [US7] Consulta de capital inmovilizado con `COALESCE(categoria.dias_umbral_inmovilizado, umbral_global)` y `cantidad_restante × costo_unitario` en `backend/rasero/servicios/inventario.py` (depende de T009)
-- [ ] T082 [US7] Endpoint `GET /capital-inmovilizado` en `backend/rasero/api/inventario.py` (depende de T081)
-- [ ] T083 [US7] Pantalla de listado de capital inmovilizado, de solo lectura, sin ninguna acción, en `frontend/src/pantallas/CapitalInmovilizado.tsx` (depende de T015, T082)
+- [X] T080 [P] [US7] Prueba de integración: umbral corto señala, umbral largo no señala, categoría sin umbral hereda el global, lote sin costo aparece no calculable, en `tests/integracion/test_capital_inmovilizado.py`
+- [X] T081 [US7] Consulta de capital inmovilizado con `COALESCE(categoria.dias_umbral_inmovilizado, umbral_global)` y `cantidad_restante × costo_unitario` en `backend/rasero/servicios/inventario.py` (depende de T009)
+- [X] T082 [US7] Endpoint `GET /capital-inmovilizado` en `backend/rasero/api/inventario.py` (depende de T081)
+- [X] T083 [US7] Pantalla de listado de capital inmovilizado, de solo lectura, sin ninguna acción, en `frontend/src/pantallas/CapitalInmovilizado.tsx` (depende de T015, T082)
 
 **Checkpoint**: User Story 7 funcional junto con las anteriores.
 
@@ -223,11 +223,11 @@ description: "Task list template for feature implementation"
 
 > Nota constitucional (v2.0.2, Principio II): esta historia no es opcional pese a ir última en secuencia. Mientras no esté entregada, cualquier demostración depende de conectividad continua y debe declararlo.
 
-- [ ] T084 [P] [US8] Prueba de integración: dos operaciones en conflicto resuelven por la marca de tiempo más antigua en ambas direcciones, y la desplazada queda visible en `conflicto_resuelto`, en `tests/integracion/test_reconciliacion_offline.py`
-- [ ] T085 [US8] Servicio de sincronización: ordena por `marca_tiempo_origen` ascendente y resuelve conflictos por `recurso_afectado` en ambas direcciones, en `backend/rasero/servicios/sincronizacion.py` (depende de T009)
-- [ ] T086 [US8] Endpoint `POST /operaciones-pendientes/sincronizacion` en `backend/rasero/api/sincronizacion.py` (depende de T085)
-- [ ] T087 [P] [US8] Cola local de operaciones pendientes (IndexedDB) con `marca_tiempo_origen` generada en el dispositivo, en `frontend/src/servicios/colaOffline.ts` (depende de T015, T016)
-- [ ] T088 [US8] Disparador de sincronización al recuperar conectividad, contra el endpoint de T086, en `frontend/src/servicios/colaOffline.ts` (depende de T015, T086, T087)
+- [X] T084 [P] [US8] Prueba de integración: dos operaciones en conflicto resuelven por la marca de tiempo más antigua en ambas direcciones, y la desplazada queda visible en `conflicto_resuelto`, en `tests/integracion/test_reconciliacion_offline.py`
+- [X] T085 [US8] Servicio de sincronización: ordena por `marca_tiempo_origen` ascendente y resuelve conflictos por `recurso_afectado` en ambas direcciones, en `backend/rasero/servicios/sincronizacion.py` (depende de T009)
+- [X] T086 [US8] Endpoint `POST /operaciones-pendientes/sincronizacion` en `backend/rasero/api/sincronizacion.py` (depende de T085)
+- [X] T087 [P] [US8] Cola local de operaciones pendientes (IndexedDB) con `marca_tiempo_origen` generada en el dispositivo, en `frontend/src/servicios/colaOffline.ts` (depende de T015, T016)
+- [X] T088 [US8] Disparador de sincronización al recuperar conectividad, contra el endpoint de T086, en `frontend/src/servicios/colaOffline.ts` (depende de T015, T086, T087)
 
 **Checkpoint**: las 8 historias de usuario funcionan de forma independiente.
 
@@ -237,10 +237,10 @@ description: "Task list template for feature implementation"
 
 **Propósito**: validación de extremo a extremo y cumplimiento transversal.
 
-- [ ] T089 [P] Ejecutar los 10 escenarios de `quickstart.md` de extremo a extremo y confirmar el resultado esperado de cada uno
-- [ ] T090 [P] Auditar que "Despensa Los Ríos", "Quevedo Centro" y "Buena Fe" no aparecen en ningún identificador técnico, solo como valor de fila en `backend/rasero/semilla.py`
-- [ ] T091 Auditar `frontend/` en busca de color, radio o tipografía incrustados fuera de `frontend/src/estilos/tokens.css`, y confirmar que Inter no aparece en ninguna parte
-- [ ] T092 Ejecutar `pytest tests` completo y confirmar en verde las 6 suites obligatorias (T017, T018, T019, T020, T072, T084) antes de considerar el módulo fusionable
+- [X] T089 [P] Ejecutar los 10 escenarios de `quickstart.md` de extremo a extremo y confirmar el resultado esperado de cada uno
+- [X] T090 [P] Auditar que "Despensa Los Ríos", "Quevedo Centro" y "Buena Fe" no aparecen en ningún identificador técnico, solo como valor de fila en `backend/rasero/semilla.py`
+- [X] T091 Auditar `frontend/` en busca de color, radio o tipografía incrustados fuera de `frontend/src/estilos/tokens.css`, y confirmar que Inter no aparece en ninguna parte
+- [X] T092 Ejecutar `pytest tests` completo y confirmar en verde las 6 suites obligatorias (T017, T018, T019, T020, T072, T084) antes de considerar el módulo fusionable
 
 ---
 
@@ -324,3 +324,11 @@ Con más de una persona disponible:
 - Las 6 suites obligatorias del Principio III están marcadas y deben pasar antes de fusionar; no hay pruebas de interfaz, maquetación ni componentes visuales.
 - Backend en `backend/`, frontend en `frontend/`, pruebas en `tests/` — las tres en la raíz. Ninguna tarea genera código en `specs/` ni crea `src/` en la raíz del repositorio.
 - Fuera de alcance de este desglose: autenticación más allá del PIN de operador, roles y permisos, devolución de mercancía con reembolso, contenedores Docker y despliegue.
+
+### Adiciones y desviaciones registradas durante la implementación del Bloque B (US2–US8)
+
+- **`GET /sucursales`** (`backend/rasero/api/sucursales.py`) — añadido: la pantalla de despacho de traspaso (US6) necesita elegir la sucursal de destino y el contrato no exponía ninguna lectura de `sucursal`. Mismo motivo por el que US1 añadió `GET /productos` y `GET /operadores`. Codificar que las sucursales son dos sigue PROHIBIDO (FR-046); esta lista es la fuente para poblar cualquier selector.
+- **`backend/rasero/config/competencia.py`** — nuevo archivo de calibración (mismo patrón que `config/pronostico.py` de 004): umbrales de días para `indicador_forma` de una observación de competencia (`lleno` ≤ 7 d, `medio` 8–21 d, `hueco` > 21 d). Ningún artefacto los daba; ver research.md §12. Presentación pura, no entra en ningún cálculo.
+- **`lote.costo_unitario = 0.00` como centinela de "sin costo registrado"** (US7, T080) — FR-035 y el contrato piden `valor_calculable: false` / `valor_inmovilizado: null` para un lote sin costo, pero `lote.costo_unitario` es `NUMERIC(12,4) NOT NULL`. Se resuelve con el centinela `0.00`, sin migración. Ver research.md §11 y la nota añadida a FR-035 en spec.md.
+- **Registro visual de US4 (T064)**: `plan.md` (§Sistema de diseño) dice "el radio 6px de Análisis se define… aunque este módulo no lo use"; T064 y `DESIGN.md` sí asignan la comparación de precios al registro de Análisis (6px, Source Serif 4). Se siguió T064/DESIGN.md — es la única pantalla de Análisis de 001. `tokens.css` ya tenía `--radio-analisis` y Source Serif cargada, sin cambio de infraestructura.
+- **T089 (quickstart e2e)** se implementó como `tests/integracion/test_quickstart_001.py`: los 10 escenarios contra la API real, ya que la interfaz está exenta de prueba automatizada (Principio III) y no hay automatización de UI.

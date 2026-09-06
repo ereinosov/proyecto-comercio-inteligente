@@ -428,6 +428,10 @@ suben en orden de marca de tiempo de origen y que ninguna se pierde.
   DEBEN heredar un umbral global de respaldo configurable.
 - **FR-035**: El valor inmovilizado de un lote DEBE calcularse como cantidad restante por costo del
   lote. Un lote sin costo registrado DEBE mostrarse como no calculable, nunca como cero.
+  *(Nota de implementación — ver research.md §11: como `lote.costo_unitario` es `NUMERIC(12,4) NOT
+  NULL`, "sin costo registrado" se implementa con el centinela `costo_unitario = 0.00`, no con
+  `NULL`; para esos lotes el listado devuelve `valor_calculable: false` y `valor_inmovilizado:
+  null`.)*
 - **FR-036**: El sistema DEBE limitarse a hacer visible el capital inmovilizado, sin proponer ni
   ejecutar acción alguna sobre él.
 
