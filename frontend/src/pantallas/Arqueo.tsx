@@ -12,6 +12,7 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarArqueos, registrarArqueo, type Arqueo } from "../servicios/caja";
+import type { Turno } from "../servicios/turnos";
 import estilos from "./Arqueo.module.css";
 
 function Diferencia({ valor, motivo }: { valor: string; motivo: string | null }) {
@@ -33,12 +34,12 @@ function Diferencia({ valor, motivo }: { valor: string; motivo: string | null })
   );
 }
 
-export function Arqueo({ idSucursal }: { idSucursal: number }) {
+export function Arqueo({ turno }: { turno: Turno }) {
+  const idSucursal = turno.id_sucursal;
   const [arqueos, setArqueos] = useState<Arqueo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
 
-  const [idTurno, setIdTurno] = useState("");
   const [montoContado, setMontoContado] = useState("");
   const [motivo, setMotivo] = useState("");
   const [enviando, setEnviando] = useState(false);
@@ -72,14 +73,13 @@ export function Arqueo({ idSucursal }: { idSucursal: number }) {
     setEnviando(true);
     try {
       await registrarArqueo({
-        id_turno: Number(idTurno),
+        id_turno: turno.id_turno,
         monto_contado: montoContado,
         motivo_conocido: motivo.trim() || null,
         marca_tiempo_origen: new Date().toISOString(),
       });
       setConfirmado(true);
       setTimeout(() => setConfirmado(false), 1600);
-      setIdTurno("");
       setMontoContado("");
       setMotivo("");
       recargar();
@@ -100,16 +100,12 @@ export function Arqueo({ idSucursal }: { idSucursal: number }) {
       </div>
 
       <form className={estilos.formulario} onSubmit={registrar}>
-        <label className={estilos.campo}>
-          Turno
-          <input
-            className={estilos.entrada}
-            inputMode="numeric"
-            value={idTurno}
-            onChange={(e) => setIdTurno(e.target.value)}
-            required
-          />
-        </label>
+        <span className={estilos.campo}>
+          Turno abierto
+          <strong className={estilos.entrada}>
+            #{turno.id_turno} · caja {turno.caja}
+          </strong>
+        </span>
         <label className={estilos.campo}>
           Efectivo + comprobantes contados
           <input

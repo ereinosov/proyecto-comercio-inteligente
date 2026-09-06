@@ -168,8 +168,10 @@ export function App() {
         {pantalla === "precios" && <Precios idSucursal={turno.id_sucursal} />}
         {pantalla === "pronostico" && <Pronostico idSucursal={turno.id_sucursal} />}
         {pantalla === "promociones" && <Promociones idSucursal={turno.id_sucursal} />}
-        {pantalla === "arqueo" && <Arqueo idSucursal={turno.id_sucursal} />}
-        {pantalla === "cajafraude" && <CajaFraude idSucursal={turno.id_sucursal} />}
+        {pantalla === "arqueo" && <Arqueo turno={turno} />}
+        {pantalla === "cajafraude" && (
+          <CajaFraude idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
+        )}
         {pantalla === "terminales" && (
           <TerminalesPago idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
         )}

@@ -17,14 +17,19 @@ import { ErrorApi } from "../servicios/clienteHttp";
 import { listarAnomalias, resolverAnomalia, type AnomaliaCaja } from "../servicios/caja";
 import estilos from "./CajaFraude.module.css";
 
-export function AnomaliasCaja({ idSucursal }: { idSucursal: number }) {
+export function AnomaliasCaja({
+  idSucursal,
+  idOperador,
+}: {
+  idSucursal: number;
+  idOperador: number;
+}) {
   const [anomalias, setAnomalias] = useState<AnomaliaCaja[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [idSeleccionada, setIdSeleccionada] = useState<number | null>(null);
   const [soloAbiertas, setSoloAbiertas] = useState(true);
 
   const [resolucion, setResolucion] = useState("");
-  const [idOperador, setIdOperador] = useState("");
   const [errorForm, setErrorForm] = useState<string | null>(null);
 
   function recargar() {
@@ -47,10 +52,9 @@ export function AnomaliasCaja({ idSucursal }: { idSucursal: number }) {
     try {
       await resolverAnomalia(seleccionada.id_anomalia_caja, {
         resolucion,
-        id_operador: Number(idOperador),
+        id_operador: idOperador,
       });
       setResolucion("");
-      setIdOperador("");
       recargar();
     } catch (e) {
       setErrorForm(e instanceof ErrorApi ? e.message : "No se pudo resolver la anomalía.");
@@ -170,16 +174,6 @@ export function AnomaliasCaja({ idSucursal }: { idSucursal: number }) {
                     placeholder="error operativo confirmado, escalado a fraude, ajuste aceptado…"
                     value={resolucion}
                     onChange={(e) => setResolucion(e.target.value)}
-                    required
-                  />
-                </label>
-                <label className={estilos.campo}>
-                  Operador (id)
-                  <input
-                    className={estilos.entrada}
-                    inputMode="numeric"
-                    value={idOperador}
-                    onChange={(e) => setIdOperador(e.target.value)}
                     required
                   />
                 </label>

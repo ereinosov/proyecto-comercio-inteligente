@@ -22,7 +22,13 @@ const VISTAS: { valor: Vista; etiqueta: string }[] = [
   { valor: "indicadores", etiqueta: "Indicadores por operador" },
 ];
 
-export function CajaFraude({ idSucursal }: { idSucursal: number }) {
+export function CajaFraude({
+  idSucursal,
+  idOperador,
+}: {
+  idSucursal: number;
+  idOperador: number;
+}) {
   const [vista, setVista] = useState<Vista>("anomalias");
 
   return (
@@ -42,8 +48,10 @@ export function CajaFraude({ idSucursal }: { idSucursal: number }) {
         </nav>
       </div>
 
-      {vista === "anomalias" && <AnomaliasCaja idSucursal={idSucursal} />}
-      {vista === "mermas" && <Mermas idSucursal={idSucursal} />}
+      {vista === "anomalias" && (
+        <AnomaliasCaja idSucursal={idSucursal} idOperador={idOperador} />
+      )}
+      {vista === "mermas" && <Mermas idSucursal={idSucursal} idOperador={idOperador} />}
       {vista === "indicadores" && <IndicadoresOperador idSucursal={idSucursal} />}
     </div>
   );

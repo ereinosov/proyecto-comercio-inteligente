@@ -11,6 +11,8 @@
  */
 
 import { useEffect, useState, type FormEvent } from "react";
+import { SelectorProducto } from "../componentes/SelectorProducto";
+import type { Producto } from "../servicios/productos";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
   listarAlertasCaducidad,
@@ -31,15 +33,14 @@ const CAUSAS: { valor: CausaMerma; etiqueta: string }[] = [
   { valor: "pendiente_clasificar", etiqueta: "Pendiente de clasificar" },
 ];
 
-export function Mermas({ idSucursal }: { idSucursal: number }) {
+export function Mermas({ idSucursal, idOperador }: { idSucursal: number; idOperador: number }) {
   const [desglose, setDesglose] = useState<DesgloseMermas | null>(null);
   const [alertas, setAlertas] = useState<AlertaCaducidad[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const [idProducto, setIdProducto] = useState("");
+  const [producto, setProducto] = useState<Producto | null>(null);
   const [cantidad, setCantidad] = useState("");
   const [causa, setCausa] = useState<CausaMerma>("dano");
-  const [idOperador, setIdOperador] = useState("");
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const [confirmado, setConfirmado] = useState(false);
 
@@ -60,17 +61,21 @@ export function Mermas({ idSucursal }: { idSucursal: number }) {
   async function declarar(evento: FormEvent) {
     evento.preventDefault();
     setErrorForm(null);
+    if (!producto) {
+      setErrorForm("Elige un producto.");
+      return;
+    }
     try {
       await registrarMerma({
-        id_producto: Number(idProducto),
+        id_producto: producto.id_producto,
         id_sucursal: idSucursal,
         cantidad_faltante: Number(cantidad),
         causa,
-        id_operador_registro: Number(idOperador),
+        id_operador_registro: idOperador,
       });
       setConfirmado(true);
       setTimeout(() => setConfirmado(false), 1600);
-      setIdProducto("");
+      setProducto(null);
       setCantidad("");
       recargar();
     } catch (e) {
@@ -89,16 +94,14 @@ export function Mermas({ idSucursal }: { idSucursal: number }) {
           conteo físico de inventario; este módulo no ajusta la existencia.
         </p>
         <form className={estilos.formulario} onSubmit={declarar}>
-          <label className={estilos.campo}>
-            Producto (id)
-            <input
-              className={estilos.entrada}
-              inputMode="numeric"
-              value={idProducto}
-              onChange={(e) => setIdProducto(e.target.value)}
-              required
+          <div className={estilos.campo}>
+            <span>Producto</span>
+            <SelectorProducto
+              idSucursal={idSucursal}
+              seleccionado={producto}
+              onSeleccionar={setProducto}
             />
-          </label>
+          </div>
           <label className={estilos.campo}>
             Cantidad faltante
             <input
@@ -122,16 +125,6 @@ export function Mermas({ idSucursal }: { idSucursal: number }) {
                 </option>
               ))}
             </select>
-          </label>
-          <label className={estilos.campo}>
-            Operador (id)
-            <input
-              className={estilos.entrada}
-              inputMode="numeric"
-              value={idOperador}
-              onChange={(e) => setIdOperador(e.target.value)}
-              required
-            />
           </label>
           <button className={estilos.boton} type="submit">
             {confirmado ? "Merma registrada" : "Registrar merma"}
