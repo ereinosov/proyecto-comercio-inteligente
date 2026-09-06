@@ -169,13 +169,13 @@ description: "Task list template for feature implementation"
 
 **Independent Test**: iniciar un conteo sobre un subconjunto de productos, capturar diferencias y verificar el ajuste trazable al conteo.
 
-- [ ] T065 [P] [US5] Prueba de integración: al resolver un conteo, cada diferencia genera un `ajuste_conteo` trazable y el saldo anterior sigue siendo reconstruible, en `tests/integracion/test_conteo_fisico.py`
-- [ ] T066 [US5] Servicio de inicio de conteo físico con alcance opcional en `backend/rasero/servicios/conteos.py` (depende de T009)
-- [ ] T067 [US5] Servicio de resolución de conteo: diferencia por producto y lote sin clasificar, genera el ajuste, en `backend/rasero/servicios/conteos.py` (depende de T066)
-- [ ] T068 [US5] Endpoint `POST /conteos-fisicos` en `backend/rasero/api/conteos.py` (depende de T066)
-- [ ] T069 [US5] Endpoint `POST /conteos-fisicos/{id_conteo_fisico}/resolucion` en `backend/rasero/api/conteos.py` (depende de T067)
-- [ ] T070 [P] [US5] Pantalla de inicio de conteo con selección de alcance en `frontend/src/pantallas/ConteoFisico.tsx` (depende de T015, T013)
-- [ ] T071 [US5] Pantalla de captura y resolución de conteo, mostrando la diferencia por producto y lote, en `frontend/src/pantallas/ResolucionConteo.tsx` (depende de T015, T069)
+- [X] T065 [P] [US5] Prueba de integración: al resolver un conteo, cada diferencia genera un `ajuste_conteo` trazable y el saldo anterior sigue siendo reconstruible, en `tests/integracion/test_conteo_fisico.py`
+- [X] T066 [US5] Servicio de inicio de conteo físico con alcance opcional en `backend/rasero/servicios/conteos.py` (depende de T009)
+- [X] T067 [US5] Servicio de resolución de conteo: diferencia por producto y lote sin clasificar, genera el ajuste, en `backend/rasero/servicios/conteos.py` (depende de T066)
+- [X] T068 [US5] Endpoint `POST /conteos-fisicos` en `backend/rasero/api/conteos.py` (depende de T066)
+- [X] T069 [US5] Endpoint `POST /conteos-fisicos/{id_conteo_fisico}/resolucion` en `backend/rasero/api/conteos.py` (depende de T067)
+- [X] T070 [P] [US5] Pantalla de inicio de conteo con selección de alcance en `frontend/src/pantallas/ConteoFisico.tsx` (depende de T015, T013)
+- [X] T071 [US5] Pantalla de captura y resolución de conteo, mostrando la diferencia por producto y lote, en `frontend/src/pantallas/ResolucionConteo.tsx` (depende de T015, T069)
 
 **Checkpoint**: User Story 5 funcional junto con las anteriores.
 
