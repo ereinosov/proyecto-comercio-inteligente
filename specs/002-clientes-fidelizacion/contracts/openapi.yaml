@@ -238,13 +238,13 @@ components:
         identificador:
           type: string
           nullable: true
-          maxLength: 13
           description: |
             Cédula ecuatoriana de persona natural (10 díg.) o RUC de persona natural (13 díg. =
-            cédula válida + sufijo `001`). Opcional (FR-017); nunca bloquea una venta. La
-            validación completa del dígito verificador (algoritmo módulo 10) vive en el dominio
-            (`identidad_cliente.py`), no en este contrato: aquí sólo se acota la longitud. El RUC
-            de sociedad (módulo 11) está fuera de alcance.
+            cédula válida + sufijo `001`). Opcional (FR-017); nunca bloquea una venta. TODA la
+            validación —longitud y dígito verificador (algoritmo módulo 10)— vive en el dominio
+            (`identidad_cliente.py`) y un valor mal formado responde 422 `identificador_invalido`
+            con la forma `{codigo, mensaje}`, nunca un 422 de validación de esquema. El RUC de
+            sociedad (módulo 11) está fuera de alcance.
 
     Cliente:
       type: object

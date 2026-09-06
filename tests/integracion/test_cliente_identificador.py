@@ -50,6 +50,32 @@ def test_ruc_que_no_termina_en_001_se_rechaza_422():
     assert r.status_code == 422
 
 
+def test_identificador_mal_formado_devuelve_codigo_y_mensaje_exactos():
+    """Regresión: un identificador de 13 dígitos que no termina en "001" (el caso que en
+    pruebas manuales mostró el fallback genérico "Ocurrió un error") DEBE llegar al frontend
+    como el contrato `{codigo, mensaje}` de `IdentificadorInvalido`, nunca un 422 de esquema
+    con forma `{"detail": [...]}`.
+    """
+    r = _crear(nombre="Trece dígitos", identificador="4564654564545")
+    assert r.status_code == 422
+    cuerpo = r.json()
+    assert set(cuerpo) == {"codigo", "mensaje"}
+    assert cuerpo["codigo"] == "identificador_invalido"
+    assert cuerpo["mensaje"] == (
+        "Identificador inválido: debe ser una cédula (10 dígitos) o RUC de persona natural "
+        "(13 dígitos) válidos."
+    )
+
+
+def test_identificador_demasiado_largo_tambien_usa_el_contrato_de_dominio():
+    """Regresión de la retirada de `max_length` en el modelo Pydantic: una cadena de más de 13
+    dígitos la rechaza el dominio (`{codigo, mensaje}`), no un validador de esquema.
+    """
+    r = _crear(nombre="Muy largo", identificador="123456789012345")
+    assert r.status_code == 422
+    assert r.json()["codigo"] == "identificador_invalido"
+
+
 def test_identificador_duplicado_entre_dos_clientes_activos_se_rechaza_409():
     ced = "2410090878"
     primero = _crear(nombre="Primero", identificador=ced)

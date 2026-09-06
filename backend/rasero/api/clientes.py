@@ -11,7 +11,7 @@ capturados por esa ruta dinámica sin importar el orden de declaración — un l
 from datetime import date
 
 from fastapi import APIRouter, Depends, Response, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from rasero.api.paginacion import paginar
@@ -27,13 +27,15 @@ router = APIRouter(tags=["clientes"])
 # identificador (o sin ningún dato personal), como el modelo ORM ya los admite NULL. Forzarlos
 # aquí contradecía el caso del cliente que sólo se anota para no duplicarlo entre visitas y el
 # de "consumidor final". El `identificador` (cédula o RUC de persona natural) también es
-# opcional (FR-003/FR-017): la validación del dígito verificador vive en el dominio
-# (`identidad_cliente.py`), no en Pydantic — aquí sólo se acota la longitud.
+# opcional (FR-003/FR-017): TODA su validación —longitud incluida— vive en el dominio
+# (`identidad_cliente.py`) y se reporta como `IdentificadorInvalido` -> `{codigo, mensaje}`. No
+# se pone `max_length` en Pydantic a propósito: un límite ahí produciría un 422 con forma
+# `{"detail": [...]}` en vez del contrato `{codigo, mensaje}` que el frontend sabe mostrar.
 class ClienteNuevo(BaseModel):
     nombre: str | None = None
     fecha_nacimiento: date | None = None
     contacto: str | None = None
-    identificador: str | None = Field(default=None, max_length=13)
+    identificador: str | None = None
 
 
 class VisitaNueva(BaseModel):
@@ -44,7 +46,7 @@ class ClienteEditado(BaseModel):
     nombre: str | None = None
     fecha_nacimiento: date | None = None
     contacto: str | None = None
-    identificador: str | None = Field(default=None, max_length=13)
+    identificador: str | None = None
 
 
 def _cliente_a_respuesta(cliente) -> dict:
