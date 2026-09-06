@@ -46,6 +46,11 @@ class ConteoInvalido(ErrorDominio):
     status_code = 409
 
 
+class TraspasoInvalido(ErrorDominio):
+    codigo = "traspaso_invalido"
+    status_code = 409
+
+
 class AnulacionNoAutorizada(ErrorDominio):
     codigo = "anulacion_no_autorizada"
     status_code = 403

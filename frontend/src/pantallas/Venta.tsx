@@ -10,6 +10,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarProductos, type Producto } from "../servicios/productos";
+import { listarSucursales } from "../servicios/sucursales";
 import { type Turno } from "../servicios/turnos";
 import {
   type RenglonVentaNuevo,
@@ -66,9 +67,16 @@ export function Venta({ turno, onCerrarTurno }: Props) {
   const [consultando, setConsultando] = useState(false);
   const [enviandoConsulta, setEnviandoConsulta] = useState(false);
   const [consultaAnotada, setConsultaAnotada] = useState<string | null>(null);
+  const [nombreSucursal, setNombreSucursal] = useState<string>("");
 
   useEffect(() => {
     listarProductos(turno.id_sucursal).then(setProductos);
+    listarSucursales()
+      .then((lista) => {
+        const suc = lista.find((s) => s.id_sucursal === turno.id_sucursal);
+        setNombreSucursal(suc?.nombre ?? `Sucursal ${turno.id_sucursal}`);
+      })
+      .catch(() => setNombreSucursal(`Sucursal ${turno.id_sucursal}`));
   }, [turno.id_sucursal]);
 
   const productoNuevo = productos.find((p) => p.id_producto === idProductoNuevo);
@@ -241,7 +249,9 @@ export function Venta({ turno, onCerrarTurno }: Props) {
   return (
     <div className={estilos.pantalla}>
       <div className={estilos.encabezado}>
-        <span>Quevedo Centro · {turno.caja}</span>
+        <span>
+          {nombreSucursal ? `${nombreSucursal} · ${turno.caja}` : turno.caja}
+        </span>
         <div className={estilos.accionesEncabezado}>
           <IdentificarCliente
             seleccionado={clienteIdentificado}
