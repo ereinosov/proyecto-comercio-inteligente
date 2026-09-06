@@ -23,6 +23,7 @@ import { ModalAdministrable } from "../componentes/ModalAdministrable";
 import { CampoIdentificador } from "../componentes/CampoIdentificador";
 import { Obligatorio } from "../componentes/Obligatorio";
 import { Buscador } from "../componentes/Buscador";
+import { FugaPorSegmentoGrafico } from "../componentes/graficos/FugaPorSegmentoGrafico";
 import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import estilos from "./Clientes.module.css";
 
@@ -181,6 +182,10 @@ export function Clientes() {
             Por monto
           </button>
         </div>
+      </div>
+
+      <div className={estilos.zonaGrafico}>
+        <FugaPorSegmentoGrafico />
       </div>
 
       <div className={estilos.cuerpo}>

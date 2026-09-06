@@ -110,3 +110,13 @@ export function listarClientesPagina(
 export function obtenerCliente(idCliente: number): Promise<ClienteDetalle> {
   return clienteHttp.get<ClienteDetalle>(`/clientes/${idCliente}`);
 }
+
+/** US6: distribución instantánea de clientes por segmento de fuga (snapshot, no serie temporal). */
+export type ResumenFuga = Record<
+  "sin_senal" | "datos_insuficientes" | "activa" | "confirmada" | "resuelta",
+  number
+>;
+
+export function obtenerResumenFuga(): Promise<ResumenFuga> {
+  return clienteHttp.get<ResumenFuga>("/clientes/fuga/resumen");
+}

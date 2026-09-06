@@ -113,6 +113,16 @@ def buscar_clientes(q: str, sesion: Session = Depends(obtener_sesion)) -> list[d
     return [_resumen_a_respuesta(f) for f in filas]
 
 
+@router.get("/clientes/fuga/resumen")
+def resumen_fuga(sesion: Session = Depends(obtener_sesion)) -> dict:
+    """US6: distribución instantánea de clientes por segmento de fuga, para el gráfico de la
+    pantalla de Clientes. Lectura pura; snapshot (no serie temporal — `senal_fuga` no guarda
+    histórico periódico). Ruta con segmento literal `fuga/resumen`, nunca capturada por
+    `/clientes/{id_cliente:int}`.
+    """
+    return servicio_clientes.resumen_fuga_por_segmento(sesion)
+
+
 @router.get("/clientes/cumpleanos")
 def clientes_con_cumpleanos(
     desde: date, hasta: date, sesion: Session = Depends(obtener_sesion)

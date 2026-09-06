@@ -172,6 +172,36 @@ mensaje explícito; un cliente sin cédula se registra igual, sin fricción.
 
 ---
 
+### User Story 6 - Visualizar la curva de fuga por segmento (Priority: P6)
+
+El negocio abre la pantalla de Clientes y ve, antes de recorrer la lista, un gráfico de barras
+con cuántos clientes están hoy en cada segmento de fuga —sin señal, datos insuficientes, en
+riesgo, fuga confirmada, resuelta—, de modo que el tamaño del problema se ve de un vistazo.
+
+**Why this priority**: es una lectura pura sobre `senal_fuga` e `intervalo_compra`, que User
+Story 3 ya calcula. No escribe ni recalcula nada; es aditiva y no reabre el checkpoint de las
+historias 1–5. `senal_fuga` no guarda un histórico periódico, así que es una foto del estado
+actual, no una serie temporal — no se inventa un histórico que no existe.
+
+**Independent Test**: con un conjunto de clientes en distintos segmentos (al menos uno en riesgo
+y uno con fuga confirmada), se abre Clientes y se verifica que el gráfico muestra una barra por
+segmento con el conteo correcto, con los mismos colores que la insignia de fuga del detalle ya
+usa; sin clientes con historial, se verifica que muestra un estado vacío explicativo.
+
+**Acceptance Scenarios**:
+
+1. **Given** clientes en varios segmentos de fuga, **When** el negocio abre Clientes, **Then**
+   ve un gráfico de barras con el número de clientes por segmento, y la lista y el detalle
+   completos siguen debajo.
+2. **Given** el gráfico de segmentos, **When** se renderiza, **Then** la barra de "en riesgo"
+   usa el color Atención y la de "fuga confirmada" el color Crítico —los mismos que la insignia
+   de fuga del detalle—, y los demás segmentos la voz neutra; nunca una paleta decorativa.
+3. **Given** una base de clientes sin ninguno con historial suficiente, **When** se abre
+   Clientes, **Then** el gráfico muestra un estado vacío que explica qué aparecerá ahí, nunca un
+   lienzo en blanco.
+
+---
+
 ### Edge Cases
 
 - ¿Qué pasa con un cliente cuyo historial de visitas todavía es demasiado corto para calcular un
@@ -294,6 +324,19 @@ mensaje explícito; un cliente sin cédula se registra igual, sin fricción.
   fuera de alcance: un cliente individual de un minimarket no lo usa. Al anonimizar un cliente
   (FR-015/FR-016) el identificador se borra como cualquier otro dato personal, liberando esa
   cédula para otra persona.
+
+- **FR-018**: El sistema DEBE exponer la distribución instantánea de los clientes (no
+  anonimizados) por segmento de fuga: `sin_senal`, `datos_insuficientes`, `activa`, `confirmada`
+  y `resuelta`, con la misma clasificación que ya usa el detalle del cliente. Es una foto del
+  estado actual, NO una serie temporal: `senal_fuga` no guarda un histórico periódico y el
+  sistema NO DEBE fabricar uno.
+- **FR-019**: El sistema DEBE presentar esa distribución en la pantalla de Clientes como un
+  gráfico de barras, sin reemplazar la lista ni el detalle, que siguen siendo la fuente completa.
+- **FR-020**: El gráfico de segmentos DEBE usar los mismos colores que la insignia de fuga del
+  detalle: Atención para `activa`, Crítico para `confirmada` (uso sancionado por el sistema de
+  diseño para este caso: la anonimización inminente es un acto irreversible), y la voz neutra
+  para el resto. NO DEBE usar el color de marca ni una paleta decorativa. Es puramente de
+  lectura: no calcula ni escribe ningún dato.
 
 ### Key Entities *(include if feature involves data)*
 

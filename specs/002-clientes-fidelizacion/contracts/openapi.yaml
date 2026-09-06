@@ -116,6 +116,29 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/ClienteResumenValor' }
 
+  /clientes/fuga/resumen:
+    get:
+      tags: [clientes]
+      summary: Distribución de clientes por segmento de fuga (US6)
+      description: |
+        FR-018..FR-020. Conteo instantáneo de clientes (no anonimizados) por segmento de fuga,
+        para el gráfico de la pantalla de Clientes. Es un snapshot del estado actual, NO una
+        serie temporal: `senal_fuga` no guarda histórico periódico. Lectura pura.
+      responses:
+        '200':
+          description: Conteo por segmento
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [sin_senal, datos_insuficientes, activa, confirmada, resuelta]
+                properties:
+                  sin_senal: { type: integer }
+                  datos_insuficientes: { type: integer }
+                  activa: { type: integer }
+                  confirmada: { type: integer }
+                  resuelta: { type: integer }
+
   /clientes/cumpleanos:
     get:
       tags: [clientes]

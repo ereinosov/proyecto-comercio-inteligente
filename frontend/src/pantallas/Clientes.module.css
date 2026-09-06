@@ -51,6 +51,12 @@
   color: var(--color-tinta-suave);
 }
 
+/* US6: gráfico de segmentos de fuga, resumen sobre la lista/detalle (no scrollea con el cuerpo). */
+.zonaGrafico {
+  flex-shrink: 0;
+  padding: 0 32px 16px;
+}
+
 .cuerpo {
   flex: 1;
   min-height: 0;

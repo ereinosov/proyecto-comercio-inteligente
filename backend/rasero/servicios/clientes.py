@@ -440,6 +440,54 @@ def evaluar_fugas_pendientes(sesion: Session) -> int:
 
 
 # --------------------------------------------------------------------------
+# Resumen de fuga por segmento (User Story 6, FR-018..FR-020) — lectura pura
+# --------------------------------------------------------------------------
+
+SEGMENTOS_FUGA = ("sin_senal", "datos_insuficientes", "activa", "confirmada", "resuelta")
+
+
+def resumen_fuga_por_segmento(sesion: Session) -> dict[str, int]:
+    """Distribución instantánea de los clientes (no anonimizados) por segmento de fuga, con la
+    MISMA clasificación que `_fuga_a_respuesta` usa en el detalle: `datos_insuficientes` si el
+    intervalo no está calculado; si no, el estado de la última señal (activa/confirmada/resuelta);
+    si nunca hubo señal, `sin_senal`.
+
+    Es un snapshot: `senal_fuga` no guarda un histórico periódico, así que no se inventa una
+    serie temporal — se cuenta el estado actual.
+    """
+    subq_max = (
+        select(
+            SenalFuga.id_cliente,
+            func.max(SenalFuga.id_senal_fuga).label("max_id"),
+        )
+        .group_by(SenalFuga.id_cliente)
+        .subquery()
+    )
+    ultima_senal = (
+        select(SenalFuga.id_cliente.label("id_cliente"), SenalFuga.estado.label("estado"))
+        .join(subq_max, SenalFuga.id_senal_fuga == subq_max.c.max_id)
+        .subquery()
+    )
+
+    filas = sesion.execute(
+        select(Cliente.id_cliente, IntervaloCompra.estado, ultima_senal.c.estado)
+        .outerjoin(IntervaloCompra, IntervaloCompra.id_cliente == Cliente.id_cliente)
+        .outerjoin(ultima_senal, ultima_senal.c.id_cliente == Cliente.id_cliente)
+        .where(Cliente.anonimizado.is_(False))
+    ).all()
+
+    conteo = {segmento: 0 for segmento in SEGMENTOS_FUGA}
+    for _id_cliente, intervalo_estado, senal_estado in filas:
+        if intervalo_estado is None or intervalo_estado == "datos_insuficientes":
+            conteo["datos_insuficientes"] += 1
+        elif senal_estado is not None:
+            conteo[senal_estado] += 1
+        else:
+            conteo["sin_senal"] += 1
+    return conteo
+
+
+# --------------------------------------------------------------------------
 # Cumpleaños (FR-012) — expuesto para que 005-promociones-inteligentes lo consuma
 # --------------------------------------------------------------------------
 
