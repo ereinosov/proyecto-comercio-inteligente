@@ -132,10 +132,10 @@ description: "Task list template for feature implementation"
 
 **Independent Test**: desde la pantalla de venta, marcar un producto agotado como consultado y no atendido, y verificar producto, sucursal, instante y saldo del momento.
 
-- [ ] T050 [P] [US3] Prueba de integración: la consulta registra el saldo del instante y no acepta ningún campo de cliente, en `tests/integracion/test_consulta_no_atendida.py`
-- [ ] T051 [US3] Servicio de registro de consulta no atendida, congelando `saldo_en_el_instante`, en `backend/rasero/servicios/senales.py` (depende de T009)
-- [ ] T052 [US3] Endpoint `POST /consultas-no-atendidas` en `backend/rasero/api/senales.py` (depende de T051)
-- [ ] T053 [US3] Acción de dos toques "consulta no atendida" en la pantalla de venta, sin pedir datos del cliente, en `frontend/src/pantallas/Venta.tsx` (depende de T015, T039, T052)
+- [X] T050 [P] [US3] Prueba de integración: la consulta registra el saldo del instante y no acepta ningún campo de cliente, en `tests/integracion/test_consulta_no_atendida.py`
+- [X] T051 [US3] Servicio de registro de consulta no atendida, congelando `saldo_en_el_instante`, en `backend/rasero/servicios/senales.py` (depende de T009)
+- [X] T052 [US3] Endpoint `POST /consultas-no-atendidas` en `backend/rasero/api/senales.py` (depende de T051)
+- [X] T053 [US3] Acción de dos toques "consulta no atendida" en la pantalla de venta, sin pedir datos del cliente, en `frontend/src/pantallas/Venta.tsx` (depende de T015, T039, T052)
 
 **Checkpoint**: User Story 3 funcional junto con las anteriores.
 

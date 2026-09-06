@@ -152,6 +152,11 @@
   text-decoration: underline;
 }
 
+.senalAnotada {
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+}
+
 .advertencia {
   display: inline-flex;
   align-items: center;

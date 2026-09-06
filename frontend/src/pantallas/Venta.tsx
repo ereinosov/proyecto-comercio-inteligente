@@ -20,6 +20,7 @@ import {
 } from "../servicios/ventas";
 import { registrarVisita } from "../servicios/clientes";
 import { registrarRedencion } from "../servicios/promociones";
+import { registrarConsultaNoAtendida } from "../servicios/senales";
 import { gramosDesdeKg, RenglonGranel } from "../componentes/RenglonGranel";
 import { IdentificarCliente, type ClienteSeleccionado } from "../componentes/IdentificarCliente";
 import {
@@ -62,6 +63,9 @@ export function Venta({ turno, onCerrarTurno }: Props) {
   const [anulando, setAnulando] = useState(false);
   const [clienteIdentificado, setClienteIdentificado] = useState<ClienteSeleccionado | null>(null);
   const [promocionAplicada, setPromocionAplicada] = useState<PromocionSeleccionada | null>(null);
+  const [consultando, setConsultando] = useState(false);
+  const [enviandoConsulta, setEnviandoConsulta] = useState(false);
+  const [consultaAnotada, setConsultaAnotada] = useState<string | null>(null);
 
   useEffect(() => {
     listarProductos(turno.id_sucursal).then(setProductos);
@@ -167,6 +171,23 @@ export function Venta({ turno, onCerrarTurno }: Props) {
     }
   }
 
+  async function marcarConsultaNoAtendida(idProducto: number, nombre: string) {
+    // Dos toques, sin salir del flujo de cobro y sin pedir dato alguno del cliente (FR-020).
+    // No bloquea la caja: si falla, sólo se pierde la señal, la venta en curso sigue intacta.
+    setEnviandoConsulta(true);
+    setError(null);
+    try {
+      await registrarConsultaNoAtendida({ id_producto: idProducto, id_turno: turno.id_turno });
+      setConsultando(false);
+      setConsultaAnotada(nombre);
+      setTimeout(() => setConsultaAnotada(null), 2500);
+    } catch (e) {
+      setError(e instanceof ErrorApi ? e.message : "No se pudo anotar la consulta.");
+    } finally {
+      setEnviandoConsulta(false);
+    }
+  }
+
   function nuevaVenta() {
     setVentaConfirmada(null);
     setRenglones([]);
@@ -236,6 +257,36 @@ export function Venta({ turno, onCerrarTurno }: Props) {
               seleccion={promocionAplicada}
               onSeleccionar={setPromocionAplicada}
             />
+          )}
+          {consultaAnotada ? (
+            <span className={estilos.senalAnotada}>Consulta anotada: {consultaAnotada}</span>
+          ) : consultando ? (
+            <select
+              className={estilos.selectProducto}
+              aria-label="Producto consultado y no atendido"
+              defaultValue=""
+              autoFocus
+              disabled={enviandoConsulta}
+              onChange={(e) => {
+                const id = Number(e.target.value);
+                const p = productos.find((x) => x.id_producto === id);
+                if (p) marcarConsultaNoAtendida(p.id_producto, p.nombre);
+              }}
+              onBlur={() => setConsultando(false)}
+            >
+              <option value="" disabled>
+                ¿Qué producto pidió?
+              </option>
+              {productos.map((p) => (
+                <option key={p.id_producto} value={p.id_producto}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          ) : (
+            <button className={estilos.botonTexto} onClick={() => setConsultando(true)}>
+              Consulta no atendida
+            </button>
           )}
           <button className={estilos.botonTexto} onClick={onCerrarTurno}>
             Cerrar turno
