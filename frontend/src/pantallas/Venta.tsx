@@ -9,8 +9,10 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
-import { listarProductos, type Producto } from "../servicios/productos";
+import { listarCategorias, listarProductos, type Categoria, type Producto } from "../servicios/productos";
 import { listarSucursales } from "../servicios/sucursales";
+import { IconoCategoria } from "../componentes/IconoCategoria";
+import { CrearProductoModal } from "../componentes/CrearProductoModal";
 import { type Turno } from "../servicios/turnos";
 import {
   type RenglonVentaNuevo,
@@ -47,10 +49,13 @@ function importeEstimado(precioEfectivo: string, cantidad: number): string {
 interface Props {
   turno: Turno;
   onCerrarTurno: () => void;
+  esEncargado: boolean;
 }
 
-export function Venta({ turno, onCerrarTurno }: Props) {
+export function Venta({ turno, onCerrarTurno, esEncargado }: Props) {
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [creandoProducto, setCreandoProducto] = useState(false);
   const [renglones, setRenglones] = useState<RenglonTicket[]>([]);
   const [agregando, setAgregando] = useState(false);
   const [idProductoNuevo, setIdProductoNuevo] = useState<number | "">("");
@@ -71,6 +76,7 @@ export function Venta({ turno, onCerrarTurno }: Props) {
 
   useEffect(() => {
     listarProductos(turno.id_sucursal).then(setProductos);
+    listarCategorias().then(setCategorias).catch(() => setCategorias([]));
     listarSucursales()
       .then((lista) => {
         const suc = lista.find((s) => s.id_sucursal === turno.id_sucursal);
@@ -80,6 +86,16 @@ export function Venta({ turno, onCerrarTurno }: Props) {
   }, [turno.id_sucursal]);
 
   const productoNuevo = productos.find((p) => p.id_producto === idProductoNuevo);
+
+  const nombreCategoria = (id: number | null) =>
+    categorias.find((c) => c.id_categoria === id)?.nombre ?? null;
+
+  async function tomarProductoNuevo(idProducto: number) {
+    setCreandoProducto(false);
+    const lista = await listarProductos(turno.id_sucursal);
+    setProductos(lista);
+    setIdProductoNuevo(idProducto);
+  }
 
   const total = useMemo(
     () => renglones.reduce((acumulado, r) => acumulado + Number(r.importeEstimado), 0).toFixed(2),
@@ -317,7 +333,12 @@ export function Venta({ turno, onCerrarTurno }: Props) {
           <tbody>
             {renglones.map((r) => (
               <tr key={r.idLocal}>
-                <td>{r.producto.nombre}</td>
+                <td>
+                  <span className={estilos.celdaProducto}>
+                    <IconoCategoria nombreCategoria={nombreCategoria(r.producto.id_categoria)} />
+                    {r.producto.nombre}
+                  </span>
+                </td>
                 <td className={estilos.num}>
                   {r.cantidadGramos !== undefined
                     ? `${(r.cantidadGramos / 1000).toFixed(3)} kg`
@@ -347,6 +368,15 @@ export function Venta({ turno, onCerrarTurno }: Props) {
                           </option>
                         ))}
                       </select>
+                      {esEncargado && (
+                        <button
+                          type="button"
+                          className={estilos.botonTexto}
+                          onClick={() => setCreandoProducto(true)}
+                        >
+                          + Crear producto nuevo
+                        </button>
+                      )}
                     </div>
 
                     {productoNuevo?.es_granel ? (
@@ -384,6 +414,14 @@ export function Venta({ turno, onCerrarTurno }: Props) {
 
         {error && <p className={estilos.advertencia}>{error}</p>}
       </div>
+
+      {creandoProducto && (
+        <CrearProductoModal
+          idOperador={turno.id_operador}
+          onCerrar={() => setCreandoProducto(false)}
+          onCreado={(p) => tomarProductoNuevo(p.id_producto)}
+        />
+      )}
 
       <div className={estilos.pie}>
         <span>

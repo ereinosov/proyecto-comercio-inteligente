@@ -68,6 +68,13 @@
   text-align: right;
 }
 
+/* Ícono de familia de categoría + nombre (La Regla del Ícono por Categoría). */
+.celdaProducto {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
 .filaAgregar {
   cursor: pointer;
   color: var(--color-tinta-suave);

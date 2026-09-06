@@ -1,6 +1,6 @@
-/* Contenedor de navegación entre registros (Operación/Venta y Análisis/Clientes). Elemento de
-   estructura de la aplicación, no de un registro en particular: sin Verde Rasero, sin radio de
-   registro propio — solo cambia de pestaña, no compromete dinero. */
+/* Contenedor de navegación de la aplicación. Elemento de estructura, no de un registro:
+   sin Verde Rasero, sin sombra (La Regla del Filo). La Regla del Grupo de Navegación
+   (DESIGN.md v1.2.0): "Venta" y "Administración" sueltas; el resto en grupos desplegables. */
 
 .aplicacion {
   display: flex;
@@ -10,6 +10,8 @@
 
 .navegacion {
   flex-shrink: 0;
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
   gap: 4px;
@@ -18,23 +20,12 @@
   border-bottom: 1px solid var(--color-borde);
 }
 
-/* Logo del sistema: el wordmark de Rasero al ras del borde izquierdo, antes de los tabs.
-   Sin fondo, sin borde, sin sombra (DESIGN.md, La Regla del Filo). */
+/* Wordmark de Rasero: marca de sistema pequeña y discreta, al ras del borde izquierdo. */
 .marcaSistema {
-  height: 26px;
+  height: 24px;
   width: auto;
   display: block;
   margin: 0 18px 6px 0;
-  align-self: center;
-}
-
-/* Identidad del negocio cuyos datos se ven — información de contexto, no branding del sistema.
-   Empujado al extremo derecho, junto al selector de sucursal/turno. */
-.marcaNegocio {
-  height: 30px;
-  width: 30px;
-  display: block;
-  margin: 0 0 6px auto;
   align-self: center;
 }
 
@@ -56,6 +47,97 @@
 }
 
 .pestanaInactiva {
+  color: var(--color-tinta-suave);
+}
+
+/* Grupo desplegable */
+.grupo {
+  position: relative;
+}
+
+.grupoBoton,
+.grupoBotonActivo {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 4px;
+  cursor: pointer;
+  color: var(--color-tinta-suave);
+}
+
+/* Si la pantalla activa está dentro del grupo, el TEXTO DEL GRUPO lleva el subrayado de 2px
+   en Tinta que marca la pestaña activa, para no perder contexto con el desplegable cerrado. */
+.grupoBotonActivo {
+  color: var(--color-tinta);
+  border-bottom-color: var(--color-tinta);
+  font-weight: 600;
+}
+
+.chevron {
+  display: inline-flex;
+  color: currentColor;
+  /* Animación de MECANISMO de interfaz (gira al abrir), no decorativa: no contradice la
+     restricción de animación del registro de Análisis (DESIGN.md v1.2.0). */
+  transition: transform 150ms ease;
+}
+
+.chevronAbierto {
+  transform: rotate(180deg);
+}
+
+.desplegable {
+  position: absolute;
+  top: calc(100% + 2px);
+  left: 0;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+}
+
+.opcion,
+.opcionActiva {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  text-align: left;
+  background: transparent;
+  border: none;
+  /* Separador real de 1px en Borde entre cada opción, no sólo padding. */
+  border-bottom: 1px solid var(--color-borde);
+  padding: 8px 12px;
+  cursor: pointer;
+  color: var(--color-tinta-suave);
+}
+
+.opcion:last-child,
+.opcionActiva:last-child {
+  border-bottom: none;
+}
+
+.opcion:hover,
+.opcionActiva:hover {
+  background: var(--color-superficie-base);
+}
+
+.opcionActiva {
+  color: var(--color-tinta);
+  font-weight: 600;
+}
+
+/* Operador con turno abierto: alineado a la derecha, Tinta Suave. */
+.operador {
+  margin-left: auto;
+  margin-bottom: 6px;
+  align-self: center;
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
   color: var(--color-tinta-suave);
 }
 

@@ -26,3 +26,13 @@ export function abrirTurno(datos: {
 export function cerrarTurno(idTurno: number): Promise<Turno> {
   return clienteHttp.post<Turno>(`/turnos/${idTurno}/cierre`, {});
 }
+
+export interface Operador {
+  id_operador: number;
+  nombre: string;
+  es_encargado: boolean;
+}
+
+export function listarOperadores(): Promise<Operador[]> {
+  return clienteHttp.get<Operador[]>("/operadores");
+}

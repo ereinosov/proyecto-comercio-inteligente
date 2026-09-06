@@ -1,0 +1,39 @@
+/* La Regla del Pulso, No el Brillo (DESIGN.md v1.2.0). Bloques rectangulares en #E4E9E4 con
+   el mismo radio y layout aproximado del contenido real. La animación es EXCLUSIVAMENTE una
+   oscilación de opacidad 100% <-> 55%, 1.6s, ease-in-out, infinita. PROHIBIDO cualquier
+   shimmer o gradiente que cruce el bloque (violaría La Regla del Filo, No la Sombra). */
+
+@keyframes pulso {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+
+.bloque {
+  background-color: #e4e9e4;
+  animation: pulso 1.6s ease-in-out infinite;
+}
+
+.operacion {
+  border-radius: var(--radio-operacion);
+}
+
+.analisis {
+  border-radius: var(--radio-analisis);
+}
+
+.fila {
+  height: 44px;
+  margin-bottom: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bloque {
+    animation: none;
+    opacity: 0.75;
+  }
+}

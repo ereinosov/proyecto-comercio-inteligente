@@ -18,7 +18,10 @@ import { RolProductoSelector } from "../componentes/RolProductoSelector";
 import { SugerenciaPrecioColocacion } from "../componentes/SugerenciaPrecioColocacion";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarMargenes, type MargenProducto } from "../servicios/precios";
-import { listarProductos, type Producto } from "../servicios/productos";
+import { listarCategorias, listarProductos, type Categoria, type Producto } from "../servicios/productos";
+import { IconoCategoria } from "../componentes/IconoCategoria";
+import { EstadoVacio } from "../componentes/EstadoVacio";
+import { EsqueletoLista } from "../componentes/Esqueleto";
 import estilos from "./Precios.module.css";
 
 // Umbral de margen saludable (fracción). Por debajo, el margen pide atención (ámbar); por
@@ -78,6 +81,7 @@ function claseBordeMargen(margen: MargenProducto | undefined): string {
 
 export function Precios({ idSucursal }: { idSucursal: number }) {
   const [productos, setProductos] = useState<Producto[]>([]);
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [margenes, setMargenes] = useState<Map<number, MargenProducto>>(new Map());
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -87,6 +91,7 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
     setCargando(true);
     setError(null);
     setIdSeleccionado(null);
+    listarCategorias().then(setCategorias).catch(() => setCategorias([]));
     Promise.all([listarProductos(idSucursal), listarMargenes(idSucursal)])
       .then(([listaProductos, listaMargenes]) => {
         setProductos(listaProductos);
@@ -99,6 +104,8 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
   }, [idSucursal]);
 
   const productoSeleccionado = productos.find((p) => p.id_producto === idSeleccionado) ?? null;
+  const nombreCategoria = (id: number | null) =>
+    categorias.find((c) => c.id_categoria === id)?.nombre ?? null;
 
   return (
     <div className={estilos.pantalla}>
@@ -108,9 +115,13 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
 
       <div className={estilos.cuerpo}>
         {error && <p className={estilos.error}>{error}</p>}
-        {!error && cargando && <p className={estilos.instruccion}>Cargando…</p>}
+        {!error && cargando && <EsqueletoLista filas={8} registro="analisis" altoFila={54} />}
         {!error && !cargando && productos.length === 0 && (
-          <p className={estilos.instruccion}>Todavía no hay productos en el catálogo.</p>
+          <EstadoVacio
+            glifo="lista"
+            titulo="Todavía no hay productos en el catálogo"
+            descripcion="Aquí aparecerá cada producto con su margen real, un ícono por familia de categoría y, al elegirlo, su rol y las sugerencias de precio y colocación."
+          />
         )}
         {!error && !cargando && productos.length > 0 && (
           <>
@@ -125,7 +136,10 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
                     ].join(" ")}
                     onClick={() => setIdSeleccionado(producto.id_producto)}
                   >
-                    <span className={estilos.nombreProducto}>{producto.nombre}</span>
+                    <span className={estilos.nombreProducto}>
+                      <IconoCategoria nombreCategoria={nombreCategoria(producto.id_categoria)} />
+                      {producto.nombre}
+                    </span>
                     <IndicadorMargen margen={margenes.get(producto.id_producto)} />
                   </button>
                 </li>

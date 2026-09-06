@@ -1,14 +1,38 @@
 /**
  * Apertura de turno (T038): selector de operador + PIN de 4 dígitos (FR-005).
+ *
+ * La Regla de la Identidad del Comercio (DESIGN.md v1.2.0): esta pantalla invierte la jerarquía
+ * de un login. El nombre de la sucursal elegida (dato real de `sucursal.nombre`, nunca un
+ * literal) preside la tarjeta en un bloque de cabecera con fondo Tinta y Source Serif 4. El
+ * wordmark de Rasero baja a marca de sistema pequeña ARRIBA de la tarjeta. Debajo del nombre:
+ * la caja y la zona horaria reales, y "Última apertura: …" si existe un turno anterior en esa
+ * sucursal — si no hay ninguno, esa línea se OMITE (nunca un placeholder falso). Cualquier
+ * nombre de comercio de demostración viene de una variable de entorno del frontend, nunca de
+ * un literal en JSX ni de una tabla.
+ *
  * Verde Rasero no aparece aquí — reservado a la acción de cobro (DESIGN.md, Sola Voz).
  */
 
 import { useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
+import { clienteHttp } from "../servicios/clienteHttp";
 import { type Turno, abrirTurno } from "../servicios/turnos";
 import { listarSucursales, type Sucursal } from "../servicios/sucursales";
 import marcaSistema from "../activos/marca/rasero-wordmark-512w.png";
 import estilos from "./AperturaTurno.module.css";
+
+const NOMBRE_COMERCIO: string | undefined = import.meta.env.VITE_NOMBRE_COMERCIO;
+
+function tiempoRelativo(iso: string): string {
+  const ms = Date.now() - new Date(iso).getTime();
+  const min = Math.round(ms / 60000);
+  if (min < 1) return "hace un momento";
+  if (min < 60) return `hace ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `hace ${h} h`;
+  const d = Math.round(h / 24);
+  return `hace ${d} d`;
+}
 
 interface Operador {
   id_operador: number;
@@ -31,6 +55,7 @@ export function AperturaTurno({ onTurnoAbierto }: Props) {
   const [pin, setPin] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
+  const [ultimaApertura, setUltimaApertura] = useState<string | null>(null);
 
   useEffect(() => {
     fetch(`${URL_BASE}/operadores`)
@@ -49,6 +74,15 @@ export function AperturaTurno({ onTurnoAbierto }: Props) {
   }, []);
 
   const sucursalElegida = sucursales.find((s) => s.id_sucursal === idSucursal);
+
+  useEffect(() => {
+    setUltimaApertura(null);
+    if (idSucursal === "") return;
+    clienteHttp
+      .get<{ instante_apertura: string } | null>(`/turnos/ultimo?id_sucursal=${idSucursal}`)
+      .then((t) => setUltimaApertura(t?.instante_apertura ?? null))
+      .catch(() => setUltimaApertura(null));
+  }, [idSucursal]);
 
   async function confirmar(evento: React.FormEvent) {
     evento.preventDefault();
@@ -72,14 +106,24 @@ export function AperturaTurno({ onTurnoAbierto }: Props) {
         className={estilos.marca}
         src={marcaSistema}
         alt="Rasero"
-        width={220}
-        height={54}
+        width={96}
+        height={24}
       />
       <form className={estilos.panel} onSubmit={confirmar}>
-        <h1 className={estilos.titulo}>Abrir turno</h1>
-        <p className={estilos.subtitulo}>
-          {sucursalElegida ? `${sucursalElegida.nombre} · ${CAJA}` : CAJA}
-        </p>
+        <header className={estilos.cabecera}>
+          <p className={estilos.nombreSucursal}>
+            {sucursalElegida ? sucursalElegida.nombre : "Elige una sucursal"}
+          </p>
+          <p className={estilos.contexto}>
+            {CAJA}
+            {sucursalElegida ? ` · ${sucursalElegida.zona_horaria}` : ""}
+          </p>
+          {ultimaApertura && (
+            <p className={estilos.ultimaApertura}>
+              Última apertura: {tiempoRelativo(ultimaApertura)}
+            </p>
+          )}
+        </header>
 
         <div className={estilos.campo}>
           <label className={estilos.etiqueta} htmlFor="sucursal">
@@ -143,6 +187,7 @@ export function AperturaTurno({ onTurnoAbierto }: Props) {
           {enviando ? "Verificando…" : "Abrir turno"}
         </button>
       </form>
+      {NOMBRE_COMERCIO && <p className={estilos.pieComercio}>{NOMBRE_COMERCIO}</p>}
     </div>
   );
 }

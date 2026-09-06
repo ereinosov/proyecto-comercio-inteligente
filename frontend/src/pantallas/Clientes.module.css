@@ -77,6 +77,58 @@
   font-size: 14px;
 }
 
+.listaUl {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.filaTituloDetalle {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.editarCliente {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.editarCliente:hover {
+  color: var(--color-tinta);
+}
+
+.campoModal {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.campoModal span {
+  color: var(--color-tinta-suave);
+}
+
+.campoModal input {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 7px 9px;
+}
+
 /* Un bloque = una decisión (constitución, registro de Análisis): el cliente completo, nunca
    una fila densa de tabla como en Operación. */
 .bloque {

@@ -1,0 +1,200 @@
+/* Pantalla de Administración de datos maestros (Parte 3). Registro de ANÁLISIS: radio 6px,
+   Source Serif 4, aire visual (DESIGN.md). Sin Verde Rasero (La Regla del Registro Sin Dinero):
+   administrar un maestro no compromete dinero. Sin sombra, sin gradiente. Tokens de tokens.css. */
+
+.pantalla {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+  padding: 24px 32px 32px;
+}
+
+.encabezado {
+  flex-shrink: 0;
+}
+
+.titulo {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 0 0 12px;
+}
+
+.segmentado {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.segActivo,
+.segInactivo {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  padding: 8px 6px;
+  cursor: pointer;
+}
+
+.segActivo {
+  color: var(--color-tinta);
+  border-bottom-color: var(--color-tinta);
+  font-weight: 600;
+}
+
+.segInactivo {
+  color: var(--color-tinta-suave);
+}
+
+.barra {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin: 16px 0 12px;
+}
+
+.filtroInactivos {
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.botonNuevo {
+  font-family: var(--tipografia-analisis);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.botonNuevo:hover {
+  background: var(--color-superficie-base);
+}
+
+.soloLectura {
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  font-style: italic;
+}
+
+.error {
+  color: var(--color-critico);
+  font-size: 13px;
+}
+
+.tablaContenedor {
+  overflow-x: auto;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  background: var(--color-superficie-alta);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla th {
+  text-align: left;
+  color: var(--color-tinta-suave);
+  font-weight: 600;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.tabla td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-borde);
+  color: var(--color-tinta);
+}
+
+.tabla tr:last-child td {
+  border-bottom: none;
+}
+
+.filaInactiva td {
+  color: var(--color-tinta-suave);
+}
+
+.acciones {
+  display: flex;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.accion {
+  font-family: var(--tipografia-operacion);
+  font-size: 12px;
+  color: var(--color-tinta-suave);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.accion:hover {
+  color: var(--color-tinta);
+}
+
+/* Campos del modal */
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 13px;
+}
+
+.campoEtiqueta {
+  color: var(--color-tinta-suave);
+}
+
+.campoBool {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-tinta);
+}
+
+.entrada {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 7px 9px;
+}
+
+.entrada:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}
+
+.textoModal {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.listaDeps {
+  margin: 4px 0 0;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.6;
+}

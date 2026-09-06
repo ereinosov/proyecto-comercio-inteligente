@@ -1,0 +1,39 @@
+/* Paginador (La Regla del Filtro y la Página). Sin Verde Rasero, sin sombra. */
+
+.paginador {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 0;
+}
+
+.texto {
+  font-family: var(--tipografia-analisis);
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+.flecha {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  cursor: pointer;
+}
+
+.flecha:disabled {
+  /* Deshabilitada visualmente, nunca oculta. */
+  opacity: 0.35;
+  cursor: default;
+}
+
+.flecha:not(:disabled):hover {
+  background: var(--color-superficie-base);
+}

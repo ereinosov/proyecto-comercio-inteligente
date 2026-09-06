@@ -16,7 +16,7 @@ from fastapi.testclient import TestClient
 
 from rasero.api.aplicacion import app
 from rasero.persistencia.modelos import Categoria, Operador, Producto, Sucursal
-from tests.apoyo_pagos import crear_operador
+from tests.apoyo_pagos import crear_operador, crear_sucursal, crear_turno
 
 cliente = TestClient(app)
 
@@ -169,3 +169,21 @@ def test_listado_paginado_devuelve_total_en_cabecera(sesion):
     assert r.status_code == 200
     assert len(r.json()) == 2
     assert int(r.headers["X-Total-Count"]) >= 3
+
+
+def test_ultimo_turno_de_sucursal_para_la_pantalla_de_apertura(sesion):
+    sucursal = crear_sucursal(sesion)
+    encargado = crear_operador(sesion, es_encargado=True)
+    sesion.commit()
+
+    # Sin turnos: null, nunca un placeholder.
+    vacio = cliente.get(f"/turnos/ultimo?id_sucursal={sucursal.id_sucursal}")
+    assert vacio.status_code == 200
+    assert vacio.json() is None
+
+    crear_turno(sesion, id_operador=encargado.id_operador, id_sucursal=sucursal.id_sucursal)
+    sesion.commit()
+
+    con = cliente.get(f"/turnos/ultimo?id_sucursal={sucursal.id_sucursal}")
+    assert con.status_code == 200
+    assert con.json()["instante_apertura"] is not None

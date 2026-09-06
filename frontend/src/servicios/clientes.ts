@@ -66,12 +66,29 @@ export function registrarCliente(datos: {
   return clienteHttp.post<Cliente>("/clientes", datos);
 }
 
+export function actualizarCliente(
+  idCliente: number,
+  datos: { nombre: string; fecha_nacimiento: string; contacto?: string | null },
+): Promise<Cliente> {
+  return clienteHttp.put<Cliente>(`/clientes/${idCliente}`, datos);
+}
+
 export function registrarVisita(idCliente: number, idVenta: number): Promise<Visita> {
   return clienteHttp.post<Visita>(`/clientes/${idCliente}/visitas`, { id_venta: idVenta });
 }
 
 export function listarClientes(orden: "valor" | "monto_total" = "valor"): Promise<ClienteResumen[]> {
   return clienteHttp.get<ClienteResumen[]>(`/clientes?orden=${orden}`);
+}
+
+export function listarClientesPagina(
+  orden: "valor" | "monto_total",
+  pagina: number,
+  tamanoPagina: number,
+) {
+  return clienteHttp.getPagina<ClienteResumen>(
+    `/clientes?orden=${orden}&pagina=${pagina}&tamano_pagina=${tamanoPagina}`,
+  );
 }
 
 export function obtenerCliente(idCliente: number): Promise<ClienteDetalle> {

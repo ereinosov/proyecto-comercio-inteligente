@@ -8,17 +8,18 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 36px;
+  gap: 12px;
   background: var(--color-superficie-base);
   font-family: var(--tipografia-operacion);
 }
 
-/* La puerta de entrada al sistema: la única pantalla donde el logo tiene protagonismo.
-   Centrado sobre la tarjeta, sin fondo ni sombra (DESIGN.md, La Regla del Filo). */
+/* La Regla de la Identidad del Comercio: el wordmark de Rasero baja a marca de sistema
+   pequeña y discreta ARRIBA de la tarjeta, nunca dentro de ella. */
 .marca {
-  height: 54px;
+  height: 24px;
   width: auto;
   display: block;
+  opacity: 0.8;
 }
 
 .panel {
@@ -27,27 +28,52 @@
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  padding: 24px;
+  overflow: hidden;
 }
 
-.titulo {
-  margin: 0 0 4px;
-  font-size: 18px;
+/* Bloque de cabecera: el nombre de la sucursal como elemento de mayor peso visual de la
+   tarjeta, fondo Tinta, texto en Superficie Base, Source Serif 4. */
+.cabecera {
+  background: var(--color-tinta);
+  color: var(--color-superficie-base);
+  padding: 20px 24px;
+}
+
+.nombreSucursal {
+  margin: 0;
+  font-family: var(--tipografia-analisis);
+  font-size: 22px;
   font-weight: 600;
-  color: var(--color-tinta);
+  line-height: 1.15;
 }
 
-.subtitulo {
-  margin: 0 0 20px;
-  font-size: 13px;
+.contexto {
+  margin: 6px 0 0;
+  font-size: 12px;
+  color: var(--color-borde);
+}
+
+.ultimaApertura {
+  margin: 4px 0 0;
+  font-size: 12px;
+  color: var(--color-borde);
+}
+
+.pieComercio {
+  margin: 0;
+  font-size: 11px;
   color: var(--color-tinta-suave);
+}
+
+.primerCampo {
+  margin-top: 20px;
 }
 
 .campo {
   display: flex;
   flex-direction: column;
   gap: 6px;
-  margin-bottom: 16px;
+  margin: 0 24px 16px;
 }
 
 .etiqueta {
@@ -81,11 +107,12 @@
 .error {
   font-size: 13px;
   color: var(--color-critico);
-  margin: -8px 0 16px;
+  margin: -8px 24px 16px;
 }
 
 .boton {
-  width: 100%;
+  width: calc(100% - 48px);
+  margin: 4px 24px 24px;
   font-family: var(--tipografia-operacion);
   font-size: 15px;
   font-weight: 600;

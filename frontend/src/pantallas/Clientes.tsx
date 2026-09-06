@@ -11,11 +11,16 @@
 import { useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
-  listarClientes,
+  actualizarCliente,
+  listarClientesPagina,
   obtenerCliente,
   type ClienteDetalle,
   type ClienteResumen,
 } from "../servicios/clientes";
+import { EstadoVacio } from "../componentes/EstadoVacio";
+import { EsqueletoLista } from "../componentes/Esqueleto";
+import { ModalAdministrable } from "../componentes/ModalAdministrable";
+import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import estilos from "./Clientes.module.css";
 
 function textoValor(valor: number | null): string {
@@ -77,14 +82,54 @@ function InsigniaFuga({ detalle }: { detalle: ClienteDetalle }) {
 export function Clientes() {
   const [orden, setOrden] = useState<"valor" | "monto_total">("valor");
   const [clientes, setClientes] = useState<ClienteResumen[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pagina, setPagina] = useState(1);
+  const [cargandoLista, setCargandoLista] = useState(true);
   const [idSeleccionado, setIdSeleccionado] = useState<number | null>(null);
   const [detalle, setDetalle] = useState<ClienteDetalle | null>(null);
   const [cargandoDetalle, setCargandoDetalle] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [editando, setEditando] = useState(false);
+  const [form, setForm] = useState({ nombre: "", fecha_nacimiento: "", contacto: "" });
+  const [guardando, setGuardando] = useState(false);
+  const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
 
-  useEffect(() => {
-    listarClientes(orden).then(setClientes);
-  }, [orden]);
+  function recargarLista() {
+    setCargandoLista(true);
+    listarClientesPagina(orden, pagina, TAMANO_PAGINA)
+      .then(({ items, total: t }) => {
+        setClientes(items);
+        setTotal(t ?? items.length);
+      })
+      .finally(() => setCargandoLista(false));
+  }
+
+  useEffect(recargarLista, [orden, pagina]);
+
+  useEffect(() => setPagina(1), [orden]);
+
+  const totalPaginas = Math.max(1, Math.ceil(total / TAMANO_PAGINA));
+
+  async function guardarEdicion() {
+    if (!detalle) return;
+    setGuardando(true);
+    setErrorEdicion(null);
+    try {
+      await actualizarCliente(detalle.id_cliente, {
+        nombre: form.nombre.trim(),
+        fecha_nacimiento: form.fecha_nacimiento,
+        contacto: form.contacto.trim() || null,
+      });
+      setEditando(false);
+      const fresco = await obtenerCliente(detalle.id_cliente);
+      setDetalle(fresco);
+      recargarLista();
+    } catch (e) {
+      setErrorEdicion(e instanceof ErrorApi ? e.message : "No se pudo guardar el cliente.");
+    } finally {
+      setGuardando(false);
+    }
+  }
 
   useEffect(() => {
     if (idSeleccionado === null) {
@@ -120,34 +165,71 @@ export function Clientes() {
       </div>
 
       <div className={estilos.cuerpo}>
-        <ul className={estilos.lista}>
-          {clientes.map((c) => (
-            <li key={c.id_cliente}>
-              <button
-                className={`${estilos.bloque} ${idSeleccionado === c.id_cliente ? estilos.bloqueSeleccionado : ""}`}
-                onClick={() => setIdSeleccionado(c.id_cliente)}
-              >
-                <span className={estilos.nombreCliente}>{c.nombre ?? "(sin nombre)"}</span>
-                <span className={estilos.valorResumen}>{textoValor(c.valor)}</span>
-              </button>
-            </li>
-          ))}
-          {clientes.length === 0 && <li className={estilos.vacio}>Todavía no hay clientes registrados.</li>}
-        </ul>
+        <div className={estilos.lista}>
+          {cargandoLista ? (
+            <EsqueletoLista filas={8} registro="analisis" altoFila={52} />
+          ) : clientes.length === 0 ? (
+            <EstadoVacio
+              glifo="lista"
+              titulo="Todavía no hay clientes registrados"
+              descripcion="Aquí aparecerá cada cliente, ordenado por su valor o su monto. Los clientes se registran desde la caja al identificar a alguien durante una venta."
+            />
+          ) : (
+            <>
+              <ul className={estilos.listaUl}>
+                {clientes.map((c) => (
+                  <li key={c.id_cliente}>
+                    <button
+                      className={`${estilos.bloque} ${idSeleccionado === c.id_cliente ? estilos.bloqueSeleccionado : ""}`}
+                      onClick={() => setIdSeleccionado(c.id_cliente)}
+                    >
+                      <span className={estilos.nombreCliente}>{c.nombre ?? "(sin nombre)"}</span>
+                      <span className={estilos.valorResumen}>{textoValor(c.valor)}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+              <Paginador pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} />
+            </>
+          )}
+        </div>
 
         <div className={estilos.panelDetalle}>
           {error && <p className={estilos.error}>{error}</p>}
           {!error && !idSeleccionado && (
-            <p className={estilos.instruccion}>Elige un cliente de la lista para ver su detalle.</p>
+            <EstadoVacio
+              glifo="seleccion"
+              titulo="Elige un cliente"
+              descripcion="Aquí se abrirá el detalle del cliente que elijas: el desglose de su valor por frecuencia, monto y margen, y su estado de señal de fuga."
+            />
           )}
           {!error && idSeleccionado && cargandoDetalle && (
-            <p className={estilos.instruccion}>Cargando…</p>
+            <EsqueletoLista filas={4} registro="analisis" altoFila={40} />
           )}
           {!error && detalle && (
             // key fuerza el remount al cambiar de cliente: la animación de revelación se
             // dispara una vez por cliente mostrado, nunca en cada re-render.
             <div key={detalle.id_cliente} className={estilos.detalleRevelado}>
-              <h2 className={estilos.nombreDetalle}>{detalle.nombre ?? "(sin nombre)"}</h2>
+              <div className={estilos.filaTituloDetalle}>
+                <h2 className={estilos.nombreDetalle}>{detalle.nombre ?? "(sin nombre)"}</h2>
+                {!detalle.anonimizado && (
+                  <button
+                    type="button"
+                    className={estilos.editarCliente}
+                    onClick={() => {
+                      setForm({
+                        nombre: detalle.nombre ?? "",
+                        fecha_nacimiento: detalle.fecha_nacimiento ?? "",
+                        contacto: detalle.contacto ?? "",
+                      });
+                      setErrorEdicion(null);
+                      setEditando(true);
+                    }}
+                  >
+                    Editar
+                  </button>
+                )}
+              </div>
 
               <InsigniaFuga detalle={detalle} />
 
@@ -180,6 +262,41 @@ export function Clientes() {
           )}
         </div>
       </div>
+
+      {editando && detalle && (
+        <ModalAdministrable
+          titulo="Editar cliente"
+          onCerrar={() => setEditando(false)}
+          onGuardar={guardarEdicion}
+          guardando={guardando}
+          error={errorEdicion}
+          primariaHabilitada={form.nombre.trim() !== "" && form.fecha_nacimiento !== ""}
+        >
+          <label className={estilos.campoModal}>
+            <span>Nombre</span>
+            <input
+              value={form.nombre}
+              onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+              autoFocus
+            />
+          </label>
+          <label className={estilos.campoModal}>
+            <span>Fecha de nacimiento</span>
+            <input
+              type="date"
+              value={form.fecha_nacimiento}
+              onChange={(e) => setForm((f) => ({ ...f, fecha_nacimiento: e.target.value }))}
+            />
+          </label>
+          <label className={estilos.campoModal}>
+            <span>Contacto (opcional)</span>
+            <input
+              value={form.contacto}
+              onChange={(e) => setForm((f) => ({ ...f, contacto: e.target.value }))}
+            />
+          </label>
+        </ModalAdministrable>
+      )}
     </div>
   );
 }

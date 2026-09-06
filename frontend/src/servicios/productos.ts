@@ -13,9 +13,21 @@ export interface Producto {
   lleva_caducidad: boolean;
   precio_efectivo: string;
   moneda: string;
+  id_categoria: number | null;
+}
+
+export interface Categoria {
+  id_categoria: number;
+  nombre: string;
+  dias_umbral_inmovilizado: number | null;
+  activo: boolean;
 }
 
 export function listarProductos(idSucursal?: number): Promise<Producto[]> {
   const query = idSucursal !== undefined ? `?id_sucursal=${idSucursal}` : "";
   return clienteHttp.get<Producto[]>(`/productos${query}`);
+}
+
+export function listarCategorias(): Promise<Categoria[]> {
+  return clienteHttp.get<Categoria[]>("/categorias");
 }

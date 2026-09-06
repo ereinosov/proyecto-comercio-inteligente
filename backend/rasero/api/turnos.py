@@ -4,8 +4,10 @@ from datetime import datetime
 
 from fastapi import APIRouter, Depends, status
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from rasero.persistencia.modelos import Turno
 from rasero.persistencia.sesion import obtener_sesion
 from rasero.servicios import turnos as servicio_turnos
 
@@ -50,6 +52,28 @@ def abrir_turno(cuerpo: TurnoNuevo, sesion: Session = Depends(obtener_sesion)) -
     )
     sesion.commit()
     return _a_respuesta(turno)
+
+
+@router.get("/turnos/ultimo")
+def ultimo_turno(id_sucursal: int, sesion: Session = Depends(obtener_sesion)) -> dict | None:
+    """Turno más reciente (por apertura) de una sucursal, o `null` si no hay ninguno. Lo usa la
+    pantalla de apertura de turno para mostrar "Última apertura: …" (La Regla de la Identidad
+    del Comercio, DESIGN.md v1.2.0) — sin placeholder falso cuando no hay turno previo.
+    """
+    turno = sesion.execute(
+        select(Turno)
+        .where(Turno.id_sucursal == id_sucursal)
+        .order_by(Turno.instante_apertura.desc())
+        .limit(1)
+    ).scalar_one_or_none()
+    if turno is None:
+        return None
+    return {
+        "id_turno": turno.id_turno,
+        "id_sucursal": turno.id_sucursal,
+        "instante_apertura": turno.instante_apertura.isoformat(),
+        "instante_cierre": turno.instante_cierre.isoformat() if turno.instante_cierre else None,
+    }
 
 
 @router.post("/turnos/{id_turno}/cierre", response_model=TurnoRespuesta)

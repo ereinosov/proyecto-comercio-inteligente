@@ -126,6 +126,9 @@
 
 .nombreProducto {
   max-width: 60ch;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
 }
 
 .margenValor {

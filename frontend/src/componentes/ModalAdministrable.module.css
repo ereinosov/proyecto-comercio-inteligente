@@ -1,0 +1,116 @@
+/* La Regla del Modal Administrable (DESIGN.md v1.2.0). Registro de Análisis (radio 6px,
+   Source Serif 4). Sin sombra en ningún borde: sólo contraste de tono velo/tarjeta/header. */
+
+.velo {
+  position: fixed;
+  inset: 0;
+  /* Tinta al 45%, nunca negro puro. */
+  background: rgba(27, 38, 33, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 50;
+}
+
+.tarjeta {
+  width: 100%;
+  max-width: 420px;
+  background: var(--color-superficie-base);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  max-height: calc(100vh - 48px);
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  background: var(--color-superficie-alta);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--tipografia-analisis);
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--color-tinta);
+}
+
+.cerrar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  color: var(--color-tinta-suave);
+  background: var(--color-superficie-base);
+  border: 1px solid var(--color-borde);
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.cerrar:hover {
+  color: var(--color-tinta);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: var(--color-superficie-base);
+  overflow-y: auto;
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.error {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-critico);
+}
+
+.footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin: 4px -16px -16px;
+  padding: 12px 16px;
+  background: var(--color-superficie-alta);
+  border-top: 1px solid var(--color-borde);
+}
+
+.cancelar {
+  font-family: var(--tipografia-analisis);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: transparent;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.primaria {
+  font-family: var(--tipografia-analisis);
+  font-size: 13px;
+  color: var(--color-superficie-alta);
+  background: var(--color-tinta);
+  border: 1px solid var(--color-tinta);
+  border-radius: var(--radio-analisis);
+  padding: 7px 14px;
+  cursor: pointer;
+}
+
+.primaria:disabled {
+  opacity: 0.5;
+  cursor: default;
+}

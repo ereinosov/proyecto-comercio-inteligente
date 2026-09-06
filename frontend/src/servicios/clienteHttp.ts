@@ -17,7 +17,10 @@ export class ErrorApi extends Error {
   }
 }
 
-async function peticion<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
+async function peticionCompleta<T>(
+  ruta: string,
+  opciones: RequestInit = {},
+): Promise<{ datos: T; total: number | null }> {
   const respuesta = await fetch(`${URL_BASE}${ruta}`, {
     ...opciones,
     headers: {
@@ -27,7 +30,7 @@ async function peticion<T>(ruta: string, opciones: RequestInit = {}): Promise<T>
   });
 
   if (respuesta.status === 204) {
-    return undefined as T;
+    return { datos: undefined as T, total: null };
   }
 
   const cuerpo = await respuesta.json().catch(() => null);
@@ -38,11 +41,28 @@ async function peticion<T>(ruta: string, opciones: RequestInit = {}): Promise<T>
     throw new ErrorApi(codigo, mensaje, respuesta.status);
   }
 
-  return cuerpo as T;
+  const cabecera = respuesta.headers.get("X-Total-Count");
+  return { datos: cuerpo as T, total: cabecera === null ? null : Number(cabecera) };
+}
+
+async function peticion<T>(ruta: string, opciones: RequestInit = {}): Promise<T> {
+  return (await peticionCompleta<T>(ruta, opciones)).datos;
+}
+
+/** Página de un listado: los elementos más el total de registros de la cabecera `X-Total-Count`
+ * (La Regla del Filtro y la Página, DESIGN.md v1.2.0). `total` es `null` si el backend no la
+ * envió. */
+export interface Pagina<T> {
+  items: T[];
+  total: number | null;
 }
 
 export const clienteHttp = {
   get: <T>(ruta: string) => peticion<T>(ruta, { method: "GET" }),
+  getPagina: async <T>(ruta: string): Promise<Pagina<T>> => {
+    const { datos, total } = await peticionCompleta<T[]>(ruta, { method: "GET" });
+    return { items: datos, total };
+  },
   post: <T>(ruta: string, cuerpo: unknown) =>
     peticion<T>(ruta, { method: "POST", body: JSON.stringify(cuerpo) }),
   put: <T>(ruta: string, cuerpo: unknown) =>

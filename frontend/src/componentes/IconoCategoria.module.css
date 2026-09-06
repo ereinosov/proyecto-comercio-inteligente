@@ -1,0 +1,12 @@
+/* La Regla del Ícono por Categoría. Glifo de línea, sin color propio, sin volumen: hereda el
+   color del texto de la fila. Nunca una foto de producto. */
+
+.icono {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 20px;
+  height: 20px;
+  color: var(--color-tinta-suave);
+}
