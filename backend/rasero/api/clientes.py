@@ -97,11 +97,12 @@ def registrar_cliente(cuerpo: ClienteNuevo, sesion: Session = Depends(obtener_se
 @router.get("/clientes")
 def listar_clientes(
     orden: str = "valor",
+    busqueda: str | None = None,
     pagina: int | None = None,
     tamano_pagina: int | None = None,
     sesion: Session = Depends(obtener_sesion),
 ) -> dict:
-    filas = servicio_clientes.listar_valor_clientes(sesion, orden=orden)
+    filas = servicio_clientes.listar_valor_clientes(sesion, orden=orden, busqueda=busqueda)
     respuestas = [_resumen_a_respuesta(f) for f in filas]
     return paginar(respuestas, pagina=pagina, tamano_pagina=tamano_pagina)
 

@@ -83,12 +83,18 @@ export function idDeFila(entidad: EntidadMaestra, fila: FilaMaestra): number {
 
 export function listarMaestros(
   entidad: EntidadMaestra,
-  opciones: { pagina?: number; tamanoPagina?: number; incluirInactivos?: boolean } = {},
+  opciones: {
+    pagina?: number;
+    tamanoPagina?: number;
+    incluirInactivos?: boolean;
+    busqueda?: string;
+  } = {},
 ): Promise<Pagina<FilaMaestra>> {
   const params = new URLSearchParams();
   if (opciones.pagina !== undefined) params.set("pagina", String(opciones.pagina));
   if (opciones.tamanoPagina !== undefined) params.set("tamano_pagina", String(opciones.tamanoPagina));
   if (opciones.incluirInactivos) params.set("incluir_inactivos", "true");
+  if (opciones.busqueda && opciones.busqueda.trim()) params.set("busqueda", opciones.busqueda.trim());
   const cadena = params.toString();
   return clienteHttp.getPagina<FilaMaestra>(`/administracion/${entidad}${cadena ? `?${cadena}` : ""}`);
 }

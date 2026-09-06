@@ -151,6 +151,21 @@ def test_get_clientes_devuelve_lista_con_las_claves_del_contrato():
         assert clave in cuerpo["items"][0], f"falta '{clave}' en la respuesta de GET /clientes"
 
 
+def test_get_clientes_filtra_por_busqueda_de_nombre_y_conserva_la_paginacion():
+    import uuid as _uuid
+
+    marca = _uuid.uuid4().hex[:8]
+    cliente_http.post("/clientes", json={"nombre": f"Zoraida {marca}"})
+    cliente_http.post("/clientes", json={"nombre": f"Bruno {marca}"})
+
+    r = cliente_http.get(f"/clientes?busqueda=zoraida {marca}&tamano_pagina=50")
+    assert r.status_code == 200
+    cuerpo = r.json()
+    nombres = [c["nombre"] for c in cuerpo["items"]]
+    assert nombres == [f"Zoraida {marca}"]
+    assert cuerpo["total"] == 1
+
+
 def test_get_cliente_por_id_devuelve_detalle_con_desglose():
     creado = cliente_http.post(
         "/clientes", json={"nombre": "Detalle Contrato", "fecha_nacimiento": "1980-01-01"}

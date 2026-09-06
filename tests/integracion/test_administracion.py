@@ -172,6 +172,26 @@ def test_listado_paginado_devuelve_items_y_total_en_el_body(sesion):
     assert cuerpo["total"] >= 3
 
 
+def test_listado_admite_busqueda_por_nombre_combinada_con_paginacion(sesion):
+    encargado = crear_operador(sesion, es_encargado=True)
+    sesion.commit()
+    marca = uuid.uuid4().hex[:8]
+    cliente.post(
+        "/administracion/categorias",
+        json={"nombre": f"Refrescos {marca}", "id_operador": encargado.id_operador},
+    )
+    cliente.post(
+        "/administracion/categorias",
+        json={"nombre": f"Congelados {marca}", "id_operador": encargado.id_operador},
+    )
+
+    r = cliente.get(f"/administracion/categorias?busqueda=refrescos {marca}&tamano_pagina=50")
+    assert r.status_code == 200
+    nombres = [f["nombre"] for f in r.json()["items"]]
+    assert nombres == [f"Refrescos {marca}"]
+    assert r.json()["total"] == 1
+
+
 def test_ultimo_turno_de_sucursal_para_la_pantalla_de_apertura(sesion):
     sucursal = crear_sucursal(sesion)
     encargado = crear_operador(sesion, es_encargado=True)

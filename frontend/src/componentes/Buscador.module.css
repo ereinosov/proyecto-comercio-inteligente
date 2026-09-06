@@ -1,0 +1,20 @@
+/* Campo de búsqueda por nombre para listados largos (La Regla del Filtro y la Página combina
+   con paginación; esto la complementa, no la reemplaza). Estilo consistente: borde 1px Borde,
+   radio del registro de la pantalla que lo usa (por defecto Análisis, 6px), sin sombra. */
+
+.buscador {
+  width: 100%;
+  max-width: 360px;
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-analisis);
+  padding: 8px 12px;
+}
+
+.buscador:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}

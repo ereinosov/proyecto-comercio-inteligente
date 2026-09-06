@@ -85,12 +85,13 @@ class Desactivacion(BaseModel):
 def listar(
     entidad: str,
     incluir_inactivos: bool = False,
+    busqueda: str | None = None,
     pagina: int | None = None,
     tamano_pagina: int | None = None,
     sesion: Session = Depends(obtener_sesion),
 ) -> dict:
     filas = servicio.listar(
-        sesion, entidad=entidad, incluir_inactivos=incluir_inactivos
+        sesion, entidad=entidad, incluir_inactivos=incluir_inactivos, busqueda=busqueda
     )
     return paginar(filas, pagina=pagina, tamano_pagina=tamano_pagina)
 

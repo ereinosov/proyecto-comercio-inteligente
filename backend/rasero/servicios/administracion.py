@@ -571,7 +571,13 @@ def fijar_activo(
 # --------------------------------------------------------------------------
 
 
-def listar(sesion: Session, *, entidad: str, incluir_inactivos: bool) -> list[dict]:
+def listar(
+    sesion: Session,
+    *,
+    entidad: str,
+    incluir_inactivos: bool,
+    busqueda: str | None = None,
+) -> list[dict]:
     if entidad not in _ENTIDADES:
         raise ErrorAdministracion(
             "admin_entidad_desconocida", "Ese tipo de maestro no existe."
@@ -580,6 +586,10 @@ def listar(sesion: Session, *, entidad: str, incluir_inactivos: bool) -> list[di
     consulta = select(modelo)
     if not incluir_inactivos:
         consulta = consulta.where(modelo.activo.is_(True))
+    if busqueda and busqueda.strip():
+        # Las cinco entidades tienen columna `nombre`; se combina con la paginación del
+        # endpoint, nunca la reemplaza.
+        consulta = consulta.where(modelo.nombre.ilike(f"%{busqueda.strip()}%"))
     consulta = consulta.order_by(getattr(modelo, pk))
     filas = sesion.execute(consulta).scalars().all()
     return [_a_dict(entidad, f) for f in filas]

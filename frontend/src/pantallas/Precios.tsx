@@ -22,6 +22,7 @@ import { listarCategorias, listarProductos, type Categoria, type Producto } from
 import { IconoCategoria } from "../componentes/IconoCategoria";
 import { EstadoVacio } from "../componentes/EstadoVacio";
 import { EsqueletoLista } from "../componentes/Esqueleto";
+import { Buscador } from "../componentes/Buscador";
 import estilos from "./Precios.module.css";
 
 // Umbral de margen saludable (fracción). Por debajo, el margen pide atención (ámbar); por
@@ -86,6 +87,11 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [idSeleccionado, setIdSeleccionado] = useState<number | null>(null);
+  // Filtro por nombre en el cliente, sin debounce ni paginación: `GET /productos` y
+  // `GET /margenes` de esta pantalla se cargan juntos y se cruzan en memoria en un Map para
+  // toda la sucursal; paginar partiría ese cruce y la lista está acotada por el catálogo de un
+  // minimarket de una sola tienda (decenas, no miles). Si crece, se revisa entonces.
+  const [filtro, setFiltro] = useState("");
 
   useEffect(() => {
     setCargando(true);
@@ -104,6 +110,10 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
   }, [idSucursal]);
 
   const productoSeleccionado = productos.find((p) => p.id_producto === idSeleccionado) ?? null;
+  const filtroNorm = filtro.trim().toLowerCase();
+  const productosVisibles = filtroNorm
+    ? productos.filter((p) => p.nombre.toLowerCase().includes(filtroNorm))
+    : productos;
   const nombreCategoria = (id: number | null) =>
     categorias.find((c) => c.id_categoria === id)?.nombre ?? null;
 
@@ -125,26 +135,39 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
         )}
         {!error && !cargando && productos.length > 0 && (
           <>
-            <ul className={estilos.lista}>
-              {productos.map((producto) => (
-                <li key={producto.id_producto}>
-                  <button
-                    className={[
-                      estilos.bloque,
-                      claseBordeMargen(margenes.get(producto.id_producto)),
-                      idSeleccionado === producto.id_producto ? estilos.bloqueSeleccionado : "",
-                    ].join(" ")}
-                    onClick={() => setIdSeleccionado(producto.id_producto)}
-                  >
-                    <span className={estilos.nombreProducto}>
-                      <IconoCategoria nombreCategoria={nombreCategoria(producto.id_categoria)} />
-                      {producto.nombre}
-                    </span>
-                    <IndicadorMargen margen={margenes.get(producto.id_producto)} />
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className={estilos.columnaLista}>
+              <Buscador
+                valor={filtro}
+                onCambiar={setFiltro}
+                placeholder="Buscar producto por nombre…"
+              />
+              {productosVisibles.length === 0 ? (
+                <p className={estilos.instruccion}>
+                  Ningún producto coincide con «{filtro.trim()}».
+                </p>
+              ) : (
+                <ul className={estilos.lista}>
+                  {productosVisibles.map((producto) => (
+                    <li key={producto.id_producto}>
+                      <button
+                        className={[
+                          estilos.bloque,
+                          claseBordeMargen(margenes.get(producto.id_producto)),
+                          idSeleccionado === producto.id_producto ? estilos.bloqueSeleccionado : "",
+                        ].join(" ")}
+                        onClick={() => setIdSeleccionado(producto.id_producto)}
+                      >
+                        <span className={estilos.nombreProducto}>
+                          <IconoCategoria nombreCategoria={nombreCategoria(producto.id_categoria)} />
+                          {producto.nombre}
+                        </span>
+                        <IndicadorMargen margen={margenes.get(producto.id_producto)} />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
 
             <div className={estilos.panelDetalle}>
               {!productoSeleccionado && (

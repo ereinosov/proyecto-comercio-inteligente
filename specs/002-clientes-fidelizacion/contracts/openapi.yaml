@@ -66,6 +66,12 @@ paths:
         - name: orden
           in: query
           schema: { type: string, enum: [valor, monto_total], default: valor }
+        - name: busqueda
+          in: query
+          description: |
+            Filtra por nombre (`ILIKE '%busqueda%'`, ignora mayúsculas). Se combina con la
+            paginación, no la reemplaza. Vacío o sólo espacios se ignora.
+          schema: { type: string }
         - name: pagina
           in: query
           description: Página 1-indexada. Si se omite, `items` trae todos los registros.

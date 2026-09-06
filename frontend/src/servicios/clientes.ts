@@ -96,10 +96,15 @@ export function listarClientesPagina(
   orden: "valor" | "monto_total",
   pagina: number,
   tamanoPagina: number,
+  busqueda?: string,
 ) {
-  return clienteHttp.getPagina<ClienteResumen>(
-    `/clientes?orden=${orden}&pagina=${pagina}&tamano_pagina=${tamanoPagina}`,
-  );
+  const params = new URLSearchParams({
+    orden,
+    pagina: String(pagina),
+    tamano_pagina: String(tamanoPagina),
+  });
+  if (busqueda && busqueda.trim()) params.set("busqueda", busqueda.trim());
+  return clienteHttp.getPagina<ClienteResumen>(`/clientes?${params.toString()}`);
 }
 
 export function obtenerCliente(idCliente: number): Promise<ClienteDetalle> {

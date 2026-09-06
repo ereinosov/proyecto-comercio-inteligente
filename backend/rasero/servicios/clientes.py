@@ -274,15 +274,21 @@ def _resumen_cliente(
     }
 
 
-def listar_valor_clientes(sesion: Session, *, orden: str = "valor") -> list[dict]:
+def listar_valor_clientes(
+    sesion: Session, *, orden: str = "valor", busqueda: str | None = None
+) -> list[dict]:
     """Registro de Análisis (FR-011b consume el detalle; esto es el listado resumen). Clientes
     anonimizados quedan fuera: sin nombre, no hay nada accionable que mostrar de ellos aquí.
+
+    `busqueda` filtra por nombre (ILIKE '%busqueda%'); se combina con la paginación del
+    endpoint, nunca la reemplaza. Un `busqueda` vacío o sólo espacios se ignora.
     """
     valores = obtener_valor_clientes(sesion)
     montos = _montos_por_cliente(sesion)
-    clientes = sesion.execute(
-        select(Cliente).where(Cliente.anonimizado.is_(False))
-    ).scalars().all()
+    consulta = select(Cliente).where(Cliente.anonimizado.is_(False))
+    if busqueda and busqueda.strip():
+        consulta = consulta.where(Cliente.nombre.ilike(f"%{busqueda.strip()}%"))
+    clientes = sesion.execute(consulta).scalars().all()
 
     filas = [_resumen_cliente(c, valores, montos) for c in clientes]
     if orden == "monto_total":

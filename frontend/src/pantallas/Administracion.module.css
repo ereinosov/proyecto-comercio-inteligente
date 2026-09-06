@@ -60,6 +60,10 @@
   margin: 16px 0 12px;
 }
 
+.barraBuscador {
+  margin: 16px 0 0;
+}
+
 .filtroInactivos {
   font-size: 13px;
   color: var(--color-tinta-suave);

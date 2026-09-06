@@ -21,6 +21,7 @@ import { EsqueletoLista } from "../componentes/Esqueleto";
 import { IconoCategoria } from "../componentes/IconoCategoria";
 import { ModalAdministrable } from "../componentes/ModalAdministrable";
 import { Obligatorio } from "../componentes/Obligatorio";
+import { Buscador } from "../componentes/Buscador";
 import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
@@ -51,6 +52,15 @@ interface Campo {
   tipo: TipoCampo;
   opcional?: boolean;
 }
+
+// Buscador por nombre sólo en las vistas que pueden crecer sin techo. Se EXCLUYE
+// deliberadamente "zonas" (una tienda tiene un puñado de zonas de exhibición) y "medios"
+// (los medios de pago son una lista corta y estable) — ahí un buscador sería ruido.
+const ENTIDADES_CON_BUSCADOR: ReadonlySet<EntidadMaestra> = new Set([
+  "sucursales",
+  "productos",
+  "categorias",
+]);
 
 const VISTAS: { valor: EntidadMaestra; etiqueta: string; singular: string; campos: Campo[] }[] = [
   {
@@ -149,6 +159,15 @@ export function Administracion({ idOperador, esEncargado }: Props) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const conBuscador = ENTIDADES_CON_BUSCADOR.has(entidad);
+  const [texto, setTexto] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setBusqueda(texto), 200);
+    return () => clearTimeout(t);
+  }, [texto]);
+
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
 
@@ -176,7 +195,12 @@ export function Administracion({ idOperador, esEncargado }: Props) {
   const recargar = useCallback(() => {
     setCargando(true);
     setError(null);
-    listarMaestros(entidad, { pagina, tamanoPagina: TAMANO_PAGINA, incluirInactivos })
+    listarMaestros(entidad, {
+      pagina,
+      tamanoPagina: TAMANO_PAGINA,
+      incluirInactivos,
+      busqueda: conBuscador ? busqueda : undefined,
+    })
       .then(({ items, total: t }) => {
         setFilas(items);
         setTotal(t ?? items.length);
@@ -185,7 +209,7 @@ export function Administracion({ idOperador, esEncargado }: Props) {
         setError(e instanceof ErrorApi ? e.message : "No se pudo cargar el listado."),
       )
       .finally(() => setCargando(false));
-  }, [entidad, pagina, incluirInactivos]);
+  }, [entidad, pagina, incluirInactivos, conBuscador, busqueda]);
 
   useEffect(recargar, [recargar]);
 
@@ -196,7 +220,13 @@ export function Administracion({ idOperador, esEncargado }: Props) {
 
   useEffect(() => {
     setPagina(1);
-  }, [entidad, incluirInactivos]);
+  }, [entidad, incluirInactivos, busqueda]);
+
+  // Al cambiar de vista, la búsqueda de la vista anterior no aplica.
+  useEffect(() => {
+    setTexto("");
+    setBusqueda("");
+  }, [entidad]);
 
   const totalPaginas = Math.max(1, Math.ceil(total / TAMANO_PAGINA));
 
@@ -292,6 +322,16 @@ export function Administracion({ idOperador, esEncargado }: Props) {
         </nav>
       </div>
 
+      {conBuscador && (
+        <div className={estilos.barraBuscador}>
+          <Buscador
+            valor={texto}
+            onCambiar={setTexto}
+            placeholder={`Buscar ${vista.singular} por nombre…`}
+          />
+        </div>
+      )}
+
       <div className={estilos.barra}>
         <label className={estilos.filtroInactivos}>
           <input
@@ -319,8 +359,16 @@ export function Administracion({ idOperador, esEncargado }: Props) {
       ) : filas.length === 0 ? (
         <EstadoVacio
           glifo="lista"
-          titulo={`Todavía no hay ${vista.etiqueta.toLowerCase()}`}
-          descripcion={`Aquí aparecerá cada ${vista.singular} del sistema, con su estado y las acciones para editarlo o desactivarlo. Usa «+ Nuevo ${vista.singular}» para crear el primero.`}
+          titulo={
+            conBuscador && busqueda.trim()
+              ? `Sin resultados para «${busqueda.trim()}»`
+              : `Todavía no hay ${vista.etiqueta.toLowerCase()}`
+          }
+          descripcion={
+            conBuscador && busqueda.trim()
+              ? "Prueba con otra parte del nombre; la búsqueda ignora mayúsculas."
+              : `Aquí aparecerá cada ${vista.singular} del sistema, con su estado y las acciones para editarlo o desactivarlo. Usa «+ Nuevo ${vista.singular}» para crear el primero.`
+          }
         />
       ) : (
         <div className={estilos.tablaContenedor}>

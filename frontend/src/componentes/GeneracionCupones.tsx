@@ -11,10 +11,11 @@ import { useCallback, useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
   generarCupones,
-  listarCupones,
+  listarCuponesPagina,
   type Cupon,
   type ResultadoGeneracion,
 } from "../servicios/promociones";
+import { Paginador, TAMANO_PAGINA } from "./Paginador";
 import estilos from "./GeneracionCupones.module.css";
 
 function hoyISO(): string {
@@ -37,20 +38,27 @@ export function GeneracionCupones() {
   const [generando, setGenerando] = useState(false);
   const [ultimoResultado, setUltimoResultado] = useState<ResultadoGeneracion | null>(null);
   const [cupones, setCupones] = useState<Cupon[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pagina, setPagina] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
 
   const recargar = useCallback(() => {
     setCargando(true);
-    listarCupones()
-      .then(setCupones)
+    listarCuponesPagina({ pagina, tamanoPagina: TAMANO_PAGINA })
+      .then(({ items, total: t }) => {
+        setCupones(items);
+        setTotal(t ?? items.length);
+      })
       .catch((e) =>
         setError(e instanceof ErrorApi ? e.message : "No se pudieron cargar los cupones.")
       )
       .finally(() => setCargando(false));
-  }, []);
+  }, [pagina]);
 
   useEffect(recargar, [recargar]);
+
+  const totalPaginas = Math.max(1, Math.ceil(total / TAMANO_PAGINA));
 
   async function generar() {
     setGenerando(true);
@@ -58,6 +66,7 @@ export function GeneracionCupones() {
     try {
       const resultado = await generarCupones(desde, hasta);
       setUltimoResultado(resultado);
+      setPagina(1);
       recargar();
     } catch (e) {
       setError(e instanceof ErrorApi ? e.message : "No se pudo generar la campaña de cupones.");
@@ -106,6 +115,7 @@ export function GeneracionCupones() {
         <p className={estilos.instruccion}>Todavía no se ha emitido ningún cupón.</p>
       )}
       {!cargando && cupones.length > 0 && (
+        <>
         <table className={estilos.tabla}>
           <thead>
             <tr>
@@ -136,6 +146,8 @@ export function GeneracionCupones() {
             ))}
           </tbody>
         </table>
+        <Paginador pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} />
+        </>
       )}
     </div>
   );

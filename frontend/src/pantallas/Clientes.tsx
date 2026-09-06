@@ -22,6 +22,7 @@ import { EsqueletoLista } from "../componentes/Esqueleto";
 import { ModalAdministrable } from "../componentes/ModalAdministrable";
 import { CampoIdentificador } from "../componentes/CampoIdentificador";
 import { Obligatorio } from "../componentes/Obligatorio";
+import { Buscador } from "../componentes/Buscador";
 import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import estilos from "./Clientes.module.css";
 
@@ -100,10 +101,20 @@ export function Clientes() {
   });
   const [guardando, setGuardando] = useState(false);
   const [errorEdicion, setErrorEdicion] = useState<string | null>(null);
+  // `texto` es lo que escribe el usuario; `busqueda` es el valor ya aplicado tras el debounce
+  // de 200ms (mismo patrón de temporizador que IdentificarCliente.tsx). Se combina con la
+  // paginación, no la reemplaza.
+  const [texto, setTexto] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+
+  useEffect(() => {
+    const t = setTimeout(() => setBusqueda(texto), 200);
+    return () => clearTimeout(t);
+  }, [texto]);
 
   function recargarLista() {
     setCargandoLista(true);
-    listarClientesPagina(orden, pagina, TAMANO_PAGINA)
+    listarClientesPagina(orden, pagina, TAMANO_PAGINA, busqueda)
       .then(({ items, total: t }) => {
         setClientes(items);
         setTotal(t ?? items.length);
@@ -111,9 +122,9 @@ export function Clientes() {
       .finally(() => setCargandoLista(false));
   }
 
-  useEffect(recargarLista, [orden, pagina]);
+  useEffect(recargarLista, [orden, pagina, busqueda]);
 
-  useEffect(() => setPagina(1), [orden]);
+  useEffect(() => setPagina(1), [orden, busqueda]);
 
   const totalPaginas = Math.max(1, Math.ceil(total / TAMANO_PAGINA));
 
@@ -174,13 +185,26 @@ export function Clientes() {
 
       <div className={estilos.cuerpo}>
         <div className={estilos.lista}>
+          <Buscador
+            valor={texto}
+            onCambiar={setTexto}
+            placeholder="Buscar cliente por nombre…"
+          />
           {cargandoLista ? (
             <EsqueletoLista filas={8} registro="analisis" altoFila={52} />
           ) : clientes.length === 0 ? (
             <EstadoVacio
               glifo="lista"
-              titulo="Todavía no hay clientes registrados"
-              descripcion="Aquí aparecerá cada cliente, ordenado por su valor o su monto. Los clientes se registran desde la caja al identificar a alguien durante una venta."
+              titulo={
+                busqueda.trim()
+                  ? "Ningún cliente coincide con la búsqueda"
+                  : "Todavía no hay clientes registrados"
+              }
+              descripcion={
+                busqueda.trim()
+                  ? "Prueba con otra parte del nombre; la búsqueda ignora mayúsculas."
+                  : "Aquí aparecerá cada cliente, ordenado por su valor o su monto. Los clientes se registran desde la caja al identificar a alguien durante una venta."
+              }
             />
           ) : (
             <>
