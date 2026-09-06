@@ -21,7 +21,7 @@ description: "Task list template for feature implementation"
 - Cada tarea que toca datos indica explícitamente de dónde:
   - **[004]** — tabla propia de este módulo (`demanda_observada`, `demanda_corregida`, `pronostico`, `sustitucion_producto`)
   - **[001-lectura: ...]** — consulta de **solo lectura** a una o más tablas de `001` (nunca se altera su esquema ni se duplica)
-  - **[001-lectura: consulta_no_atendida]** — consulta de solo lectura a la entidad de `001` que **NO está implementada** (001 User Story 3, tareas T050–T053); toda tarea con esta etiqueta está **bloqueada** (ver sección "Bloqueado por 001" al final)
+  - **[001-lectura: consulta_no_atendida]** — consulta de solo lectura a la entidad de `001` (001 User Story 3, T050–T053, ya implementada); las tareas con esta etiqueta quedaron desbloqueadas (ver "Bloqueado por 001 — RESUELTO" al final)
   - **[005-futuro]** — gancho a la marca de "promoción activa" de `005-promociones-inteligentes`, inerte hasta que `005` exista (FR-030)
 
 ## Convención de rutas (fijada en plan.md, extiende la de 001/002/003, no negociable)
@@ -59,7 +59,7 @@ description: "Task list template for feature implementation"
 - [X] T006 [P] [US1] Prueba unitaria del método base de descensura: período de quiebre → corregida = máximo de la demanda observada del producto entre los N días recientes sin quiebre (research.md #5); invariante `corregida >= observada` en todo período de quiebre (FR-006); período sin quiebre → `correccion_quiebre = 0` (FR-011); sin ningún período sin quiebre y sin consultas → "no estimable por censura total" (FR-012), nunca 0 — funciones puras, en `tests/unidad/test_censura.py` **[004]**
 - [X] T007 [P] [US1] Prueba de integración: `reconstruir_serie` materializa `demanda_observada` y `demanda_corregida` de una ventana, con `dias_en_quiebre` calculado **replayando `movimiento_inventario`** (no leyendo `existencia`, que no es autoritativa — data-model.md de `001`) — contra PostgreSQL real, puerto 5442, en `tests/integracion/test_reconstruir_serie.py` **[004] [001-lectura: venta, renglon_venta, movimiento_inventario, existencia]**
 - [X] T008 [P] [US1] Prueba de integración: `GET /demanda` de una sucursal completa se resuelve con **una** consulta de conjunto y un upsert masivo, nunca un bucle de N llamadas al reconstructor de un solo producto (research.md #3, patrón N+1 explícitamente rechazado) — contra PostgreSQL real, en `tests/integracion/test_demanda_sucursal.py` **[004] [001-lectura]**
-- [X] T009 [P] [US1] Prueba **xfail** del camino de evidencia real (FR-007), marcada `@pytest.mark.xfail(reason="001 User Story 3 / consulta_no_atendida sin implementar — T050-T053", strict=True)`: cuando existan registros de `consulta_no_atendida` para el intervalo, `respaldo_quiebre = 'consulta_no_atendida'` y la magnitud de la corrección usa el conteo como evidencia directa, no sólo el método base — contra PostgreSQL real, en `tests/integracion/test_descensura_consulta_no_atendida.py` **[004] [001-lectura: consulta_no_atendida]** — se **activa** (quitar el marcador `xfail`) cuando `001` implemente T050–T053; verifica a T014
+- [X] T009 [P] [US1] Prueba del camino de evidencia real (FR-007): cuando existan registros de `consulta_no_atendida` para el intervalo, `respaldo_quiebre = 'consulta_no_atendida'` y la magnitud de la corrección usa el conteo como evidencia directa, no sólo el método base — contra PostgreSQL real, en `tests/integracion/test_descensura_consulta_no_atendida.py` **[004] [001-lectura: consulta_no_atendida]** — el marcador `xfail` se retiró al implementar `001` T050–T053 y `004` T014; en verde
 
 ### Implementación backend para User Story 1
 
@@ -67,7 +67,7 @@ description: "Task list template for feature implementation"
 - [X] T011 [US1] Ampliar `backend/rasero/dominio/serie_demanda.py`: construir la demanda observada por período (`Σ salida_venta − Σ entrada_anulacion`, día local — research.md #3), anotar `dias_en_quiebre` por replay de `movimiento_inventario`, dejar `precio_vigente_periodo = NULL` (se llena en US4) y `con_promocion = FALSE` (se llena en US5) (depende de T005, T010) **[004] [001-lectura: venta, renglon_venta, movimiento_inventario]**
 - [X] T012 [US1] Servicio `demanda.reconstruir_serie(sesion, *, id_sucursal, id_producto=None, desde, hasta)` en `backend/rasero/servicios/demanda.py`: una consulta de conjunto por sucursal-ventana, upsert masivo sobre `demanda_observada`, y deriva `demanda_corregida` aplicando **sólo** la corrección de quiebre en esta historia (precio/promo/sustituto se suman en US4/US5/US6, en el orden fijo de research.md #3) (depende de T011, T002; implementa T007, T008) **[004] [001-lectura: venta, renglon_venta, movimiento_inventario, existencia]**
 - [X] T013 [US1] Rama `respaldo_quiebre = 'metodo_base'` (FR-008) y estado `censura_total` (FR-012, `valor` no numérico, `estado: "no_estimable_censura_total"`) en `backend/rasero/servicios/demanda.py` (depende de T012) **[004]**
-- [ ] T014 [US1] **⛔ BLOQUEADA por `001` (T050–T053)** — Rama `respaldo_quiebre = 'consulta_no_atendida'` (FR-007): leer `consulta_no_atendida` de `001` para el producto, sucursal e intervalo, usar `saldo_en_el_instante` y el conteo de consultas como evidencia directa de la magnitud de la demanda latente en vez de sólo el método base, en `backend/rasero/servicios/demanda.py` (depende de T012) **[004] [001-lectura: consulta_no_atendida]** — no ejecutable hasta que `001` implemente su User Story 3; al implementarse, quitar el `xfail` de T009
+- [X] T014 [US1] Rama `respaldo_quiebre = 'consulta_no_atendida'` (FR-007): lee `consulta_no_atendida` de `001` por producto, sucursal y día, y usa el conteo de consultas como evidencia directa de la magnitud de la demanda latente en vez de sólo el método base — paso (1c) de `reconstruir_serie` en `backend/rasero/servicios/demanda.py` (depende de T012) **[004] [001-lectura: consulta_no_atendida]** — DESBLOQUEADA: `001` implementó su User Story 3 (T050–T053); el `xfail` de T009 se retiró
 - [X] T015 [US1] Endpoint `GET /demanda?id_sucursal=&id_producto=&desde=&hasta=` en `backend/rasero/api/pronostico.py` (depende de T012, T004)
 - [X] T016 [P] [US1] Prueba de contrato de `GET /demanda` contra `contracts/openapi.yaml` (forma feliz + `404`) en `tests/contrato/test_contrato_pronostico.py` (depende de T015)
 
@@ -221,7 +221,7 @@ description: "Task list template for feature implementation"
 - [X] T067 [US6] Ampliar `SerieDemanda.tsx`: señal "demanda potencialmente inflada por el quiebre de <sustituto>" en los períodos afectados — marca cualitativa con texto, sin número de ajuste (FR-034), en `frontend/src/componentes/SerieDemanda.tsx` (depende de T062, T018)
 - [X] T068 [US6] Verificación `tsc -b`, `eslint` y `vite build` del frontend sin errores tras integrar sustitutos (depende de T067)
 
-**Checkpoint**: las seis historias funcionan de forma independiente; la única parte incompleta es la rama T014 (evidencia real de `consulta_no_atendida`), bloqueada por `001`.
+**Checkpoint**: las seis historias funcionan de forma independiente. La rama T014 (evidencia real de `consulta_no_atendida`) quedó implementada al desbloquear `001` su User Story 3.
 
 ---
 
@@ -232,7 +232,7 @@ description: "Task list template for feature implementation"
 - [X] T069 [P] Ejecutar los 12 escenarios de `quickstart.md` de extremo a extremo y confirmar el resultado esperado de cada uno; el escenario 3 (`consulta_no_atendida`) se comprueba como **xfail documentado**, no como fallo
 - [X] T070 [P] Auditar `Pronostico.tsx`, `SerieDemanda.tsx`, `ValidacionDescensura.tsx` y `DeclararSustituto.tsx` en busca de color, radio o tipografía incrustados fuera de `frontend/src/estilos/tokens.css`; verificar la distinción **observado / estimado** con los tres portadores simultáneos (color `#1F5673`, forma, texto)
 - [X] T071 Actualizar `DESIGN.md` con la skill de Impeccable (`document`), derivándolo de `Pronostico.tsx` ya construido; sidecar `.impeccable/design.json` actualizado en el mismo cambio
-- [X] T072 Ejecutar `pytest tests` completo contra PostgreSQL real (puerto 5442) — las 6 suites obligatorias (T006/T007/T008, T021, T033/T034, T044/T045, T052, T058/T059, y la de contrato T016/T028/T039/T049/T055/T064) — y `tsc -b`, `eslint`, `vite build` del frontend, todo en verde (T009 permanece `xfail` hasta que `001` implemente T050–T053)
+- [X] T072 Ejecutar `pytest tests` completo contra PostgreSQL real (puerto 5442) — las 6 suites obligatorias (T006/T007/T008, T021, T033/T034, T044/T045, T052, T058/T059, y la de contrato T016/T028/T039/T049/T055/T064) — y `tsc -b`, `eslint`, `vite build` del frontend, todo en verde (re-ejecutado tras el desbloqueo de `001` T050–T053: T009 en verde sin `xfail`)
 - [X] T073 Verificar que `N`, `α`, `ε`, la ventana de materialización, los tramos del mes y el mínimo de períodos sin quiebre viven **sólo** en `backend/rasero/config/pronostico.py` con los valores por defecto de research.md, sin ninguna constante mágica dispersa por el código (Principio V "acotada")
 
 ---
@@ -243,7 +243,7 @@ description: "Task list template for feature implementation"
 
 - **Foundational (Fase 1)**: sin dependencias externas a este módulo salvo que `001` ya esté migrado. **Bloquea** las seis historias de usuario.
 - **Historias de usuario (Fases 2–7)**: todas dependen de Foundational. Dentro de cada una, backend antes que frontend.
-- **Polish (Fase final)**: depende de que las seis historias estén completas (salvo T014).
+- **Polish (Fase final)**: depende de que las seis historias estén completas (T014 ya lo está).
 
 ### Dependencias entre historias
 
@@ -256,7 +256,7 @@ El orden **US1 → US2 → US3 → US4 → US5 → US6 está fijado por spec.md 
 
 ### Dependencia externa bloqueante
 
-- **T014** (rama `respaldo_quiebre = 'consulta_no_atendida'`, FR-007) depende de que `001` implemente su **User Story 3** (tareas **T050–T053** de `001/tasks.md`: servicio y endpoint de `consulta_no_atendida` + acción de dos toques en la pantalla de venta). Ninguna otra tarea de `004` la necesita.
+- **T014** (rama `respaldo_quiebre = 'consulta_no_atendida'`, FR-007) — implementada: `001` completó su **User Story 3** (T050–T053). Ninguna otra tarea de `004` la necesitaba.
 
 ### Dentro de cada historia
 
@@ -291,7 +291,7 @@ Task: "Prueba xfail del camino consulta_no_atendida en tests/integracion/test_de
 ### MVP primero (User Story 1 únicamente)
 
 1. Completar Fase 1: Foundational — crítica, bloquea todo lo demás.
-2. Completar Fase 2: User Story 1, con sus pruebas obligatorias en verde (T009 queda `xfail`).
+2. Completar Fase 2: User Story 1, con sus pruebas obligatorias en verde.
 3. **Detenerse y validar**: ejecutar los escenarios 1, 2, 4 y 12 de `quickstart.md`.
 4. Demostrar: serie observada intacta, serie corregida por quiebre `>=` observada y explicable, por método base.
 
@@ -305,7 +305,7 @@ Task: "Prueba xfail del camino consulta_no_atendida en tests/integracion/test_de
 6. + US5 (neutralización de promoción, parcial) → probar de forma independiente (escenario 8).
 7. + US6 (sustitutos) → probar de forma independiente (escenario 6).
 8. Fase final: `quickstart.md` completo, auditoría de tokens, `DESIGN.md` actualizado, suite completa en verde.
-9. **Cuando `001` implemente su User Story 3**: quitar el `xfail` de T009, completar T014, y volver a correr T072.
+9. **`001` implementó su User Story 3**: se quitó el `xfail` de T009, se completó T014 y se re-ejecutó T072 — todo en verde.
 
 ### Estrategia de equipo en paralelo
 
@@ -332,16 +332,14 @@ Con más de una persona disponible:
 
 ---
 
-## Bloqueado por 001
+## Bloqueado por 001 — RESUELTO
 
-Tareas que **no se pueden ejecutar todavía** porque dependen de `001-core-ventas-inventario` User Story 3 (`consulta_no_atendida`), cuyas tareas **T050–T053 de `001/tasks.md` están sin implementar**:
+`001-core-ventas-inventario` implementó su User Story 3 (`consulta_no_atendida`, T050–T053). Con eso:
 
-- **T014** — Rama `respaldo_quiebre = 'consulta_no_atendida'` en `backend/rasero/servicios/demanda.py` (FR-007): usar el conteo real de consultas no atendidas y `saldo_en_el_instante` como evidencia directa de la magnitud de la demanda latente.
+- **T014** — implementada: rama `respaldo_quiebre = 'consulta_no_atendida'` en `backend/rasero/servicios/demanda.py`, paso (1c) de `reconstruir_serie`.
+- **T009** — el marcador `@pytest.mark.xfail(strict=True)` se retiró; la prueba está en verde.
+- **T072** — se re-ejecutó tras el desbloqueo: suite completa en verde.
 
-Tarea relacionada que **sí se ejecuta ahora**, como tripwire, y se **activa** al desbloquearse:
-
-- **T009** — Prueba de integración del camino `consulta_no_atendida`, escrita ya y marcada `@pytest.mark.xfail(strict=True)`. Cuando `001` implemente T050–T053: quitar el marcador `xfail`, completar T014, y re-ejecutar T072.
-
-Ninguna otra tarea de `004` está bloqueada. US1 (por método base), US2, US3, US4, US6 y la parte de gancho de US5 son todas implementables ya (plan.md, "Estado de implementación por historia").
+Ninguna tarea de `004` queda bloqueada.
 
 **Nota de secuencia (no bloqueo por `001`)**: la parte de T026/T022 que exige que `generar_pronostico` responda `409` para un producto sólo sintético se verifica en **User Story 3** (T036/T037), donde se crea esa función. US2 entregó el mecanismo (`es_producto_solo_sintetico` + guarda `es_sintetico = FALSE` en el upsert de producción) y la prueba de aislamiento de `GET /demanda`, que sí es medible ahora.

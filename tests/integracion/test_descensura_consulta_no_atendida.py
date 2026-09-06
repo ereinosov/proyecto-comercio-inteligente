@@ -3,18 +3,13 @@ de `consulta_no_atendida` (de 001) para el intervalo de quiebre de un producto, 
 debe apoyarse en ese conteo como evidencia directa de la magnitud de la demanda latente y marcar
 `respaldo_quiebre = 'consulta_no_atendida'`, en vez del método base.
 
-⛔ BLOQUEADA por 001: su User Story 3 (`consulta_no_atendida`, tareas T050-T053 de 001/tasks.md)
-NO está implementada, y T014 de 004 —la rama de servicio que consumiría ese dato— tampoco. Esta
-prueba queda ESCRITA y marcada `xfail(strict=True)`: hoy falla (la corrección se hace por método
-base), y cuando 001 desbloquee FR-007 y se implemente T014, empezará a pasar — momento en que
-`strict=True` la marcará como XPASS y obligará a quitar este marcador. Ver tasks.md, sección
-"Bloqueado por 001".
+001 implementó su User Story 3 (`consulta_no_atendida`, T050-T053) y 004 implementó T014 (rama
+de evidencia real, paso (1c) de `reconstruir_serie`). El `xfail` se retiró: la prueba está en
+verde.
 """
 
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
-
-import pytest
 
 from rasero.persistencia.modelos import ConsultaNoAtendida
 from rasero.persistencia.movimientos import registrar_movimiento
@@ -30,10 +25,6 @@ def _en(dias_atras: int, horas: int = 0) -> datetime:
     return _BASE - timedelta(days=dias_atras) + timedelta(hours=horas)
 
 
-@pytest.mark.xfail(
-    reason="001 User Story 3 / consulta_no_atendida sin implementar (T050-T053); T014 de 004 bloqueada",
-    strict=True,
-)
 def test_intervalo_de_quiebre_con_consultas_no_atendidas_usa_ese_conteo_como_evidencia(
     sesion,
 ):

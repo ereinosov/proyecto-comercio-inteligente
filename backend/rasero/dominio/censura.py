@@ -16,10 +16,12 @@ Método fijado por `/speckit-clarify` (FR-009), en dos niveles:
       valor: si el producto está en censura total, no hay base que complementar y sigue en censura
       total.
 
-El camino de EVIDENCIA REAL de `consulta_no_atendida` (FR-007) está BLOQUEADO por 001 (su User
-Story 3 / tareas T050-T053 sin implementar): mientras tanto todo período de quiebre se descensura
-por el método base y se marca `respaldo_quiebre = 'metodo_base'` (menor confianza que uno
-respaldado por consultas no atendidas). Ver `servicios/demanda.py` y tasks.md, "Bloqueado por 001".
+El camino de EVIDENCIA REAL de `consulta_no_atendida` (FR-007) ya está disponible: 001 implementó
+su User Story 3 (T050-T053). La rama vive en `servicios/demanda.py`, paso (1c) de
+`reconstruir_serie` — necesita la base de datos (contar consultas por día), así que no está aquí,
+en las funciones puras. Un período de quiebre sin consultas registradas sigue descensurándose por
+el método base y marcándose `respaldo_quiebre = 'metodo_base'` (menor confianza que uno respaldado
+por consultas no atendidas).
 """
 
 from dataclasses import dataclass
@@ -33,7 +35,7 @@ ESTADO_CENSURA_TOTAL = "no_estimable_censura_total"
 # Valores de `demanda_corregida.respaldo_quiebre`.
 RESPALDO_NO_APLICA = "no_aplica"
 RESPALDO_METODO_BASE = "metodo_base"
-RESPALDO_CONSULTA_NO_ATENDIDA = "consulta_no_atendida"  # sólo cuando 001 desbloquee FR-007
+RESPALDO_CONSULTA_NO_ATENDIDA = "consulta_no_atendida"  # evidencia real (FR-007), paso (1c) de demanda.py
 
 
 @dataclass(frozen=True)

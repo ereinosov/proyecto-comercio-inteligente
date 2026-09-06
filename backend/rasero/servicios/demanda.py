@@ -38,6 +38,8 @@ from rasero.config.pronostico import (
     VENTANA_METODO_BASE_DIAS,
 )
 from rasero.dominio.censura import (
+    ESTADO_OK,
+    RESPALDO_CONSULTA_NO_ATENDIDA,
     PeriodoCorregido,
     PeriodoObservado,
     ajuste_cruzado,
@@ -57,6 +59,7 @@ from rasero.dominio.serie_demanda import (
 )
 from rasero.errores import RecursoNoEncontrado
 from rasero.persistencia.modelos import (
+    ConsultaNoAtendida,
     DemandaCorregida,
     DemandaObservada,
     MovimientoInventario,
@@ -232,6 +235,38 @@ def _renglones_de_la_ventana(
     return por_producto
 
 
+def _consultas_no_atendidas_por_dia(
+    sesion: Session,
+    *,
+    id_sucursal: int,
+    filtro_productos: set[int] | None,
+    inicio_utc: datetime,
+    fin_utc: datetime,
+    zona_horaria: str,
+) -> dict[int, dict[date, int]]:
+    """Consulta: número de `consulta_no_atendida` (entidad de 001) por producto y día local de la
+    ventana. Una sola consulta, independiente del número de productos. Es la evidencia real de
+    FR-007: cada consulta registrada durante un quiebre es demanda que llegó y no se atendió.
+    """
+    consulta = (
+        select(ConsultaNoAtendida.id_producto, ConsultaNoAtendida.instante)
+        .where(
+            ConsultaNoAtendida.id_sucursal == id_sucursal,
+            ConsultaNoAtendida.instante >= inicio_utc,
+            ConsultaNoAtendida.instante < fin_utc,
+        )
+    )
+    if filtro_productos is not None:
+        consulta = consulta.where(ConsultaNoAtendida.id_producto.in_(filtro_productos))
+
+    por_producto: dict[int, dict[date, int]] = {}
+    for pid, instante in sesion.execute(consulta).all():
+        dia = periodo_local(instante, zona_horaria)
+        por_producto.setdefault(pid, {}).setdefault(dia, 0)
+        por_producto[pid][dia] += 1
+    return por_producto
+
+
 def _precio_referencia(
     sesion: Session, *, id_sucursal: int, productos: set[int]
 ) -> dict[int, Decimal]:
@@ -346,6 +381,14 @@ def reconstruir_serie(
         inicio_utc=inicio_utc,
         fin_utc=fin_utc,
     )
+    consultas_no_atendidas = _consultas_no_atendidas_por_dia(
+        sesion,
+        id_sucursal=id_sucursal,
+        filtro_productos=filtro_productos,
+        inicio_utc=inicio_utc,
+        fin_utc=fin_utc,
+        zona_horaria=zona_horaria,
+    )
 
     productos_con_datos = sorted(set(movimientos) | set(renglones) | (objetivo_conocido or set()))
     if objetivo_conocido is not None:
@@ -435,6 +478,25 @@ def reconstruir_serie(
             valor_tras_quiebre = (base.valor + ajuste) if base.valor is not None else None
             correccion_quiebre = base.correccion_quiebre + ajuste
 
+            # (1c) EVIDENCIA REAL — `consulta_no_atendida` de 001 (FR-007). El conteo de consultas
+            # no atendidas registradas durante el quiebre es evidencia DIRECTA de la magnitud de
+            # la demanda latente: cada consulta es un cliente que pidió el producto y no se lo
+            # pudo vender. Ese día sustituye al método base (mayor confianza) y, si el método base
+            # no era estimable por falta de historia previa, la evidencia lo rescata de la censura
+            # total. Ver 001 User Story 3 (T050-T053) y dominio/censura.py.
+            respaldo_efectivo = base.respaldo_quiebre
+            estado_efectivo = base.estado
+            censura_efectiva = base.censura_total
+            if obs.dias_en_quiebre > 0:
+                n_consultas = consultas_no_atendidas.get(pid, {}).get(dia, 0)
+                if n_consultas > 0:
+                    latente = obs.cantidad + Decimal(n_consultas)
+                    valor_tras_quiebre = max(latente + ajuste, obs.cantidad)
+                    correccion_quiebre = valor_tras_quiebre - obs.cantidad
+                    respaldo_efectivo = RESPALDO_CONSULTA_NO_ATENDIDA
+                    estado_efectivo = ESTADO_OK
+                    censura_efectiva = False
+
             # (2) Precio — normalización al precio de referencia.
             correccion_precio = Decimal(0)
             elasticidad_usada: Decimal | None = None
@@ -475,7 +537,7 @@ def reconstruir_serie(
                         break
 
             valor_final = valor_tras_precio
-            censura_total = base.censura_total
+            censura_total = censura_efectiva
 
             filas_observada.append(
                 {
@@ -497,7 +559,7 @@ def reconstruir_serie(
                     "valor_observado": base.valor_observado,
                     "valor": valor_final if valor_final is not None else Decimal(0),
                     "correccion_quiebre": correccion_quiebre,
-                    "respaldo_quiebre": base.respaldo_quiebre,
+                    "respaldo_quiebre": respaldo_efectivo,
                     "ajuste_cruzado_sustituto": ajuste,
                     "correccion_precio": correccion_precio,
                     "elasticidad_usada": elasticidad_usada,
@@ -513,10 +575,10 @@ def reconstruir_serie(
                     "periodo": dia.isoformat(),
                     "demanda_observada": _fmt0(obs.cantidad),
                     "demanda_corregida": _fmt4(valor_final),
-                    "estado": base.estado,
+                    "estado": estado_efectivo,
                     "dias_en_quiebre": f"{obs.dias_en_quiebre:.3f}",
                     "correccion_quiebre": _fmt4(correccion_quiebre),
-                    "respaldo_quiebre": base.respaldo_quiebre,
+                    "respaldo_quiebre": respaldo_efectivo,
                     "ajuste_cruzado_sustituto": _fmt4(ajuste),
                     "precio_vigente_periodo": _fmt4(precio_periodo),
                     "correccion_precio": _fmt4(correccion_precio),
@@ -533,13 +595,11 @@ def reconstruir_serie(
 
 
 # --------------------------------------------------------------------------------------------
-# T014 — BLOQUEADA por 001 (User Story 3 / consulta_no_atendida, tareas T050-T053 sin implementar)
+# T014 — EVIDENCIA REAL de `consulta_no_atendida` (FR-007) — IMPLEMENTADA
 # --------------------------------------------------------------------------------------------
-# Cuando 001 implemente su User Story 3, aquí (dentro de la Fase 1, antes del método base) va la
-# rama de EVIDENCIA REAL (FR-007): para cada intervalo de quiebre con registros de
-# `consulta_no_atendida` de 001 del producto y sucursal, usar `saldo_en_el_instante` y el CONTEO
-# de consultas como evidencia directa de la magnitud de la demanda latente en vez del método
-# base, y marcar `respaldo_quiebre = 'consulta_no_atendida'`. La prueba
-# `tests/integracion/test_descensura_consulta_no_atendida.py` (T009) queda escrita y marcada
-# `xfail(strict=True)`: al implementar esta rama, quitar ese marcador. Ver tasks.md, "Bloqueado
-# por 001".
+# 001 implementó su User Story 3 (`consulta_no_atendida`, T050-T053). La rama de evidencia real
+# vive ahora en `reconstruir_serie`, paso (1c), justo después del método base y el ajuste
+# cruzado: para cada día en quiebre con registros de `consulta_no_atendida` del producto y la
+# sucursal, el CONTEO de consultas se usa como evidencia directa de la magnitud de la demanda
+# latente y `respaldo_quiebre` pasa a `'consulta_no_atendida'`. La prueba
+# `tests/integracion/test_descensura_consulta_no_atendida.py` (T009) ya no lleva `xfail`.
