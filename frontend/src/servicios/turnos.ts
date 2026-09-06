@@ -27,12 +27,6 @@ export function cerrarTurno(idTurno: number): Promise<Turno> {
   return clienteHttp.post<Turno>(`/turnos/${idTurno}/cierre`, {});
 }
 
-export interface Operador {
-  id_operador: number;
-  nombre: string;
-  es_encargado: boolean;
-}
-
-export function listarOperadores(): Promise<Operador[]> {
-  return clienteHttp.get<Operador[]>("/operadores");
-}
+// `listarOperadores` vive en `servicios/operadores.ts`; se re-exporta aquí por compatibilidad
+// con quien ya lo importaba desde este módulo.
+export { listarOperadores, type Operador } from "./operadores";

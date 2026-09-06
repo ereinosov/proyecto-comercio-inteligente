@@ -50,6 +50,33 @@ components:
 <!--
 INFORME DE IMPACTO — enmienda del sistema de diseño
 ==================================================
+Cambio de versión: 1.2.1 → 1.3.0 (MENOR — reescribe una regla existente sin
+eliminarla; ninguna otra regla cambia).
+
+Regla modificada: La Regla de la Identidad del Comercio. Antes: cabecera con
+fondo Tinta y el nombre de sucursal (Source Serif 4) como elemento de mayor
+peso. Ahora: cabecera de fondo blanco con el logo a color del comercio como
+elemento principal; nombre de sucursal + caja como contexto secundario en Tinta
+Suave debajo, con "Última apertura" en formato relativo legible. Motivo: el logo
+a color de la marca no está diseñado para fondo oscuro; el bloque Tinta lo
+apagaba. El wordmark de Rasero sigue arriba y fuera de la tarjeta; el origen del
+logo se fija por VITE_LOGO_COMERCIO (asset de demostración por defecto), nunca un
+literal de marca en JSX ni en tabla.
+
+Reglas eliminadas: ninguna. Reglas nuevas: ninguna. Secciones nuevas: ninguna.
+
+Sincronización con la constitución: la enmienda v2.2.8 de constitution.md
+registra este mismo cambio en su historial con la razón "reescribe La Regla de la
+Identidad del Comercio: cabecera de apertura con logo a color sobre fondo blanco
+en vez de bloque Tinta". No toca ningún principio ni la tabla de Propiedad de
+Datos: la única sincronización es DESIGN.md ↔ ese historial.
+
+(1.2.1 — PARCHE previo del mismo día: aclaración de "Identificar cliente
+(Operación)"; ver historial de versiones al pie.)
+
+--><!--
+INFORME DE IMPACTO — enmienda del sistema de diseño (histórico)
+==============================================================
 Cambio de versión: 1.1.0 → 1.2.0 (MENOR — amplía una guía existente con reglas
 nuevas; no elimina ni redefine ninguna regla previa, mismo criterio de versionado
 que la constitución).
@@ -400,21 +427,25 @@ que cada pantalla deba alcanzar — Clientes.tsx es la primera superficie del si
 en cero apariciones, y es el comportamiento correcto, no una omisión.
 
 **La Regla de la Identidad del Comercio.** La pantalla de apertura de turno invierte la jerarquía
-habitual de un login. El elemento de mayor peso visual de la tarjeta es el **nombre de la
-sucursal** —dato real de `sucursal.nombre`, nunca un literal en JSX— compuesto en Source Serif 4
-sobre un bloque de cabecera con fondo Tinta (#1B2621) y texto en Superficie Base. El wordmark de
-Rasero deja de presidir la tarjeta: baja a marca de sistema pequeña y discreta **encima** de la
-tarjeta, nunca dentro de ella. Bajo el nombre de sucursal va sólo el contexto real disponible: el
-nombre de la caja y la zona horaria (`sucursal.zona_horaria`). Si existe un turno anterior en esa
-sucursal, se muestra "Última apertura: [fecha/hora relativa]" leída del `instante_apertura` del
-turno más reciente de esa sucursal; si no hay ninguno, esa línea se omite —nunca un placeholder
-falso. Esta regla **no** crea ninguna entidad `Negocio` ni `Empresa`: el nombre de sucursal es el
-único dato de negocio real que la pantalla muestra. Cualquier otro texto de marca del comercio que
-aparezca en el frontend (p. ej. "Despensa Los Ríos" como pie de datos de demostración) DEBE venir
-de una variable de entorno de configuración del frontend, nunca de un literal en JSX ni de una
-tabla. **Razón**: quien abre turno no necesita que le recuerden qué software usa —lo abre veinte
-veces por semana—; necesita confirmar de un vistazo *en qué sucursal y caja está entrando*, porque
-ese es el dato que ata todas sus ventas del turno. La forma dice cuál es la decisión.
+habitual de un login. La tarjeta abre con una **cabecera de marca del comercio**: fondo blanco
+(Superficie Alta —el logo a color del comercio no está diseñado para fondo oscuro; un bloque
+Tinta lo apaga) y el **logo a color del comercio, centrado, como elemento principal**
+(ancho ≈ 240–280px). El logo se toma de `VITE_LOGO_COMERCIO`; si no está definida, del asset de
+demostración incluido (`despensa-logo-color-800w.png`) —nunca de una tabla ni de una regla de
+negocio codificada. El wordmark de Rasero **no** preside la tarjeta: baja a marca de sistema
+pequeña y discreta **encima** de la tarjeta, fuera de ella. Debajo del logo, con al menos 12px de
+aire, va el contexto real, más pequeño y en Tinta Suave: `{sucursal.nombre} · {caja}` —dato real
+de `sucursal.nombre`, nunca un literal en JSX—. Si existe un turno anterior en esa sucursal, una
+línea más —"Última apertura: [fecha/hora relativa, p. ej. 'hoy, 07:58' o 'ayer, 18:20']" leída del
+`instante_apertura` del turno más reciente de esa sucursal— también en Tinta Suave; si no hay
+ninguno, esa línea se omite por completo, nunca un placeholder falso. Esta regla **no** crea
+ninguna entidad `Negocio` ni `Empresa`. Cualquier texto de marca del comercio que aparezca en el
+frontend (p. ej. "Despensa Los Ríos" como pie de datos de demostración) DEBE venir de una variable
+de entorno del frontend, nunca de un literal en JSX ni de una tabla. **Razón**: quien abre turno
+no necesita que le recuerden qué software usa —lo abre veinte veces por semana—; el logo del
+comercio ancla la pantalla en "esta es tu tienda" y, debajo, el nombre de sucursal y caja le
+confirman de un vistazo *en qué sucursal y caja está entrando*, que es el dato que ata todas sus
+ventas del turno.
 
 **La Regla del Hueco que Enseña.** Todo estado vacío —ninguna selección hecha, ninguna fila que
 mostrar— se compone de tres partes y nunca de una sola línea de texto plano: (1) un ícono propio
@@ -546,5 +577,15 @@ una aclaración sin cambio de significado.
   Administrable, que nombra "la edición de Cliente"); el panel flotante conserva sólo la
   búsqueda. No cambia ninguna regla; reconcilia dos partes del mismo documento al construir la
   User Story 4 de `002` (identificador de cliente por cédula/RUC).
+- **1.3.0** (2026-09-06) — MENOR: **La Regla de la Identidad del Comercio** se reescribe. La
+  cabecera de la pantalla de apertura pasa de bloque Tinta con el nombre de sucursal como
+  elemento de mayor peso, a **cabecera de fondo blanco con el logo a color del comercio como
+  elemento principal** (el logo a color no está pensado para fondo oscuro); el nombre de
+  sucursal y la caja bajan a contexto secundario en Tinta Suave debajo del logo, con la línea
+  "Última apertura: …" en formato relativo legible ("hoy, 07:58"). El wordmark de Rasero sigue
+  arriba y fuera de la tarjeta. El origen del logo se fija por `VITE_LOGO_COMERCIO` (asset de
+  demostración por defecto); ningún dato de marca en literal de JSX ni en tabla. No elimina
+  ninguna regla; ninguna otra regla cambia. Sincronizada con la enmienda **v2.2.8** de la
+  constitución.
 
-**Versión**: 1.2.1 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-06
+**Versión**: 1.3.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-06

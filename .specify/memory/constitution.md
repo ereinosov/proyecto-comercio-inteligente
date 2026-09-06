@@ -1,6 +1,40 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.2.7 → 2.2.8
+Tipo de cambio: MENOR — reescribe una regla del sistema de diseño. Como v2.2.7,
+la enmienda vive enteramente en `DESIGN.md`; no toca ningún principio, ni la
+tabla de Propiedad de Datos, ni ningún artefacto de funcionalidad
+(spec.md / plan.md / data-model.md / contracts).
+
+Motivo: reescribe La Regla de la Identidad del Comercio — la cabecera de la
+pantalla de apertura de turno pasa de un bloque con fondo Tinta y el nombre de
+sucursal como elemento de mayor peso, a una cabecera de fondo blanco con el logo
+a color del comercio como elemento principal (el logo a color no está diseñado
+para fondo oscuro), con el nombre de sucursal y la caja como contexto secundario
+debajo. Detectado al rediseñar `AperturaTurno.tsx` con captura del usuario que
+mostraba el logo apagado sobre el bloque Tinta.
+
+Principios modificados: ninguno.
+Secciones añadidas: ninguna.
+Secciones eliminadas: ninguna.
+
+Regla reescrita en `DESIGN.md` v1.3.0: La Regla de la Identidad del Comercio. No
+se elimina ni se añade ninguna otra regla. `DESIGN.md` v1.2.1 (PARCHE del mismo
+día) aclaró además "Identificar cliente (Operación)" — alta/edición de cliente
+usan `ModalAdministrable` — sin cambiar ninguna regla.
+
+Puerta de sincronización de enmiendas (v2.2.0): esta enmienda no cita versiones
+en artefactos de funcionalidad porque no cambia ninguna regla que ellos citen;
+la única sincronización es `DESIGN.md` ↔ este historial, ya hecha en el mismo
+cambio.
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.2.6 → 2.2.7
 Tipo de cambio: MENOR — amplía el sistema de diseño con reglas nuevas. No toca
 ningún principio, ni la tabla de Propiedad de Datos, ni ningún artefacto de
@@ -177,6 +211,15 @@ Historial de versiones:
     todas aditivas: Identidad del Comercio, Hueco que Enseña, Pulso No el Brillo,
     Ícono por Categoría, Modal Administrable, Filtro y la Página, Grupo de
     Navegación). No toca ningún principio ni la tabla de Propiedad de Datos.
+  - 2.2.8 (2026-09-06) — reescribe La Regla de la Identidad del Comercio: la
+    cabecera de la pantalla de apertura de turno pasa de bloque con fondo Tinta y
+    nombre de sucursal como elemento de mayor peso, a cabecera de fondo blanco con
+    el logo a color del comercio como elemento principal (el logo a color no está
+    diseñado para fondo oscuro), con nombre de sucursal y caja como contexto
+    secundario. Registrada en `DESIGN.md` v1.3.0. No elimina ni añade ninguna
+    otra regla; no toca ningún principio ni la tabla de Propiedad de Datos.
+    (`DESIGN.md` v1.2.1, PARCHE del mismo día, aclaró "Identificar cliente
+    (Operación)" sin cambio de regla.)
 
 Artefactos de funcionalidad afectados: las citas que reclaman una versión
 vigente de la constitución ("constitución vX.Y.Z", "verificación contra la
@@ -646,4 +689,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.2.7 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-06
+**Versión**: 2.2.8 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-06

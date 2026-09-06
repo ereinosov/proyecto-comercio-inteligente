@@ -1,6 +1,10 @@
-/* Registro de Operación: sin tarjetas, radio 2px, cero sombras (DESIGN.md, La Regla del
-   Filo, No la Sombra). Verde Rasero NO aparece aquí — se reserva para la acción de cobro
-   en la pantalla de venta (La Regla de la Sola Voz). */
+/* Registro de Operación: sin tarjetas anidadas, radio 2px, cero sombras (La Regla del Filo, No
+   la Sombra). Verde Rasero NO aparece aquí — se reserva para la acción de cobro de la pantalla
+   de venta (La Regla de la Sola Voz).
+
+   La Regla de la Identidad del Comercio (DESIGN.md v1.3.0): cabecera de marca con fondo blanco
+   y el logo a color como elemento principal; el wordmark de Rasero, pequeño y discreto, ARRIBA
+   de la tarjeta. */
 
 .contenedor {
   min-height: 100vh;
@@ -8,55 +12,56 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 12px;
+  gap: 14px;
   background: var(--color-superficie-base);
   font-family: var(--tipografia-operacion);
 }
 
-/* La Regla de la Identidad del Comercio: el wordmark de Rasero baja a marca de sistema
-   pequeña y discreta ARRIBA de la tarjeta, nunca dentro de ella. */
+/* Wordmark de Rasero: marca de sistema pequeña y discreta, encima de la tarjeta, fuera de ella. */
 .marca {
-  height: 24px;
+  height: 21px;
   width: auto;
   display: block;
-  opacity: 0.8;
+  opacity: 0.7;
 }
 
 .panel {
   width: 100%;
-  max-width: 360px;
+  max-width: 380px;
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
   overflow: hidden;
 }
 
-/* Bloque de cabecera: el nombre de la sucursal como elemento de mayor peso visual de la
-   tarjeta, fondo Tinta, texto en Superficie Base, Source Serif 4. */
+/* Cabecera de marca del comercio: fondo blanco (el logo a color no está pensado para fondo
+   oscuro), logo centrado como elemento principal. */
 .cabecera {
-  background: var(--color-tinta);
-  color: var(--color-superficie-base);
-  padding: 20px 24px;
+  background: var(--color-superficie-alta);
+  border-bottom: 1px solid var(--color-borde);
+  padding: 28px 24px 20px;
+  text-align: center;
 }
 
-.nombreSucursal {
-  margin: 0;
-  font-family: var(--tipografia-analisis);
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.15;
+.logoComercio {
+  display: block;
+  width: 260px;
+  max-width: 80%;
+  height: auto;
+  margin: 0 auto;
 }
 
+/* Nombre de sucursal + caja: más pequeño, Tinta Suave, con aire respecto al logo (>= 12px). */
 .contexto {
-  margin: 6px 0 0;
-  font-size: 12px;
-  color: var(--color-borde);
+  margin: 16px 0 0;
+  font-size: 13px;
+  color: var(--color-tinta-suave);
 }
 
 .ultimaApertura {
   margin: 4px 0 0;
   font-size: 12px;
-  color: var(--color-borde);
+  color: var(--color-tinta-suave);
 }
 
 .pieComercio {
@@ -65,15 +70,20 @@
   color: var(--color-tinta-suave);
 }
 
-.primerCampo {
-  margin-top: 20px;
+/* Bloques del formulario con más respiro entre sí: 20px, no el espaciado ajustado anterior. */
+.campos {
+  padding: 24px 24px 4px;
 }
 
 .campo {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin: 0 24px 16px;
+  gap: 7px;
+  margin-bottom: 20px;
+}
+
+.campo:last-child {
+  margin-bottom: 0;
 }
 
 .etiqueta {
@@ -81,38 +91,33 @@
   color: var(--color-tinta-suave);
 }
 
-.select,
 .input {
   font-family: var(--tipografia-operacion);
   font-size: 15px;
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
-  background: var(--color-superficie-base);
+  background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  padding: 10px 12px;
+  padding: 12px;
+  letter-spacing: 0.3em;
+  text-align: center;
 }
 
-.select:focus-visible,
 .input:focus-visible {
   outline: 2px solid var(--color-tinta);
   outline-offset: 1px;
 }
 
-.input {
-  letter-spacing: 0.3em;
-  text-align: center;
-}
-
 .error {
   font-size: 13px;
   color: var(--color-critico);
-  margin: -8px 24px 16px;
+  margin: 12px 24px 0;
 }
 
 .boton {
   width: calc(100% - 48px);
-  margin: 4px 24px 24px;
+  margin: 20px 24px 24px;
   font-family: var(--tipografia-operacion);
   font-size: 15px;
   font-weight: 600;
