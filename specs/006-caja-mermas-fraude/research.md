@@ -41,7 +41,7 @@ exponencial de `004` y la prueba z de `005`.
 ## 2. Propiedad de datos: exactamente tres entidades, **sin enmienda constitucional**
 
 **Decisión**: `data-model.md` define únicamente `arqueo`, `merma` y `anomalia_caja` — las tres que
-la tabla de "Propiedad de Datos y Nomenclatura" de la constitución (v2.2.5) ya asigna a
+la tabla de "Propiedad de Datos y Nomenclatura" de la constitución (v2.2.6) ya asigna a
 `006-caja-mermas-fraude` desde la ratificación. **No se abre ninguna enmienda.**
 
 **Lo que la revisión de la entrada de `006` encontró** (misma revisión que en `003`/`004`/`005`

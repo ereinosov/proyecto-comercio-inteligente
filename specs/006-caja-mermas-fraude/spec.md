@@ -513,7 +513,7 @@ entidades de este módulo. No debe quedar oculta en `plan.md`.
 **Verificaciones exigidas por el encargo — resueltas antes de escribir los FR**:
 
 1. **Campos y tablas de `001` que ya existen para esto** (verificado contra
-   `001/data-model.md`, constitución v2.2.5): `existencia` (agregación derivada, sin restricción de
+   `001/data-model.md`, constitución v2.2.6): `existencia` (agregación derivada, sin restricción de
    no negatividad), `movimiento_inventario` (con `tipo` ∈ {`entrada_compra`, `salida_venta`,
    `entrada_anulacion`, `salida_traspaso`, `entrada_traspaso`, `ajuste_conteo`} y `cantidad` con
    signo), `venta` (con `id_turno`, del que se derivan operador, sucursal y caja) y `renglon_venta`
@@ -570,7 +570,7 @@ de FR-019; `plan.md` decide si el indicador excluye los períodos con promoción
 `005` exista (refinamiento, no bloqueo — hasta entonces todos los períodos se tratan sin promoción,
 igual que hace `004`).
 
-**Propiedad de datos — estado frente a la constitución (v2.2.5)**: la tabla de Propiedad de Datos
+**Propiedad de datos — estado frente a la constitución (v2.2.6)**: la tabla de Propiedad de Datos
 lista para `006-caja-mermas-fraude` tres entidades: `arqueo`, `merma`, `anomalia_caja`. **Este spec
 usa exactamente esas tres y ninguna más.** A diferencia de `003` (v2.2.3, `costo_producto` →
 `sugerencia_precio`), `004` (v2.2.4, + `sustitucion_producto`) y `005` (v2.2.5, de 3 a 6 entidades),
@@ -684,7 +684,8 @@ modela como campos de `arqueo` y se difiere el desglose por medio de pago a cuan
 - **Datos personales**: `006` no captura ningún dato de cliente. Solo consulta el `id_operador` y su
   condición de encargado; nunca el PIN ni el hash del PIN. Los rastros de este módulo no contienen
   datos de pago completos (constitución, Principio IV).
-- **Constitución vigente citada**: v2.2.5. Este módulo **no motivó ninguna enmienda**: sus tres
+- **Constitución vigente citada**: v2.2.6. Este módulo **no motivó ninguna enmienda** (v2.2.6, sobre
+  la entrada de `007-pagos-seguridad`, es posterior y sin efecto sobre este módulo): sus tres
   entidades (`arqueo`, `merma`, `anomalia_caja`) coinciden con la tabla de Propiedad de Datos desde
   la ratificación. El único punto que podría motivar una (una cuarta entidad para materializar los
   indicadores por operador) se decide en `data-model.md` y se ha señalado explícitamente en

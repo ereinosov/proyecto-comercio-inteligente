@@ -66,7 +66,7 @@ cómputo o almacenamiento respecto a la ya prevista para `001`.
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.2.5**.
+Verificación explícita contra la constitución **v2.2.6**.
 
 ### Principios
 

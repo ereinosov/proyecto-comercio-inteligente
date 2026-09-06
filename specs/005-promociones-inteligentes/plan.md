@@ -116,8 +116,9 @@ sucursal, dos sucursales en el alcance de examen (cifra de entrega, no del model
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.2.5** (vigente) — versión que esta misma
-funcionalidad motivó (enmienda v2.2.5, ver "Nota sobre la enmienda v2.2.5" abajo).
+Verificación explícita contra la constitución **v2.2.6** (vigente). La enmienda que esta misma
+funcionalidad motivó fue la **v2.2.5** (ver "Nota sobre la enmienda v2.2.5" abajo); v2.2.6 es una
+corrección posterior sobre la entrada de `007-pagos-seguridad`, sin efecto sobre este módulo.
 
 ### Principios
 

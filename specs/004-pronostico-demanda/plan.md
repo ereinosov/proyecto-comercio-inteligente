@@ -87,10 +87,10 @@ ventana (research.md #3).
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.2.5** (vigente). La enmienda que esta misma
-funcionalidad motivó fue la v2.2.4 (ver "Nota sobre la enmienda v2.2.4" abajo); v2.2.5 es una
-corrección posterior sobre la entrada de `005-promociones-inteligentes`, sin efecto sobre este
-módulo.
+Verificación explícita contra la constitución **v2.2.6** (vigente). La enmienda que esta misma
+funcionalidad motivó fue la v2.2.4 (ver "Nota sobre la enmienda v2.2.4" abajo); v2.2.5 (sobre
+`005-promociones-inteligentes`) y v2.2.6 (sobre `007-pagos-seguridad`) son correcciones posteriores
+sobre entradas de otros módulos, sin efecto sobre este módulo.
 
 ### Principios
 

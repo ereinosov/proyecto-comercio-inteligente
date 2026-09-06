@@ -1,19 +1,18 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
-Cambio de versión: 2.2.4 → 2.2.5
-Tipo de cambio: PARCHE — amplía la entrada de `005-promociones-inteligentes`
-en la tabla de Propiedad de Datos de 3 a 6 entidades, detectado al escribir
-su `spec.md` en `/speckit-specify`. Mismo tipo de corrección que v2.1.1 y
-v2.1.2 sobre 001, v2.2.3 sobre 003 y v2.2.4 sobre 004: la lista original de
-005 era un supuesto anterior a la especificación real del módulo, y esta
-enmienda la completa con lo que su spec realmente exige. No cambia ningún
-principio.
+Cambio de versión: 2.2.5 → 2.2.6
+Tipo de cambio: PARCHE — amplía la entrada de `007-pagos-seguridad` en la
+tabla de Propiedad de Datos de 4 a 5 entidades, detectado al escribir su
+`research.md` en `/speckit-plan` (research.md #1). Mismo tipo de corrección
+que v2.1.1 y v2.1.2 sobre 001, v2.2.3 sobre 003, v2.2.4 sobre 004 y v2.2.5
+sobre 005: la lista original de 007 era un supuesto anterior a la
+especificación real del módulo —se ratificó en v2.0.0 sin que existiera el
+spec de pagos y seguridad— y esta enmienda la completa con lo que su spec
+realmente exige. No cambia ningún principio.
 
-A diferencia de v2.2.4 —que sólo añadió una entidad omitida— y en línea con
-v2.2.3 —que además retiró una entidad mal asignada—, esta enmienda retira dos
-entidades genéricas (`envio_promocional`, `grupo_control`) y añade cinco
-específicas.
+En línea con v2.2.4 —que sólo añadió una entidad omitida—, esta enmienda
+añade una entidad (`token_pago`) y no retira ninguna.
 
 Principios modificados: ninguno.
 Secciones añadidas: ninguna.
@@ -21,59 +20,56 @@ Secciones eliminadas: ninguna.
 
 Revisión de consistencia previa a la enmienda (exigida por la "Puerta de
 propiedad de datos"; el mismo tipo de revisión que en v2.2.3 detectó el
-error de `costo_producto` en 003): se contrastó la entrada COMPLETA de
-`005-promociones-inteligentes` —`campania`, `envio_promocional`,
-`grupo_control`— contra la Lectura Crítica n.º 6 ("las promociones son tres
-mecanismos, no uno") y contra las fronteras declaradas en la propia sección.
-Resultado:
-  - `envio_promocional`, entidad genérica única de "envío de promoción",
-    contradice de frente la Lectura Crítica n.º 6, que PROHÍBE modelar las
-    promociones como un mecanismo único. Se retira y se sustituye por una
-    entidad por mecanismo: `cupon` (fecha fija / cumpleaños) y
-    `oferta_recompra` (empuje por patrón de recompra, con reserva de precio).
-    El hecho transversal —que una promoción se redimió en una venta de 001—
-    se modela como `redencion_promocion`, más estrecha y mejor definida que
-    "envío", que consulta `venta` de 001 sin poseerla.
-  - `grupo_control`, la entidad "grupo de control" a secas, es demasiado
-    gruesa para lo que el spec de 005 exige del mecanismo de reactivación:
-    no captura la semilla de aleatorización, la ventana de medición ni el
-    desenlace de retorno por cliente. Se retira y se precisa en dos:
-    `experimento_reactivacion` (semilla, ventana de medición, tasas de retorno
-    por grupo, incrementalidad, resultado de la prueba de significancia y
-    veredicto) y `asignacion_experimento` (una fila por cliente elegible con
-    su grupo tratamiento/control y su resultado de retorno). El grupo de control sigue siendo OBLIGATORIO para este
-    mecanismo (Lectura Crítica n.º 6); la enmienda no lo debilita, lo modela
-    con la granularidad que la medición de incrementalidad necesita.
-  - `campania` se conserva sin cambios como paraguas de una corrida de
-    promoción de un mecanismo dado.
+error de `costo_producto` en 003 y en v2.2.5 detectó el problema de
+`envio_promocional`/`grupo_control`): se contrastó la entrada COMPLETA de
+`007-pagos-seguridad` —`terminal_pago`, `medio_pago`, `cobertura_pago`,
+`bitacora_auditoria`— contra las cuatro preocupaciones acotadas del encargo
+(tokenización de datos de pago, firmware de terminal, log de actividad de
+pagos, cobertura de medios de pago) y contra la sección "Datos de pago" de
+las Restricciones Técnicas. Resultado:
+  - Tres de las cuatro preocupaciones caen limpiamente en las entidades ya
+    listadas: firmware de terminal → `terminal_pago`; cobertura de medios →
+    `medio_pago` + `cobertura_pago`; log de actividad → `bitacora_auditoria`.
+  - La cuarta —la persistencia del token de un cobro con tarjeta— NO tiene
+    entidad anticipada. No es el catálogo `medio_pago` (una instancia
+    transaccional no es un catálogo), no es el dispositivo `terminal_pago`
+    (el token pertenece al cobro, no al datáfono), no es la métrica agregada
+    `cobertura_pago`, y NO es un evento de `bitacora_auditoria`: esta última
+    es un rastro de solo anexado, y `token_pago` es el registro autoritativo
+    de la relación venta↔token, con restricción UNIQUE por cobro, requisito
+    de idempotencia y ciclo de purga propio, y es lo que rellena la
+    `referencia_terminal_pago` opaca de 001. Un log de solo anexado no puede
+    ser el sistema de registro de un dato con clave única.
+  - La constitución ya fija la REGLA aplicable ("Datos de pago": los datos
+    completos de tarjeta no se almacenan; se conservan únicamente
+    identificadores y últimos dígitos) pero no la ENTIDAD que la implementa.
+    Esta enmienda añade esa entidad. Mismo patrón que `rol_producto` de 003,
+    `sustitucion_producto` de 004 y `cupon`/`oferta_recompra` de 005:
+    declaración de negocio que el módulo modela en tabla propia con FK, sin
+    alterar el esquema ajeno.
 
 Secciones modificadas:
-  - Propiedad de Datos y Nomenclatura, entrada de `005-promociones-inteligentes`:
-      * Se retiran `envio_promocional` y `grupo_control`.
-      * Se añaden `cupon`, `oferta_recompra`, `experimento_reactivacion`,
-        `asignacion_experimento` y `redencion_promocion`.
-        `005-promociones-inteligentes/spec.md` exige un mecanismo (y su
-        entidad) por tipo de promoción en las User Stories 1–3 y en FR-001
-        a FR-025, más el registro de redención compartido (FR-005, FR-030) y
-        la marca de "promoción activa" derivada de él (FR-031 a FR-034). No
-        estaban en la ratificación original porque esa lista se escribió
-        antes de que existiera el spec de 005. Mismo patrón que `rol_producto`
-        de 003 y `sustitucion_producto` de 004: declaraciones de negocio que
-        NO son atributos de `cliente`/`producto` de 001/002 y que su módulo
-        modela en tablas propias con FK, sin alterar el esquema ajeno.
-    Lista resultante de 005: `campania`, `cupon`, `oferta_recompra`,
-    `experimento_reactivacion`, `asignacion_experimento`, `redencion_promocion`
-    (6 entidades; antes 3).
-  - Fronteras entre funcionalidades adyacentes: la viñeta que separa la
-    detección de fuga (002) de la decisión de reactivación (005) se amplía
-    para nombrar las entidades de los tres mecanismos de 005, aclarar que la
-    "reserva" del empuje por recompra es de precio y no de inventario (005 no
-    escribe contra `existencia` ni `movimiento_inventario` de 001) y fijar
-    que la marca de "promoción activa" que 004 consume es cálculo derivado
-    propiedad de 005.
-  - Pie del documento: "Versión: 2.2.4" → "2.2.5".
+  - Propiedad de Datos y Nomenclatura, entrada de `007-pagos-seguridad`:
+      * Se añade `token_pago`.
+        `007-pagos-seguridad/spec.md` exige (FR-016 a FR-022, User Story 3)
+        que, cuando una `venta` de 001 se cobra con tarjeta, el módulo
+        conserve únicamente {token opaco, últimos cuatro dígitos, marca,
+        tipo, terminal de captura, referencia de la venta, clave de
+        idempotencia} y nunca el PAN, el CVV ni datos de banda/chip. Ese
+        registro no cabe en las otras cuatro entidades (ver revisión de
+        consistencia arriba). No estaba en la ratificación original porque
+        esa lista se escribió antes de que existiera el spec de 007.
+    Lista resultante de 007: `terminal_pago`, `medio_pago`, `cobertura_pago`,
+    `bitacora_auditoria`, `token_pago` (5 entidades; antes 4).
+  - Fronteras entre funcionalidades adyacentes: se añade una viñeta que
+    separa la referencia de terminal de pago que 001 guarda como opaca de la
+    tokenización que 007 posee: `token_pago` CONSULTA `venta` de 001 sin
+    poseerla y RELLENA la `referencia_terminal_pago` opaca de 001 sin alterar
+    el tipo ni la semántica de ese campo en el esquema de 001; el PAN nunca
+    se persiste en ningún módulo.
+  - Pie del documento: "Versión: 2.2.5" → "2.2.6".
 
-Decisiones de alcance vigentes (sin cambio en 2.2.5):
+Decisiones de alcance vigentes (sin cambio en 2.2.6):
   - `sucursal` es entidad de primera clase con cardinalidad no acotada; el
     alcance del examen cubre exactamente dos sucursales (Quevedo Centro y
     Buena Fe, del juego de datos Despensa Los Ríos).
@@ -91,6 +87,12 @@ Decisiones de alcance vigentes (sin cambio en 2.2.5):
     v2.2.3 (`costo_producto` retirado, `sugerencia_precio` añadida).
   - Propiedad de datos de 004-pronostico-demanda: 4 entidades vigentes desde
     v2.2.4 (`sustitucion_producto` añadida).
+  - Propiedad de datos de 005-promociones-inteligentes: 6 entidades vigentes
+    desde v2.2.5 (`envio_promocional` y `grupo_control` retiradas; `cupon`,
+    `oferta_recompra`, `experimento_reactivacion`, `asignacion_experimento` y
+    `redencion_promocion` añadidas).
+  - Propiedad de datos de 007-pagos-seguridad: 5 entidades vigentes desde
+    v2.2.6 (`token_pago` añadida).
   - Puerta de sincronización de enmiendas (v2.2.0).
 
 Historial de versiones:
@@ -120,7 +122,7 @@ Historial de versiones:
     User Story 6, FR-009 b), detectada al escribir `data-model.md` de 004 en
     `/speckit-plan`; nueva viñeta de frontera demanda-observada/pronóstico;
     y corrección del pie del documento, que v2.2.3 dejó en 2.2.2.
-  - 2.2.5 (2026-09-05) — esta enmienda: propiedad de datos de
+  - 2.2.5 (2026-09-05) — propiedad de datos de
     `005-promociones-inteligentes` ampliada de 3 a 6 entidades
     (`envio_promocional` y `grupo_control` retiradas; `cupon`,
     `oferta_recompra`, `experimento_reactivacion`, `asignacion_experimento`
@@ -129,16 +131,26 @@ Historial de versiones:
     experimento— más su registro de redención compartido, detectada al
     escribir `spec.md` de 005 en `/speckit-specify`; ampliación de la viñeta
     de frontera 002/005.
+  - 2.2.6 (2026-09-05) — esta enmienda: propiedad de datos de
+    `007-pagos-seguridad` ampliada de 4 a 5 entidades (`token_pago` añadida)
+    para dar entidad autoritativa a la persistencia del token de un cobro con
+    tarjeta —{token opaco, últimos cuatro dígitos, marca, tipo, terminal de
+    captura, referencia de venta, clave de idempotencia}, nunca el PAN—, que
+    no cabe en `medio_pago`, `terminal_pago`, `cobertura_pago` ni
+    `bitacora_auditoria`; detectada al escribir `research.md` de 007 en
+    `/speckit-plan` (research.md #1); nueva viñeta de frontera
+    001/007 sobre la `referencia_terminal_pago` opaca.
 
 Artefactos de funcionalidad afectados: las citas que reclaman una versión
 vigente de la constitución ("constitución vX.Y.Z", "verificación contra la
-constitución vX.Y.Z") en spec.md, plan.md y data-model.md de 001, 002, 003 y
-004 se sincronizan a v2.2.5 en este mismo cambio (puerta de sincronización de
-enmiendas, v2.2.0). `005-promociones-inteligentes` nace citando v2.2.5. Las
-citas históricas —"la enmienda v2.2.3 que añadió `sugerencia_precio`",
-"`sustitucion_producto` añadida en v2.2.4", "tras la enmienda v2.2.3/v2.2.4"—
-describen qué enmienda introdujo qué regla y NO se barren (excepción explícita
-de la puerta).
+constitución vX.Y.Z") en spec.md, plan.md y data-model.md de 001, 002, 003,
+004, 005 y 006 se sincronizan a v2.2.6 en este mismo cambio (puerta de
+sincronización de enmiendas, v2.2.0). `007-pagos-seguridad` nace citando
+v2.2.6. Las citas históricas —"la enmienda v2.2.3 que añadió
+`sugerencia_precio`", "`sustitucion_producto` añadida en v2.2.4", "de 3 a 6
+entidades por v2.2.5", "tras la enmienda v2.2.3/v2.2.4/v2.2.5"— describen qué
+enmienda introdujo qué regla y NO se barren (excepción explícita de la
+puerta).
 
 TODOs pendientes: ninguno.
 -->
@@ -382,7 +394,11 @@ una enmienda la corrija.
   el registro de redención compartido; ver frontera de "promoción" más abajo.)
 - **006-caja-mermas-fraude**: `arqueo`, `merma`, `anomalia_caja`.
 - **007-pagos-seguridad**: `terminal_pago`, `medio_pago`, `cobertura_pago`,
-  `bitacora_auditoria`.
+  `bitacora_auditoria`, `token_pago`. (`token_pago` añadida por la enmienda **v2.2.6**, a raíz de la
+  especificación real de 007 — FR-016 a FR-022 y User Story 3: la persistencia del token de un cobro
+  con tarjeta {token opaco, últimos cuatro dígitos, marca, tipo, terminal de captura, referencia de
+  venta, clave de idempotencia}, nunca el PAN. No cabía en las otras cuatro entidades; ver frontera
+  de "pago" más abajo.)
 
 Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de confundir:
 
@@ -416,6 +432,16 @@ Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de conf
   n.º 1 exige detectar el fraude de "cobrar 5, registrar 3": cruzando salida de inventario contra
   venta registrada y tasa de anulaciones por operador, no buscando un descuadre de efectivo que ese
   fraude nunca produce.
+- La **referencia a la terminal de pago** que 001 guarda en cada `venta` (`referencia_terminal_pago`)
+  es un valor **opaco** para 001, que no lo interpreta; la **tokenización** de los datos de pago
+  —sustituir el número de tarjeta por un identificador sustituto y conservar solo {token, últimos
+  cuatro dígitos, marca, tipo}— pertenece a 007 (`token_pago`). `token_pago` **consulta** `venta` de
+  001 sin poseerla y **rellena** esa referencia opaca sin alterar el tipo ni la semántica del campo
+  en el esquema de 001. El PAN completo, el CVV y los datos de banda/chip **no se almacenan,
+  registran ni transmiten en ningún módulo** (Restricciones Técnicas, "Datos de pago"; Principio IV).
+  La **cobertura de medios de pago aceptados por sucursal** —incluida la métrica de intención de
+  compra no atendida cuando el cliente no puede pagar como quería (Lectura Crítica n.º 4)— es
+  `cobertura_pago`, propiedad de 007, distinta de `consulta_no_atendida` de 001 ("no hay producto").
 
 **Convención de nomenclatura**: identificadores de datos en español, `snake_case`, sustantivo
 en singular, sin prefijo de número de módulo. La letra "ñ" está PROHIBIDA en identificadores
@@ -583,4 +609,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.2.5 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-05
+**Versión**: 2.2.6 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-05

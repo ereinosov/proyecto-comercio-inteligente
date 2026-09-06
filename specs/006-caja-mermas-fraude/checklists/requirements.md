@@ -42,7 +42,7 @@
      estado `sin_explicacion`, pendiente de revisión manual; el sistema nunca fuerza una
      clasificación ni la cierra por el paso del tiempo.
 - **Verificaciones de frontera de datos resueltas ANTES de escribir los FR** (contra
-  `001/data-model.md`, constitución v2.2.5; documentadas en "Dependencias entre módulos"):
+  `001/data-model.md`, constitución v2.2.6; documentadas en "Dependencias entre módulos"):
   1. Campos/tablas de `001` que ya existen: `existencia`, `movimiento_inventario` (`tipo`,
      `cantidad`), `venta` (`id_turno`), `renglon_venta` (`precio_aplicado`), `anulacion_venta`
      (`id_operador`), `lote` (`costo_unitario`, `fecha_caducidad`), `operador` (`pin_hash`,
@@ -56,7 +56,7 @@
   4. Diferencia no explicada → `anomalia_caja` estado `sin_explicacion` (decidido, no NEEDS
      CLARIFICATION).
 - **Este spec NO requiere enmienda constitucional.** Sus tres entidades (`arqueo`, `merma`,
-  `anomalia_caja`) coinciden con la tabla de Propiedad de Datos de la constitución (v2.2.5) desde la
+  `anomalia_caja`) coinciden con la tabla de Propiedad de Datos de la constitución (v2.2.6) desde la
   ratificación. A diferencia de `003` (v2.2.3), `004` (v2.2.4) y `005` (v2.2.5), no hay discrepancia
   que reconciliar en el alcance aquí definido. La constitución ya anticipa que `anomalia_caja` "se
   calcula consultando `movimiento_inventario`, `venta` y `anulacion_venta`" — los indicadores por

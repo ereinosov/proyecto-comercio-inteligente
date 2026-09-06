@@ -29,7 +29,7 @@ de muestra ni el desenlace por cliente que FR-016 a FR-024 exigen; se precisó e
 `experimento_reactivacion` + `asignacion_experimento`. `campania` se conservó como paraguas. Se
 corrigió por la enmienda **v2.2.5** (commit `a2bb668`) — ver research.md #2 y el informe de impacto
 de sincronización al inicio de `constitution.md`. No hay discrepancia pendiente entre este documento
-y la tabla vigente (constitución v2.2.5).
+y la tabla vigente (constitución v2.2.6).
 
 **Frontera de propiedad explícita — sólo lectura, sin escritura ni posesión**: este módulo consulta
 `cliente` (`002`), `visita` (`002`), `intervalo_compra` (`002`, `intervalo_esperado_dias` y
