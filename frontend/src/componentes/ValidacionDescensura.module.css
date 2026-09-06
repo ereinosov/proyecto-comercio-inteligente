@@ -57,7 +57,9 @@
 }
 
 .veredictoOk {
-  color: var(--color-marca);
+  /* Inferencia estadística → --color-estimado, igual criterio que los veredictos ▲/▬/◇
+     del experimento de reactivación. NUNCA Verde Rasero (La Regla de la Sola Voz). */
+  color: var(--color-estimado);
 }
 
 .veredictoMal {
