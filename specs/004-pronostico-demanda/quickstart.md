@@ -187,3 +187,21 @@ ojo antes de dar el módulo por terminado:
   corregido; no hay hover por punto ni fade-in por bloque.
 - `ValidacionDescensura.tsx` está rotulada de forma inequívoca como **datos sintéticos** y no
   puede confundirse con una vista de producción.
+
+## Acceso al panel de validación de la descensura (fuera de navegación)
+
+El panel **"Validación de la descensura"** se dejó **fuera de la navegación de producto**
+porque expone herramientas de QA (semilla sintética, el código de requisito FR-009, serie
+cruda) que no corresponden a la superficie de un encargado real de minimarket. No se borra:
+sigue siendo evidencia válida para la defensa oral del método de corrección de censura.
+
+Se accede **directamente por URL** —no hay pestaña ni enlace en ningún nav—:
+
+```
+http://localhost:5173/#pronostico/validacion-descensura
+```
+
+Con ese hash presente, la pestaña "Validación de la descensura" reaparece dentro de
+Pronóstico y queda preseleccionada. Sin el hash, la vista no es alcanzable desde la interfaz.
+Mecanismo elegido: hash-no-enlazado (no se introdujo router ni flag de rol, para no reabrir
+el checkpoint certificado de 004 ni añadir superficie nueva).
