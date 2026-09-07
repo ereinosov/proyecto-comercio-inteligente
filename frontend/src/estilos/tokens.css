@@ -9,6 +9,10 @@
   --color-tinta: #1B2621;
   --color-tinta-suave: #5A6862;
   --color-marca: #0F5132;
+  /* Acento secundario (La Regla del Segundo Tono, DESIGN.md v1.4.0): tierra apagado para la
+     acción secundaria neutra. SIEMPRE como contorno (borde + texto), nunca relleno — un relleno
+     macizo competiría con el botón de cobro. No reemplaza el Verde Rasero ni los semánticos. */
+  --color-acento-secundario: #7A6A56;
   --color-borde: #D5DCD6;
 
   /* Semánticos — reservados exclusivamente a su significado, nunca decorativos. */

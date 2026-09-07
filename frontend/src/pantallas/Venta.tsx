@@ -311,7 +311,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
               Nueva venta
             </button>
             {!ventaConfirmada.anulada && (
-              <button className={estilos.botonTexto} onClick={anular} disabled={anulando}>
+              <button className={estilos.botonCancelar} onClick={anular} disabled={anulando}>
                 {anulando ? "Anulando…" : "Anular esta venta"}
               </button>
             )}
@@ -474,7 +474,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
                     <button className={estilos.botonSecundario} type="button" onClick={confirmarFila}>
                       Agregar
                     </button>
-                    <button className={estilos.botonTexto} type="button" onClick={cancelarFila}>
+                    <button className={estilos.botonCancelar} type="button" onClick={cancelarFila}>
                       Cancelar
                     </button>
                   </div>

@@ -3,15 +3,26 @@
    confirmación de cobro. Mismo lenguaje visual que IdentificarCliente.module.css. Todo token
    viene de tokens.css. */
 
+/* Disparador colapsado: acción secundaria neutra — botón de contorno en el Acento Secundario
+   (La Regla del Segundo Tono, DESIGN.md v1.4.0). Mismo lenguaje que IdentificarCliente. */
 .abrir {
   font-family: var(--tipografia-operacion);
   font-size: 13px;
-  color: var(--color-tinta-suave);
+  color: var(--color-acento-secundario);
   background: transparent;
-  border: none;
-  padding: 0;
+  border: 1px solid var(--color-acento-secundario);
+  border-radius: var(--radio-operacion);
+  padding: 5px 10px;
   cursor: pointer;
-  text-decoration: underline;
+}
+
+.abrir:hover {
+  background: var(--color-superficie-base);
+}
+
+.abrir:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
 }
 
 .chip {
@@ -72,14 +83,24 @@
   background: var(--color-superficie-base);
 }
 
+/* Acción secundaria en un par: borde neutro, texto Tinta Suave (bloque 4 de la ronda v1.4.0). */
 .cancelar {
   align-self: flex-start;
   font-family: var(--tipografia-operacion);
   font-size: 12px;
   color: var(--color-tinta-suave);
   background: transparent;
-  border: none;
-  padding: 0;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 5px 10px;
   cursor: pointer;
-  text-decoration: underline;
+}
+
+.cancelar:hover {
+  background: var(--color-superficie-base);
+}
+
+.cancelar:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
 }

@@ -142,7 +142,7 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
           <div className={estilos.acciones}>
             <button
               type="button"
-              className={estilos.enlace}
+              className={estilos.enlaceAccion}
               onClick={() => {
                 setErrorAlta(null);
                 setForm((f) => ({ ...f, nombre: busqueda.trim() }));

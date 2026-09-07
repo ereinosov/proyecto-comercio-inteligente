@@ -2,15 +2,26 @@
    Regla de la Sola Voz, reservado al botón de cobro de Venta.module.css), sin animación de
    revelación — es información de contexto, no confirmación de una acción de cobro. */
 
+/* Disparador colapsado: acción secundaria neutra — botón de contorno en el Acento Secundario
+   (La Regla del Segundo Tono, DESIGN.md v1.4.0). Contorno, nunca relleno; no compite con la tabla. */
 .abrir {
   font-family: var(--tipografia-operacion);
   font-size: 13px;
-  color: var(--color-tinta-suave);
+  color: var(--color-acento-secundario);
   background: transparent;
-  border: none;
-  padding: 0;
+  border: 1px solid var(--color-acento-secundario);
+  border-radius: var(--radio-operacion);
+  padding: 5px 10px;
   cursor: pointer;
-  text-decoration: underline;
+}
+
+.abrir:hover {
+  background: var(--color-superficie-base);
+}
+
+.abrir:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
 }
 
 .chip {
@@ -88,21 +99,45 @@
 .acciones {
   display: flex;
   justify-content: space-between;
+  gap: 8px;
 }
 
+/* Par de acciones real: "+ Registrar cliente nuevo" (acción secundaria neutra, Acento
+   Secundario — La Regla del Segundo Tono) y "Cancelar" (borde neutro), mismo tamaño y padding. */
+.enlaceAccion,
 .enlace {
   font-family: var(--tipografia-operacion);
   font-size: 12px;
-  color: var(--color-tinta-suave);
   background: transparent;
-  border: none;
-  padding: 0;
+  border-radius: var(--radio-operacion);
+  padding: 5px 10px;
   cursor: pointer;
-  text-decoration: underline;
+}
+
+.enlaceAccion {
+  color: var(--color-acento-secundario);
+  border: 1px solid var(--color-acento-secundario);
+}
+
+.enlace {
+  color: var(--color-tinta-suave);
+  border: 1px solid var(--color-borde);
+}
+
+.enlaceAccion:hover,
+.enlace:hover {
+  background: var(--color-superficie-base);
+}
+
+.enlaceAccion:focus-visible,
+.enlace:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
 }
 
 .enlace:disabled {
   color: var(--color-borde);
+  border-color: var(--color-borde);
   cursor: not-allowed;
 }
 

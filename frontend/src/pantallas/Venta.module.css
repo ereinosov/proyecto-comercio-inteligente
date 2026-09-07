@@ -198,15 +198,48 @@
   background: var(--color-superficie-base);
 }
 
+/* Acción secundaria neutra de la barra de contexto (Consulta no atendida, Cerrar turno):
+   botón de contorno en el Acento Secundario (La Regla del Segundo Tono, DESIGN.md v1.4.0). */
 .botonTexto {
+  font-family: var(--tipografia-operacion);
+  font-size: 13px;
+  color: var(--color-acento-secundario);
+  background: transparent;
+  border: 1px solid var(--color-acento-secundario);
+  border-radius: var(--radio-operacion);
+  padding: 5px 10px;
+  cursor: pointer;
+}
+
+.botonTexto:hover {
+  background: var(--color-superficie-base);
+}
+
+.botonTexto:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
+}
+
+/* Acción secundaria dentro de un par principal+secundaria (Cancelar junto a Agregar; Anular
+   junto a Nueva venta): borde neutro, texto Tinta Suave, mismo tamaño que el botón de al lado. */
+.botonCancelar {
   font-family: var(--tipografia-operacion);
   font-size: 13px;
   color: var(--color-tinta-suave);
   background: transparent;
-  border: none;
-  padding: 0;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 8px 14px;
   cursor: pointer;
-  text-decoration: underline;
+}
+
+.botonCancelar:hover {
+  background: var(--color-superficie-base);
+}
+
+.botonCancelar:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: 1px;
 }
 
 .senalAnotada {

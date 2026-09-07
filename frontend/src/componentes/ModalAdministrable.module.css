@@ -88,15 +88,21 @@
   border-top: 1px solid var(--color-borde);
 }
 
+/* Acción secundaria del par (junto a la primaria en Tinta): borde neutro, texto Tinta Suave,
+   mismo tamaño y padding que `.primaria` (bloque 4 de la ronda v1.4.0). */
 .cancelar {
   font-family: var(--tipografia-analisis);
   font-size: 13px;
-  color: var(--color-tinta);
+  color: var(--color-tinta-suave);
   background: transparent;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-analisis);
   padding: 7px 14px;
   cursor: pointer;
+}
+
+.cancelar:hover {
+  background: var(--color-superficie-base);
 }
 
 .primaria {
