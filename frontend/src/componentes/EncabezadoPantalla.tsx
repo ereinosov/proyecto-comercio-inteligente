@@ -3,7 +3,8 @@
  *
  * Toda pantalla abre con el mismo bloque: un `<h1>` en `--texto-xl`, el contexto de sesión
  * debajo (no en su lugar) y una zona de acciones a la derecha en la misma línea del título.
- * En esta ronda se aplica en Venta; el resto migra después.
+ * Desde v1.8.0 lo usan todas las pantallas con título propio; los subcomponentes montados
+ * dentro de otra pantalla no lo llevan (su título vive en el padre o en el nav de `App.tsx`).
  *
  * `SeccionPantalla` da el mismo padding lateral al resto del cuerpo.
  */

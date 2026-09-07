@@ -2,9 +2,9 @@
  * Botón único del sistema (DESIGN.md v1.5.0, "Botón: spec general").
  *
  * Reemplaza la proliferación de clases equivalentes por pantalla (`botonSecundario`,
- * `botonCancelar`, `botonTexto`, `botonNuevo`, `boton`, `primaria`, `cancelar`, …). En esta
- * ronda se aplica SÓLO en Venta y en la navegación; el resto del sistema migra en rondas
- * posteriores.
+ * `botonCancelar`, `botonTexto`, `botonNuevo`, `boton`, `primaria`, `cancelar`, …). Desde
+ * v1.8.0 se aplica en TODAS las pantallas: ningún `<button>` crudo de acción queda sin migrar
+ * (salvo las filas de selección de listas, que no son un botón de acción).
  *
  * Variantes:
  *  - `cobro`      Verde Rasero. EXCLUSIVO del botón de cobro de Venta (La Regla de la Sola Voz).

@@ -57,6 +57,39 @@ components:
 <!--
 INFORME DE IMPACTO — enmienda del sistema de diseño
 ==================================================
+Cambio de versión: 1.7.0 → 1.8.0 (MENOR — un componente base nuevo, migración transversal a
+componentes ya especificados; ninguna regla se elimina ni se invierte).
+
+Motivo: cierre de la ronda de evolución visual. `Boton` y `EncabezadoPantalla` se
+especificaron en v1.5.0 pero se aplicaron SÓLO en Venta ("el resto del sistema migra en rondas
+posteriores", decía el propio JSDoc). Esta es esa ronda.
+
+Componente nuevo: `Segmentado` — cuarto componente base (con `Boton`, `Campo`,
+`EncabezadoPantalla`). Consolida las cuatro implementaciones duplicadas de pestañas internas
+(`segmentado`/`segActivo`, `subnav`/`subtab`, `selectorVista`/`vistaActiva`, más el par
+`ordenActivo`/`ordenInactivo` de Clientes) en un control único: subrayado en la activa, sin
+fondo relleno, prop `registro` para la densidad (operación/análisis). Sin iconos ni badges.
+
+Migración: las 8 pantallas con `<h1>` propio (Arqueo, Caja y fraude, Pagos, Promociones,
+Pronóstico, Administración, Clientes, Precios) pasan a `EncabezadoPantalla`, con el registro
+que declara su cabecera JSDoc (Arqueo = Operación; el resto = Análisis). Todos los `<button>`
+crudos de acción de las 24 pantallas restantes pasan a `Boton` con la variante por función
+(primaria = confirmar/registrar sin dinero, secundaria = apoyo de contorno, neutra =
+cancelar/volver, fantasma = acción de fila). Quedan como `<button>` sólo las filas de
+selección de listas (`.bloque` / `.bloqueLista`), que no son botones de acción.
+
+Ajuste visual: la subnav de Competencia era una pastilla con borde; se alinea al subrayado del
+resto de segmentados. `Paginador numerado` se activa en Administración y Clientes.
+
+JSDoc actualizado: `Boton.tsx` y `EncabezadoPantalla.tsx` dejan de decir "sólo en Venta".
+
+Reglas eliminadas o invertidas: ninguna. La Regla de la Sola Voz y la del Registro Sin Dinero
+se respetan: ningún `Boton primaria` fuera de Venta usa Verde Rasero. Sincronización con la
+constitución: PENDIENTE, junto con v1.4.0–v1.7.0.
+
+--><!--
+INFORME DE IMPACTO — enmienda del sistema de diseño (histórico)
+==============================================================
 Cambio de versión: 1.6.0 → 1.7.0 (MENOR — una regla reescrita, una sección ajustada, una
 variante de componente; ninguna regla se elimina).
 
@@ -560,7 +593,11 @@ Hasta v1.4.0 el sistema sólo tenía spec del botón de cobro; el resto se re-es
 pantalla (`botonSecundario`, `botonCancelar`, `botonTexto`, `botonNuevo`, `boton`, `primaria`,
 `cancelar`, y los pares `ordenActivo`/`Inactivo`, `segActivo`/`Inactivo`, `vistaActiva`/
 `Inactiva`) con tamaños y radios ligeramente distintos. El componente `Boton` unifica las
-variantes; la clase equivalente se retira de cada pantalla al migrarla.
+variantes; la clase equivalente se retira de cada pantalla al migrarla. Desde **v1.8.0** la
+migración está **completa**: ningún `<button>` crudo de acción queda en el sistema. La única
+excepción son los `<button>` que son una **fila de selección de una lista** (`.bloque` /
+`.bloqueLista` en Clientes, Precios, Pronóstico, Anomalías) — filas multilínea con su propio
+layout, que no son un botón de acción y no tienen variante equivalente.
 
 - **Forma:** radio del registro; alto de `--alto-control` (o `--alto-control-lg` para la
   acción primaria de alta frecuencia); padding horizontal `--espacio-4`; IBM Plex Sans
@@ -602,6 +639,34 @@ v1.4.0 no tenía título, sólo una línea de contexto en Tinta Suave— tambié
 contexto de sucursal/caja va **debajo** del `<h1>` en `--texto-sm` Tinta Suave, no en su lugar.
 `SeccionPantalla` da el mismo padding lateral y el `--espacio-6` entre secciones al resto del
 cuerpo.
+
+Desde **v1.8.0** lo usan las 9 pantallas con título propio (Venta más las 8 de la ronda:
+Arqueo, Caja y fraude, Pagos, Promociones, Pronóstico, Administración, Clientes, Precios). Los
+subcomponentes montados dentro de otra pantalla (Mermas, Anomalías, Cobertura de pago,
+Terminales, los pasos de traspaso y conteo, la captura de competencia, …) **no** lo llevan:
+su título vive en la pantalla padre o en el grupo de navegación de `App.tsx`.
+
+### Segmentado: pestañas internas de una pantalla (v1.8.0)
+
+Hasta v1.7.0 había **cuatro** implementaciones duplicadas del mismo control de pestañas
+internas, con naming distinto: `segmentado`/`segActivo`/`segInactivo` (Administración, Caja y
+fraude, Gestión de operadores, Pagos), `subnav`/`subtab`/`subtabActiva` (Competencia) y
+`selectorVista`/`vistaActiva`/`vistaInactiva` (Promociones, Pronóstico), más el par
+`ordenActivo`/`ordenInactivo` de Clientes. El componente `Segmentado` las consolida.
+
+- **Carácter:** navegación **dentro** de una pantalla, no entre pantallas (eso es el grupo de
+  nav). Estado controlado por el padre.
+- **Forma:** fila de pestañas con `border-bottom` de 1px `--color-borde` bajo el grupo; la
+  activa lleva un `border-bottom` de 2px en Tinta y `--peso-fuerte`; la inactiva, texto Tinta
+  Suave. **Sin fondo relleno, sin pastilla** (la variante de Competencia, que era una pastilla
+  con borde, se alinea al subrayado del resto).
+- **Registro:** `operacion` (default) — IBM Plex Sans `--texto-sm`, `--espacio-1` de gap y
+  `--espacio-2 --espacio-1` de padding; `analisis` — Source Serif 4 `--texto-base`,
+  `--espacio-4` de gap. Mismo patrón y default que `Boton` y `EncabezadoPantalla`.
+- **Sin** iconos ni badges: ninguna de las implementaciones consolidadas los usaba.
+- **Colocación:** debajo del `EncabezadoPantalla`, nunca dentro de sus props `acciones` o
+  `contexto`, salvo el caso de Clientes (un control de orden, no un cambio de vista) y el de
+  Pronóstico (vive en el panel de detalle condicional del producto elegido).
 
 ### Tabla de Operación
 
@@ -1027,5 +1092,18 @@ una aclaración sin cambio de significado.
   producto **suma a la cantidad**. `Paginador` gana la variante `numerado`. `SelectorProducto`
   muestra resultados a medida que se escribe, en panel flotante. Ninguna regla se elimina.
   Sincronización con la constitución **pendiente** (junto con v1.4.0–v1.6.0).
+- **1.8.0** (2026-09-07) — MENOR: cierre de la ronda de evolución visual. El componente `Boton`
+  y `EncabezadoPantalla`, que en v1.5.0–v1.7.0 se aplicaban **sólo en Venta**, migran al resto
+  del sistema: las 8 pantallas con título propio pasan a `EncabezadoPantalla` (con el registro
+  que declara su cabecera: Arqueo en Operación, el resto en Análisis) y todos los `<button>`
+  crudos de acción de las 24 pantallas restantes pasan a `Boton`. Pieza nueva del sistema:
+  **`Segmentado`** (cuarto componente base, junto a `Boton`, `Campo` y `EncabezadoPantalla`),
+  que consolida las cuatro implementaciones duplicadas de pestañas internas
+  (`segmentado`/`subnav`/`selectorVista` y el par `ordenActivo`/`Inactivo`) en un control único
+  de subrayado, con prop `registro`. La pastilla con borde de la subnav de Competencia se
+  alinea al subrayado del resto. `Paginador numerado` se activa en Administración y Clientes
+  (grillas cortas). No se elimina ni invierte ninguna regla; La Regla de la Sola Voz y la del
+  Registro Sin Dinero se respetan (ningún `Boton primaria` fuera de Venta usa verde).
+  Sincronización con la constitución **pendiente** (junto con v1.4.0–v1.7.0).
 
-**Versión**: 1.7.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 1.8.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
