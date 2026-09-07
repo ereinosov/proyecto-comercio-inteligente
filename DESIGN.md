@@ -57,6 +57,43 @@ components:
 <!--
 INFORME DE IMPACTO — enmienda del sistema de diseño
 ==================================================
+Cambio de versión: 1.6.0 → 1.7.0 (MENOR — una regla reescrita, una sección ajustada, una
+variante de componente; ninguna regla se elimina).
+
+Motivo: ronda de ajuste de la pantalla de Venta y del armazón tras revisión en uso.
+
+Regla reescrita: La Regla de la Marca Persistente. El **footer / barra de contexto inferior**
+(v1.3.1–v1.6.0) se **retira**. Su información —ícono del comercio, sucursal, caja— sube al
+**extremo derecho del nav**, junto al nombre y rol del operador (que ya vivían ahí), como un
+**bloque de contexto** con una línea divisoria real entre «lugar» y «operador». Las dos marcas
+siguen sin compartir lugar: wordmark de Rasero al extremo izquierdo, contexto del comercio al
+extremo derecho — **extremos opuestos** de la misma barra, no "al mismo nivel compitiendo" (que
+era lo que los mockups de v1.4.0 rechazaban). Además, una pantalla ya **no repite**
+`{sucursal} · {caja}` en su propio encabezado: ese dato vive una sola vez, en el nav (antes se
+veía dos veces).
+
+Sección ajustada: "Venta: dos columnas". El **ticket pasa a ser el protagonista** (ancho
+disponible) y el **catálogo, apoyo** (columna estrecha y fija). El catálogo gana un **buscador
+por nombre** integrado además de los chips de categoría; sus tarjetas se hacen **compactas**
+(franja de imagen baja); **9 por página** con un **paginador numerado anclado al pie**. El
+producto se agrega **sólo al pulsar "+"**, no al hacer click en la tarjeta. Y agregar el mismo
+producto por unidad **suma a la cantidad** del renglón existente en vez de duplicar la fila.
+
+Variante de componente nueva: `Paginador` con `numerado` — botones cuadrados con el número de
+cada página (1, 2, 3…) con elipsis cuando hay muchas, además de las flechas. Para grillas cortas
+donde ver "en qué página estoy y cuántas hay" de un vistazo importa.
+
+Ajuste de comportamiento: el buscador `SelectorProducto` deja de mostrar el catálogo entero por
+defecto — muestra resultados **a medida que se escribe**, en un **panel flotante** que no empuja
+la fila (alineación de "Producto" con "Cantidad"). Coherente con la viñeta "Expandido: panel
+flotante" del componente "Identificar cliente".
+
+Reglas eliminadas o invertidas: ninguna. Sincronización con la constitución: PENDIENTE, junto
+con v1.4.0, v1.5.0 y v1.6.0.
+
+--><!--
+INFORME DE IMPACTO — enmienda del sistema de diseño (histórico)
+==============================================================
 Cambio de versión: 1.5.0 → 1.6.0 (MENOR — dos añadidos, ninguna regla eliminada ni invertida).
 
 Contexto: Fase 3b de la ronda de evolución visual — User Story 12 de 001 añade un catálogo de
@@ -434,17 +471,27 @@ derecha; las etiquetas, a la izquierda.
 Registro de **Análisis**: una decisión por bloque, con aire alrededor. Las líneas de texto se
 mantienen por debajo de 80 caracteres.
 
-**Venta: dos columnas (v1.6.0).** La pantalla de Venta —la única de Operación con dos zonas de
-trabajo simultáneas— se organiza en **dos columnas**: el **catálogo de productos en grid** a la
-izquierda (tarjetas de producto con su foto, nombre, código y precio, filtrables por categoría)
-y el **ticket** a la derecha (la tabla de renglones de siempre, con su cantidad editable). El
+**Venta: dos columnas (v1.6.0, ajustada v1.7.0).** La pantalla de Venta —la única de Operación
+con dos zonas de trabajo simultáneas— se organiza en **dos columnas de peso desigual**: el
+**ticket es el protagonista** y toma el ancho disponible a la derecha; el **catálogo de
+productos** es apoyo y ocupa una columna **estrecha y fija** (≈ 380px) a la izquierda. El
 encabezado de pantalla va a lo ancho arriba; el **total y el botón Cobrar**, anclados a lo ancho
-abajo, nunca se desplazan. Cada columna gestiona su propio scroll. Por debajo de ~1100px las dos
-columnas se apilan en vertical —catálogo y luego ticket—, sin scroll horizontal a 1366px. El
-grid es el segundo camino para agregar un producto: **convive** con el buscador
-`SelectorProducto`, no lo reemplaza, y agregar por una vía u otra produce el mismo renglón. Sigue
-sin haber tarjetas *dentro* del ticket (La Regla del registro de Operación); las "tarjetas" son
-las del catálogo, que es una grilla de elección, no un grupo de datos.
+abajo, nunca se desplazan. Por debajo de ~1100px las dos columnas se apilan en vertical
+—catálogo y luego ticket—, sin scroll horizontal a 1366px.
+
+El catálogo: un **buscador por nombre** y los **chips de categoría** fijos arriba; una grilla de
+**tarjetas compactas** (thumbnail en franja baja + nombre + precio + un botón "+"), **9 por
+página**; y el **paginador numerado anclado al pie** de la columna (cuadros con el número de
+página, La Regla del Filtro y la Página). El producto se agrega **sólo al pulsar el "+"** —hacer
+click en el resto de la tarjeta no hace nada— y ese "+" es contorno en el Acento Secundario,
+**nunca Verde Rasero** (La Regla de la Sola Voz). El catálogo **convive** con el buscador
+`SelectorProducto` del "+ Agregar producto" del ticket, no lo reemplaza; agregar por cualquiera
+de las dos vías produce **el mismo renglón** (una sola función de "agregar al ticket") y, si el
+producto por unidad ya está en el ticket, **suma a su cantidad** en vez de crear una segunda
+fila (a granel siempre fila aparte: cada pesada es distinta).
+
+Sigue sin haber tarjetas *dentro* del ticket (La Regla del registro de Operación); las
+"tarjetas" son las del catálogo, que es una grilla de elección, no un grupo de datos.
 
 **Escala de espaciado (v1.5.0).** Siete valores, tokenizados en `tokens.css`, y ninguno más:
 `--espacio-1: 4px` · `--espacio-2: 8px` · `--espacio-3: 12px` · `--espacio-4: 16px` ·
@@ -751,28 +798,30 @@ comercio ancla la pantalla en "esta es tu tienda" y, debajo, el nombre de sucurs
 confirman de un vistazo *en qué sucursal y caja está entrando*, que es el dato que ata todas sus
 ventas del turno.
 
-**La Regla de la Marca Persistente.** Fuera de la apertura de turno —el momento ceremonial de
-La Regla de la Identidad del Comercio—, la marca del comercio no desaparece, pero **las dos
-marcas no comparten lugar**: la herramienta y el negocio ocupan extremos distintos del armazón.
-(1) El **nav global** lleva **solo el wordmark de Rasero**, al extremo izquierdo, en el espaciado
-normal del nav. Es la barra de navegación de la herramienta; ahí manda Rasero y nada más compite
-por esa lectura en el arranque de cada pantalla. (2) El **footer / barra de contexto**: franja
-delgada al pie de toda pantalla post-apertura, Superficie Base, borde superior de 1px en Borde
-(La Regla del Filo — nunca sombra), con el **ícono del comercio** (autónomo, ya trae su propio
-fondo de app-icon —sin tinte, sin filtro, sin el fondo blanco especial de la apertura—) a
-**20–22px** delante del **contexto de sesión en una sola línea**: `{sucursal.nombre} · {caja}`,
-en Tinta Suave a 12px. Es "dónde estoy" —qué tienda, qué sucursal, qué caja—, no "qué software
-uso". El ícono se configura por `VITE_ICONO_COMERCIO` (mismo patrón que `VITE_LOGO_COMERCIO` de
-la apertura); la sucursal y la caja salen del contexto de sesión (`sucursal.nombre` y `turno.caja`
-reales), nunca de un literal. Si en algún momento se quiere el nombre del comercio como texto en
-esta línea, DEBE venir de una variable de entorno nueva del frontend, nunca de un literal en JSX
-ni de una tabla. **Razón**: los mockups comparativos aprobados mostraron que el ícono del comercio
-y el wordmark de Rasero al mismo nivel en el nav se leen como dos logos que compiten cada vez que
-cambia la pantalla; separarlos —herramienta arriba, "dónde estoy" abajo— mantiene ambas presencias
-sin que ninguna reste atención a la caja. La jerarquía de los tres usos del activo de marca no
-cambia: apertura = logo a color en grande una vez al día; footer = ícono + sucursal + caja
-discretos y permanentes; mono (`despensa-logo-mono-800w.png`) = reportes, dashboards y la marca
-de agua de los estados vacíos (La Regla del Hueco que Enseña). Ningún uso se solapa.
+**La Regla de la Marca Persistente (reescrita v1.7.0).** Fuera de la apertura de turno —el
+momento ceremonial de La Regla de la Identidad del Comercio—, la marca del comercio no
+desaparece, pero **las dos marcas no comparten lugar**: la herramienta y el negocio ocupan
+**extremos opuestos de la misma barra de navegación**. (1) Al **extremo izquierdo**, el
+**wordmark de Rasero** solo — la herramienta. (2) Al **extremo derecho**, el **bloque de
+contexto de sesión**: el **ícono del comercio** (autónomo, ya trae su propio fondo de app-icon
+—sin tinte, sin filtro—, ≈ 24px, configurable por `VITE_ICONO_COMERCIO`) seguido de dos grupos
+separados por una **línea divisoria real de 1px** (`borde-fuerte`, La Regla del Filo — nunca
+sombra): «lugar» = `{sucursal.nombre}` en Tinta a `--texto-sm` con `{turno.caja}` debajo en
+Tinta Suave a 11px; «operador» = nombre del operador del turno en Tinta con su rol debajo en
+Tinta Suave a 11px en versalitas. Todo dato real del contexto de sesión (`sucursal.nombre`,
+`turno.caja`, operador resuelto), nunca un literal; el nombre del comercio como texto, si se
+quisiera, vendría de una variable de entorno nueva. **No hay footer**: la barra de contexto
+inferior de v1.3.1–v1.6.0 se retira y su información sube, mejor distribuida, al extremo derecho
+del nav. **Razón**: los mockups comparativos de v1.4.0 rechazaban el ícono del comercio y el
+wordmark **al mismo nivel** compitiendo por la misma lectura; ubicarlos en **extremos opuestos**
+—herramienta a la izquierda, "dónde estoy / quién soy" a la derecha, con separación visible entre
+sus partes— resuelve esa competencia sin gastar una franja entera al pie ni repetir la sucursal y
+la caja en el encabezado de cada pantalla (que además las duplicaba). Una pantalla ya no repite
+`{sucursal} · {caja}` en su propio encabezado: ese dato vive una sola vez, en el nav. La
+jerarquía de los tres usos del activo de marca no cambia: apertura = logo a color en grande una
+vez al día; **nav derecho** = ícono + sucursal + caja + operador discretos y permanentes; mono
+(`despensa-logo-mono-800w.png`) = reportes, dashboards y la marca de agua de los estados vacíos
+(La Regla del Hueco que Enseña). Ningún uso se solapa.
 
 **La Regla del Hueco que Enseña.** Todo estado vacío —ninguna selección hecha, ninguna fila que
 mostrar— se compone de tres partes y nunca de una sola línea de texto plano: (1) un ícono propio
@@ -967,5 +1016,16 @@ una aclaración sin cambio de significado.
   total + Cobrar anclados abajo, apilado bajo ~1100px). La Regla de la Sola Voz, del Filo y del
   Hueco que Enseña intactas. Sincronización con la constitución **pendiente** (junto con v1.4.0
   y v1.5.0).
+- **1.7.0** (2026-09-07) — MENOR: ronda de ajuste de Venta y armazón. **La Regla de la Marca
+  Persistente** se **reescribe**: se retira el footer; su contexto (ícono del comercio +
+  sucursal + caja) sube al **extremo derecho del nav** junto al operador y su rol, como un
+  bloque con divisor real — wordmark y comercio en **extremos opuestos**, no al mismo nivel. Se
+  elimina la repetición de `{sucursal} · {caja}` en el encabezado de cada pantalla.
+  **"Venta: dos columnas"** se ajusta: el **ticket es el protagonista**, el **catálogo pasa a
+  apoyo** (columna estrecha, tarjetas compactas, buscador integrado, 9 por página, **paginador
+  numerado anclado abajo**); el "+" es el único disparador de agregar; agregar el mismo
+  producto **suma a la cantidad**. `Paginador` gana la variante `numerado`. `SelectorProducto`
+  muestra resultados a medida que se escribe, en panel flotante. Ninguna regla se elimina.
+  Sincronización con la constitución **pendiente** (junto con v1.4.0–v1.6.0).
 
-**Versión**: 1.6.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 1.7.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
