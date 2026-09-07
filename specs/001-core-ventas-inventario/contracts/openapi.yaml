@@ -378,6 +378,55 @@ paths:
                 type: array
                 items: { $ref: '#/components/schemas/Existencia' }
 
+  /existencias/lotes:
+    get:
+      tags: [inventario]
+      summary: Desglose de existencia por lote (User Story 14)
+      description: |
+        Saldo de un producto en una sucursal, lote por lote, en orden FEFO (caducidad
+        ascendente con nulos al final, luego entrada, luego id_lote). Sólo lotes con saldo
+        distinto de cero; un saldo negativo histórico se muestra tal cual.
+
+        `costo_unitario` se incluye **únicamente** con `incluir_costo=true` — es dato de margen
+        (003) y la pantalla de Venta no lo solicita bajo ningún rol. Con el centinela de costo
+        cero, `costo_unitario` es `null`.
+      parameters:
+        - name: id_sucursal
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: id_producto
+          in: query
+          required: true
+          schema: { type: integer }
+        - name: incluir_costo
+          in: query
+          schema: { type: boolean, default: false }
+      responses:
+        '200':
+          description: Lotes con saldo, en orden FEFO
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [id_lote, cantidad, fecha_caducidad, instante_entrada]
+                  properties:
+                    id_lote: { type: integer }
+                    cantidad: { type: integer, description: 'saldo del lote; puede ser negativo (histórico)' }
+                    fecha_caducidad: { type: string, format: date, nullable: true }
+                    instante_entrada: { type: string, format: date-time }
+                    costo_unitario:
+                      type: string
+                      nullable: true
+                      description: 'sólo con incluir_costo=true; null si el lote usa el centinela de costo cero'
+        '404':
+          description: Sucursal o producto inexistente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
   /capital-inmovilizado:
     get:
       tags: [inventario]

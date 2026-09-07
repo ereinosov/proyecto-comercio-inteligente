@@ -62,6 +62,25 @@ def listar_existencias(
     )
 
 
+@router.get("/existencias/lotes")
+def existencias_por_lote(
+    id_sucursal: int,
+    id_producto: int,
+    incluir_costo: bool = False,
+    sesion: Session = Depends(obtener_sesion),
+) -> list[dict]:
+    """Desglose por lote del saldo de un producto en una sucursal, en orden FEFO (US14).
+    `incluir_costo` sólo lo usan las superficies con derecho a ver margen (traspasos de un
+    encargado), nunca la pantalla de Venta.
+    """
+    return servicio_inventario.existencia_por_lote(
+        sesion,
+        id_sucursal=id_sucursal,
+        id_producto=id_producto,
+        incluir_costo=incluir_costo,
+    )
+
+
 @router.get("/capital-inmovilizado")
 def capital_inmovilizado(
     id_sucursal: int | None = None, sesion: Session = Depends(obtener_sesion)

@@ -507,3 +507,13 @@ histórico "146/146"; son tareas nuevas.
 - [X] T151 Tests reescritos: `test_saldo_existencia.py` (exceso → `ExistenciaInsuficiente`, sin movimiento; límite exacto N ok / N+1 rechazado), `test_quickstart_001.py` (escenario 4 → 409, inventario intacto), `test_entrada_inventario.py` y `test_consulta_no_atendida.py` (el saldo negativo histórico se siembra directo en la base, no vía venta), `test_migracion_margen_visita.py` (parte de existencia 1 y la agota), `tests/apoyo_promociones.py` (`escenario_dos_productos` siembra stock del 2.º producto), `test_traspaso_discrepancia.py` (excede origen → rechazado sin dejar traspaso).
 - [X] T152 `frontend/src/pantallas/Venta.tsx` y `DespachoTraspaso.tsx`: confirmado que el `catch (ErrorApi)` ya muestra el mensaje del 409 `existencia_insuficiente`; sin UI nueva de override (no existe esa opción). Comentario aclaratorio añadido en cada catch.
 - [X] T153 Sincronización de artefactos: `spec.md` (nueva Clarification + FR-047 reescrito + Edge Case + FR de edición de renglón), `research.md` §5, `data-model.md` (nota de `existencia.cantidad`). Suite completa (`pytest`, `tsc`, `eslint`, `vite build`, `vitest`) en verde tras cada commit de la Parte 1.
+
+### User Story 14 — Existencia por lote visible en Venta y Traspasos (2026-09-07)
+
+Aditiva, sólo lectura, sin cambio de esquema.
+
+- [X] T154 [US14] `backend/rasero/servicios/inventario.py`: `existencia_por_lote(sesion, *, id_sucursal, id_producto, incluir_costo=False)` — lotes con saldo != 0 en orden FEFO; `costo_unitario` sólo con `incluir_costo` (null si centinela de costo cero); 404 si sucursal/producto no existe.
+- [X] T155 [US14] `backend/rasero/api/inventario.py`: `GET /existencias/lotes` con `id_sucursal`, `id_producto` (obligatorios) e `incluir_costo` (bool, default false).
+- [X] T156 [US14] `specs/001-core-ventas-inventario/contracts/openapi.yaml`: path `/existencias/lotes`.
+- [X] T157 [US14] `tests/integracion/test_existencia_por_lote.py`: orden FEFO, sin costo por defecto, `incluir_costo=true` expone costo, saldo negativo histórico visible, 404.
+- [ ] T158 [US14] Frontend: servicio `existenciasPorLote` en `frontend/src/servicios/` y consumo en `CatalogoProductos.tsx` / `SelectorProducto` (existencia total junto al precio, color crítico si ≤ 0, expansión a desglose por lote sin costo) y en `DespachoTraspaso.tsx` (existencia en origen + desglose).

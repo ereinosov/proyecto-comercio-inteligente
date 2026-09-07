@@ -493,6 +493,58 @@ cantidad y cálculo de importe que agregar ese producto por el buscador; (d) el 
 
 ---
 
+### User Story 14 - Existencia por lote visible en Venta y Traspasos (Priority: P14)
+
+Hoy el cajero sólo ve el precio de un producto; no ve cuánto hay en existencia ni de qué lotes.
+Esta historia hace visible ese dato **sin cambiar el modelo**: junto al precio de cada producto
+(en el catálogo en grid y en el resultado del buscador de Venta, y junto a cada producto
+disponible en el despacho de traspaso) se muestra la **existencia total** en la sucursal, y al
+**expandir** el producto, el **desglose por lote** —cantidad, fecha de caducidad (o "sin
+caducidad") y antigüedad de entrada— en el **mismo orden FEFO** con que 001 consume.
+
+El **costo por lote NO se muestra en la pantalla de Venta bajo ningún rol** —es dato de margen,
+propiedad de 003—; el endpoint sólo lo devuelve si se pide explícitamente (`incluir_costo=true`),
+y esa opción la usan las superficies con derecho a ver margen (el despacho de traspaso de un
+encargado), nunca la caja.
+
+No hay cambio de esquema: `lote` y `existencia` ya tienen todo. El contrato nuevo es un endpoint
+de lectura, `GET /existencias/lotes`.
+
+**Why this priority**: aditiva, de sólo lectura, sobre entidades ya certificadas (US1/US2). No
+toca el flujo de cobro ni el de despacho. Depende de US1 (existencia, lotes, FEFO) y del layout
+de dos columnas de US12.
+
+**Independent Test**: cargar dos lotes de un producto en una sucursal (uno con caducidad próxima
+que entró después, uno sin caducidad que entró antes); abrir Venta y verificar que (a) el
+producto muestra la existencia total (14); (b) al expandirlo, los lotes salen en orden FEFO —el
+que caduca primero, aunque haya entrado después—; (c) en ninguna parte de la vista de Venta
+aparece el costo; (d) en el despacho de traspaso el mismo producto muestra su existencia en la
+sucursal de origen con el mismo desglose.
+
+**Acceptance Scenarios**:
+
+1. **Given** un producto con existencia positiva en la sucursal del turno, **When** el cajero
+   abre Venta, **Then** la tarjeta del catálogo y el resultado del buscador muestran la
+   existencia total de ese producto.
+2. **Given** un producto con existencia 0 o negativa (dato histórico), **When** se muestra su
+   existencia, **Then** se presenta con el color semántico de "crítico" del sistema (token de
+   `tokens.css`, nunca un color nuevo), no oculta ni como "0" neutro.
+3. **Given** un producto con varios lotes, **When** el cajero lo expande, **Then** ve un renglón
+   por lote con cantidad, caducidad (o "sin caducidad") y antigüedad relativa de entrada, en
+   orden FEFO (caducidad ascendente con nulos al final, luego entrada, luego id_lote).
+4. **Given** cualquier rol en la pantalla de Venta, **When** se inspecciona el desglose por
+   lote, **Then** no aparece `costo_unitario` en ninguna parte.
+5. **Given** el despacho de un traspaso, **When** el encargado revisa un producto, **Then** ve
+   su existencia total en la sucursal de origen y el mismo desglose por lote que en Venta.
+6. **Given** `GET /existencias/lotes` sin `incluir_costo` (o `false`), **When** responde,
+   **Then** ningún objeto de la lista trae `costo_unitario`. **Given** `incluir_costo=true`,
+   **Then** cada objeto trae `costo_unitario` (o `null` si el lote usa el centinela de costo
+   cero).
+7. **Given** un `id_sucursal` o `id_producto` inexistente, **When** se llama al endpoint,
+   **Then** responde `404` con el código `no_encontrado`.
+
+---
+
 ### Edge Cases
 
 - **Peso cero o negativo en báscula**: un renglón de granel con cantidad menor o igual a cero se
@@ -862,6 +914,25 @@ enmienda constitucional v2.4.0)**
 - **FR-079**: Ningún elemento nuevo de la pantalla de Venta usa el Verde Rasero (`--color-marca`)
   — el control de agregar de cada tarjeta usa el tratamiento de acción secundaria/neutra. El
   verde sigue exclusivo del botón Cobrar (La Regla de la Sola Voz).
+
+**Existencia por lote visible (User Story 14)**
+
+- **FR-080**: El sistema DEBE exponer `GET /existencias/lotes?id_sucursal=&id_producto=`: el saldo
+  de un producto en una sucursal, **lote por lote**, sólo los lotes con saldo distinto de cero,
+  en el **orden FEFO** de 001 (caducidad ascendente con nulos al final, luego `instante_entrada`,
+  luego `id_lote`). Cada objeto trae `id_lote`, `cantidad`, `fecha_caducidad` (o `null`) e
+  `instante_entrada`. Sin cambio de esquema.
+- **FR-081**: `costo_unitario` NO se incluye en la respuesta salvo `incluir_costo=true`; cuando
+  se incluye y el lote usa el centinela de costo cero (research.md §11), se devuelve `null`. La
+  pantalla de Venta NUNCA solicita `incluir_costo` bajo ningún rol — el costo es dato de margen
+  (003). El despacho de traspaso (operado por un encargado) SÍ puede solicitarlo.
+- **FR-082**: La pantalla de Venta (catálogo en grid y resultado del buscador) y el despacho de
+  traspaso DEBEN mostrar la **existencia total** de cada producto en la sucursal relevante junto
+  al precio, y ofrecer expandir el producto para ver el desglose por lote de FR-080. Una
+  existencia ≤ 0 (dato histórico) se muestra con el color semántico "crítico" de `tokens.css`,
+  nunca oculta ni como "0" neutro.
+- **FR-083**: `id_sucursal` o `id_producto` inexistente en `GET /existencias/lotes` DEBE
+  responder `404` con el código `no_encontrado`, mismo patrón que el resto de lecturas de 001.
 
 ### Key Entities
 

@@ -6,7 +6,11 @@
   `entrada_compra`; `existencia` se mueve por delta en la misma transacción. **Solo costo, nunca
   margen** (FR-014).
 - `listar_existencias` — saldo por producto y sucursal, agregado sobre `existencia` (derivada de
-  `movimiento_inventario`). Puede ser negativo (FR-047); nunca se limita a cero.
+  `movimiento_inventario`). Puede ser negativo (dato histórico, FR-047 previo); nunca se limita a
+  cero.
+- `existencia_por_lote` — desglose del saldo de UN producto en UNA sucursal, lote por lote, en el
+  mismo orden FEFO que el consumo de 001 (US14). El costo sólo se incluye si se pide
+  explícitamente (`incluir_costo=True`): es dato de margen, fuera de la vista de caja.
 - `capital_inmovilizado` — lotes cuya última salida excede el umbral de días de su categoría
   (`COALESCE(categoria.dias_umbral_inmovilizado, umbral_global)`); valor = cantidad restante ×
   costo, o "no calculable" si el lote no tiene costo (FR-033 a FR-036). Solo hace visible el dato.
@@ -133,6 +137,59 @@ def listar_existencias(
         }
         for pid, cantidad, es_granel in sesion.execute(consulta).all()
     ]
+
+
+def existencia_por_lote(
+    sesion: Session,
+    *,
+    id_sucursal: int,
+    id_producto: int,
+    incluir_costo: bool = False,
+) -> list[dict]:
+    """Saldo de `id_producto` en `id_sucursal`, lote por lote, en orden FEFO (misma clave que el
+    consumo de 001: caducidad ascendente con nulos al final, luego entrada, luego id_lote). Sólo
+    lotes con saldo distinto de cero. `costo_unitario` se incluye únicamente si `incluir_costo`
+    — es dato de margen, no de la pantalla de Venta (US14).
+    """
+    if sesion.get(Sucursal, id_sucursal) is None:
+        raise RecursoNoEncontrado(f"La sucursal {id_sucursal} no existe.")
+    if sesion.get(Producto, id_producto) is None:
+        raise RecursoNoEncontrado(f"El producto {id_producto} no existe.")
+
+    filas = sesion.execute(
+        select(Lote, Existencia.cantidad)
+        .join(
+            Existencia,
+            (Existencia.id_lote == Lote.id_lote)
+            & (Existencia.id_sucursal == Lote.id_sucursal)
+            & (Existencia.id_producto == Lote.id_producto),
+        )
+        .where(
+            Lote.id_sucursal == id_sucursal,
+            Lote.id_producto == id_producto,
+            Existencia.cantidad != 0,
+        )
+        .order_by(
+            Lote.fecha_caducidad.asc().nulls_last(),
+            Lote.instante_entrada.asc(),
+            Lote.id_lote.asc(),
+        )
+    ).all()
+
+    resultado: list[dict] = []
+    for lote, cantidad in filas:
+        fila = {
+            "id_lote": lote.id_lote,
+            "cantidad": int(cantidad),
+            "fecha_caducidad": lote.fecha_caducidad.isoformat() if lote.fecha_caducidad else None,
+            "instante_entrada": lote.instante_entrada,
+        }
+        if incluir_costo:
+            # `0.0000` es el centinela de "sin costo registrado" (research.md §11).
+            costo = Decimal(lote.costo_unitario)
+            fila["costo_unitario"] = None if costo == 0 else f"{costo:.4f}"
+        resultado.append(fila)
+    return resultado
 
 
 def _dia_local(instante: datetime, zona_horaria: str) -> date:
