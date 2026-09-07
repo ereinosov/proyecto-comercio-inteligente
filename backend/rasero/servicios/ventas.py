@@ -4,8 +4,15 @@ El eje: `movimiento_inventario` es la única fuente de verdad; `existencia` se a
 delta en la misma transacción (persistencia/movimientos.py). La venta es idempotente por
 `clave_idempotencia` — la restricción UNIQUE de base de datos es lo que hace que la unicidad
 de la venta implique unicidad de sus movimientos, incluso bajo reintentos concurrentes
-(research.md, decisión 2). Ninguna validación de existencias bloquea el cobro (Principio II);
-el exceso se registra en saldo negativo (FR-047).
+(research.md, decisión 2).
+
+Existencia insuficiente: **bloqueo duro** (spec 001, Corrección 2026-09-07). Antes de escribir
+ningún movimiento se valida cada renglón contra la existencia disponible del producto en la
+sucursal; si alguno no alcanza, la venta COMPLETA se rechaza con `ExistenciaInsuficiente` (409)
+y no queda ningún movimiento a medias. La cita previa del Principio II ("ninguna validación
+bloquea el cobro") estaba mal aplicada: el Principio II protege contra la caída de servicios
+externos, no contra una consulta determinista a la propia base. El saldo negativo histórico
+anterior a esta corrección sigue siendo válido y visible.
 """
 
 from dataclasses import dataclass
@@ -21,6 +28,7 @@ from rasero.dominio.seleccion_lote import ordenar_fefo
 from rasero.dominio.totales import calcular_importe_renglon, calcular_total_venta
 from rasero.errores import (
     AnulacionNoAutorizada,
+    ExistenciaInsuficiente,
     RecursoNoEncontrado,
     RenglonInvalido,
     TurnoInvalido,
@@ -37,7 +45,11 @@ from rasero.persistencia.modelos import (
     Turno,
     Venta,
 )
-from rasero.persistencia.movimientos import obtener_existencia, registrar_movimiento
+from rasero.persistencia.movimientos import (
+    obtener_existencia,
+    obtener_existencia_total,
+    registrar_movimiento,
+)
 from rasero.seguridad import RANGO_ROL
 
 
@@ -58,6 +70,28 @@ def _resolver_precio(sesion: Session, *, id_producto: int, id_sucursal: int, pre
     return resolver_precio_efectivo(precio_base=precio_base, override_sucursal=override)
 
 
+def _cantidad_base_renglon(producto: Producto, entrada: RenglonEntrada) -> Decimal:
+    """Valida la forma del renglón (granel vs. unidad, positivo) y devuelve la cantidad en la
+    unidad base del producto (gramos si es granel, unidades si no). Único lugar donde vive esta
+    regla — la usan la pre-validación de existencia y el consumo FEFO.
+    """
+    if producto.es_granel:
+        if entrada.cantidad_gramos is None or entrada.cantidad_unidades is not None:
+            raise RenglonInvalido(
+                f"El producto {producto.nombre} se vende a peso: envía cantidad_gramos."
+            )
+        if entrada.cantidad_gramos <= 0:
+            raise RenglonInvalido("El peso leído en báscula debe ser mayor que cero.")
+        return Decimal(entrada.cantidad_gramos)
+    if entrada.cantidad_unidades is None or entrada.cantidad_gramos is not None:
+        raise RenglonInvalido(
+            f"El producto {producto.nombre} se vende por unidad: envía cantidad_unidades."
+        )
+    if entrada.cantidad_unidades <= 0:
+        raise RenglonInvalido("La cantidad debe ser mayor que cero.")
+    return Decimal(entrada.cantidad_unidades)
+
+
 def _consumir_fefo(
     sesion: Session,
     *,
@@ -68,7 +102,9 @@ def _consumir_fefo(
     instante: datetime,
     id_venta: int,
 ) -> tuple[list[dict], list[dict]]:
-    """Consume existencia en orden FEFO. Devuelve (lotes_consumidos, advertencias)."""
+    """Consume existencia en orden FEFO. Devuelve (lotes_consumidos, advertencias); la lista de
+    advertencias hoy siempre es vacía — se conserva por compatibilidad del contrato de venta.
+    """
     lotes = sesion.execute(
         select(Lote)
         .where(Lote.id_producto == id_producto, Lote.id_sucursal == id_sucursal)
@@ -100,35 +136,17 @@ def _consumir_fefo(
             lotes_consumidos.append({"id_lote": lote.id_lote, "cantidad": tomar})
             restante -= tomar
 
-    advertencias: list[dict] = []
     if restante > 0:
-        # FR-047: ninguna validación de existencias bloquea el cobro. El exceso se imputa al
-        # último lote seleccionado por FEFO (research.md, decisión 5); si no hay ningún lote
-        # en la sucursal, el movimiento se registra con id_lote nulo.
-        id_lote_destino = lotes_ordenados[-1].id_lote if lotes_ordenados else None
-        registrar_movimiento(
-            sesion,
-            id_sucursal=id_sucursal,
-            id_producto=id_producto,
-            id_lote=id_lote_destino,
-            tipo="salida_venta",
-            cantidad=-restante,
-            instante=instante,
-            id_venta=id_venta,
+        # Inalcanzable en el flujo normal: `registrar_venta` ya validó la existencia total del
+        # producto antes de tocar ningún movimiento. Queda como defensa por si la existencia
+        # disponible está atrapada en una fila sin lote que FEFO no puede consumir — bloqueo
+        # duro, nunca un saldo negativo silencioso.
+        disponible = obtener_existencia_total(
+            sesion, id_sucursal=id_sucursal, id_producto=id_producto
         )
-        lotes_consumidos.append({"id_lote": id_lote_destino, "cantidad": restante})
-        advertencias.append(
-            {
-                "codigo": "saldo_negativo",
-                "mensaje": (
-                    f"La existencia de {nombre_producto} no alcanzaba; la venta se registró "
-                    "igual y el saldo quedó negativo hasta el siguiente conteo."
-                ),
-                "id_producto": id_producto,
-            }
-        )
+        raise ExistenciaInsuficiente(nombre_producto, disponible, cantidad_requerida)
 
-    return lotes_consumidos, advertencias
+    return lotes_consumidos, []
 
 
 def registrar_venta(
@@ -155,6 +173,26 @@ def registrar_venta(
     if turno is None:
         raise TurnoInvalido("El turno indicado no existe.")
 
+    # Bloqueo duro por existencia insuficiente (Corrección 2026-09-07): se valida la venta
+    # COMPLETA contra la existencia disponible ANTES de escribir ningún movimiento. Si un solo
+    # renglón no alcanza, se rechaza la venta entera — nunca un consumo parcial silencioso.
+    requerido_por_producto: dict[int, tuple[str, Decimal]] = {}
+    for entrada in renglones:
+        producto = sesion.get(Producto, entrada.id_producto)
+        if producto is None:
+            raise RecursoNoEncontrado(f"El producto {entrada.id_producto} no existe.")
+        cantidad_base = _cantidad_base_renglon(producto, entrada)
+        nombre, acumulado = requerido_por_producto.get(
+            producto.id_producto, (producto.nombre, Decimal(0))
+        )
+        requerido_por_producto[producto.id_producto] = (nombre, acumulado + cantidad_base)
+    for id_producto, (nombre, requerido) in requerido_por_producto.items():
+        disponible = obtener_existencia_total(
+            sesion, id_sucursal=turno.id_sucursal, id_producto=id_producto
+        )
+        if disponible < requerido:
+            raise ExistenciaInsuficiente(nombre, disponible, requerido)
+
     instante = instante_origen or datetime.now(timezone.utc)
 
     venta = Venta(
@@ -176,22 +214,7 @@ def registrar_venta(
         if producto is None:
             raise RecursoNoEncontrado(f"El producto {entrada.id_producto} no existe.")
 
-        if producto.es_granel:
-            if entrada.cantidad_gramos is None or entrada.cantidad_unidades is not None:
-                raise RenglonInvalido(
-                    f"El producto {producto.nombre} se vende a peso: envía cantidad_gramos."
-                )
-            if entrada.cantidad_gramos <= 0:
-                raise RenglonInvalido("El peso leído en báscula debe ser mayor que cero.")
-            cantidad_base = Decimal(entrada.cantidad_gramos)
-        else:
-            if entrada.cantidad_unidades is None or entrada.cantidad_gramos is not None:
-                raise RenglonInvalido(
-                    f"El producto {producto.nombre} se vende por unidad: envía cantidad_unidades."
-                )
-            if entrada.cantidad_unidades <= 0:
-                raise RenglonInvalido("La cantidad debe ser mayor que cero.")
-            cantidad_base = Decimal(entrada.cantidad_unidades)
+        cantidad_base = _cantidad_base_renglon(producto, entrada)
 
         precio = _resolver_precio(
             sesion,

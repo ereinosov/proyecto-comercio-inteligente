@@ -133,9 +133,11 @@ def limpiar_experimentos(sesion) -> None:
 
 def escenario_dos_productos(sesion):
     """Escenario básico + un segundo producto, para pruebas de recompra y de la marca activa."""
+    from datetime import timedelta
     from decimal import Decimal
 
-    from rasero.persistencia.modelos import Producto
+    from rasero.persistencia.modelos import Lote, Producto
+    from rasero.persistencia.movimientos import registrar_movimiento
 
     escenario = crear_escenario_basico(sesion, existencia_inicial=100000)
     otro = Producto(
@@ -145,6 +147,29 @@ def escenario_dos_productos(sesion):
         lleva_caducidad=False,
     )
     sesion.add(otro)
+    sesion.flush()
+
+    # El segundo producto también necesita existencia: desde la Corrección 2026-09-07 una venta
+    # que excede el saldo se rechaza (antes se registraba en negativo).
+    lote_otro = Lote(
+        id_producto=otro.id_producto,
+        id_sucursal=escenario["sucursal"].id_sucursal,
+        costo_unitario=Decimal("2.0000"),
+        fecha_caducidad=None,
+        instante_entrada=datetime.now(timezone.utc) - timedelta(days=1),
+    )
+    sesion.add(lote_otro)
+    sesion.flush()
+    registrar_movimiento(
+        sesion,
+        id_sucursal=escenario["sucursal"].id_sucursal,
+        id_producto=otro.id_producto,
+        id_lote=lote_otro.id_lote,
+        tipo="entrada_compra",
+        cantidad=Decimal(100000),
+        instante=datetime.now(timezone.utc) - timedelta(days=1),
+    )
     sesion.commit()
     escenario["producto_2"] = otro
+    escenario["lote_2"] = lote_otro
     return escenario

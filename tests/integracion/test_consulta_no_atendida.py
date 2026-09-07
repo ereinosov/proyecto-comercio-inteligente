@@ -10,17 +10,18 @@ Verifica que:
 """
 
 import uuid
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from fastapi.testclient import TestClient
 from sqlalchemy import select
 
 from rasero.api.aplicacion import app
-from rasero.persistencia.modelos import ConsultaNoAtendida
+from rasero.persistencia.modelos import ConsultaNoAtendida, Lote
 from rasero.persistencia.movimientos import registrar_movimiento
 from rasero.servicios.senales import registrar_consulta_no_atendida
 from rasero.servicios.ventas import RenglonEntrada, registrar_venta
-from tests.apoyo import crear_escenario_basico
+from tests.apoyo import crear_escenario_basico, venta_de_prueba
 
 cliente = TestClient(app)
 
@@ -55,16 +56,26 @@ def test_consulta_sobre_producto_agotado_registra_saldo_cero_o_negativo(sesion):
     escenario = crear_escenario_basico(sesion, existencia_inicial=2)
     id_producto = escenario["producto"].id_producto
     id_turno = escenario["turno"].id_turno
+    id_sucursal = escenario["sucursal"].id_sucursal
+    lote_id = sesion.execute(
+        select(Lote.id_lote).where(Lote.id_producto == id_producto)
+    ).scalar_one()
 
-    # Venta que excede el saldo: la existencia queda negativa (FR-047).
-    registrar_venta(
+    # Saldo negativo HISTÓRICO: desde la Corrección 2026-09-07 una venta ya no puede dejarlo
+    # negativo, pero un negativo previo sigue siendo un dato válido que la consulta debe congelar
+    # tal cual. Se siembra directo con un movimiento de salida de 5 sobre 2 -> -3.
+    id_venta = venta_de_prueba(sesion, id_turno=id_turno, instante=datetime.now(timezone.utc))
+    registrar_movimiento(
         sesion,
-        clave_idempotencia=f"cna-neg-{uuid.uuid4()}",
-        id_turno=id_turno,
-        referencia_terminal_pago=None,
-        instante_origen=None,
-        renglones=[RenglonEntrada(id_producto=id_producto, cantidad_unidades=5, cantidad_gramos=None)],
+        id_sucursal=id_sucursal,
+        id_producto=id_producto,
+        id_lote=lote_id,
+        tipo="salida_venta",
+        cantidad=Decimal(-5),
+        instante=datetime.now(timezone.utc),
+        id_venta=id_venta,
     )
+    sesion.flush()
 
     consulta = registrar_consulta_no_atendida(sesion, id_producto=id_producto, id_turno=id_turno)
     assert consulta.saldo_en_el_instante == Decimal(-3)

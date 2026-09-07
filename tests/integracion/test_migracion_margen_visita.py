@@ -76,7 +76,11 @@ def test_margen_de_visita_coincide_con_la_ponderacion_por_importe_de_resolver_ma
 
 
 def test_producto_sin_costo_vigente_se_trata_como_margen_cien_por_ciento_no_propaga_error(sesion):
-    escenario = crear_escenario_basico(sesion, existencia_inicial=0)  # sin lote con existencia
+    # Existencia justa para 1 unidad: la venta la agota y, al resolver el margen, ningún lote
+    # tiene ya saldo positivo -> `_costo_vigente_fefo` devuelve None (FR-003 de 003), el caso que
+    # esta prueba cubre. (Antes se vendía en negativo; desde la Corrección 2026-09-07 eso se
+    # rechaza, así que se parte de existencia 1 y se agota.)
+    escenario = crear_escenario_basico(sesion, existencia_inicial=1)
     venta, _creada, _adv, _lotes = registrar_venta(
         sesion,
         clave_idempotencia="migracion-sin-costo",

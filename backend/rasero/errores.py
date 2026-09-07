@@ -2,6 +2,8 @@
 operador — nunca una traza técnica (Principio IV, prohibición explícita en el contrato).
 """
 
+from decimal import Decimal
+
 
 class ErrorDominio(Exception):
     codigo: str = "error"
@@ -83,6 +85,25 @@ class TraspasoInvalido(ErrorDominio):
 class ValorInvalido(ErrorDominio):
     codigo = "valor_invalido"
     status_code = 422
+
+
+class ExistenciaInsuficiente(ErrorDominio):
+    """Una venta o un traspaso pidió más de lo que hay en existencia disponible. Bloqueo duro,
+    sin excepción ni autorización de encargado (spec 001, Corrección 2026-09-07): vender o
+    traspasar algo que no está en inventario no tiene sentido de negocio. 409 (conflicto de
+    estado real), no 422 (no es un error de forma). Sin colisión de código: el resto de los 409
+    del sistema usan códigos propios (`conteo_invalido`, `traspaso_invalido`, `venta_ya_*`, …).
+    """
+
+    codigo = "existencia_insuficiente"
+    status_code = 409
+
+    def __init__(self, nombre_producto: str, disponible: Decimal, solicitado: Decimal):
+        super().__init__(
+            f"No hay suficiente existencia de {nombre_producto}: disponible "
+            f"{disponible}, solicitado {solicitado}. Ajusta la cantidad o "
+            "haz un conteo físico si crees que el dato está desactualizado."
+        )
 
 
 class AnulacionNoAutorizada(ErrorDominio):

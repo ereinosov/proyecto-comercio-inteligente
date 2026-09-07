@@ -9,7 +9,7 @@ sobrescribir un saldo sin movimiento que lo origine (Principio IV).
 from datetime import datetime
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.dialects.postgresql import insert as pg_insert
 from sqlalchemy.orm import Session
 
@@ -74,3 +74,18 @@ def obtener_existencia(
         condiciones.append(Existencia.id_lote == id_lote)
     fila = sesion.execute(select(Existencia.cantidad).where(*condiciones)).scalar_one_or_none()
     return fila if fila is not None else Decimal(0)
+
+
+def obtener_existencia_total(
+    sesion: Session, *, id_sucursal: int, id_producto: int
+) -> Decimal:
+    """Existencia disponible de un producto en una sucursal: suma de todos sus lotes (más la
+    fila sin lote, si la hubiera). Cero si no hay ninguna fila.
+    """
+    total = sesion.execute(
+        select(func.coalesce(func.sum(Existencia.cantidad), 0)).where(
+            Existencia.id_sucursal == id_sucursal,
+            Existencia.id_producto == id_producto,
+        )
+    ).scalar_one()
+    return Decimal(total)

@@ -189,7 +189,9 @@ def test_escenario_3_seleccion_de_lote_por_caducidad():
     assert lotes == [{"id_lote": lote_a.id_lote, "cantidad": 4}], "sale primero el de caducidad más próxima"
 
 
-def test_escenario_4_saldo_negativo_y_reconstruccion():
+def test_escenario_4_venta_excede_saldo_es_rechazada():
+    # Corrección 2026-09-07: vender más de lo disponible es bloqueo duro (409
+    # `existencia_insuficiente`), no un saldo negativo. El inventario no se toca.
     s = SesionLocal()
     suc = _sucursal(s, "Quevedo Centro")
     op = _operador(s, suc.id_sucursal)
@@ -204,8 +206,8 @@ def test_escenario_4_saldo_negativo_y_reconstruccion():
     venta = cliente.post("/ventas", json={
         "clave_idempotencia": f"qs4-{uuid.uuid4()}", "id_turno": id_turno,
         "renglones": [{"id_producto": p.id_producto, "cantidad_unidades": 5}]})
-    assert venta.status_code == 201
-    assert any(a["codigo"] == "saldo_negativo" for a in venta.json()["advertencias"])
+    assert venta.status_code == 409
+    assert venta.json()["codigo"] == "existencia_insuficiente"
 
     verif = SesionLocal()
     try:
@@ -221,8 +223,8 @@ def test_escenario_4_saldo_negativo_y_reconstruccion():
                 Existencia.id_producto == p.id_producto,
             )
         ).scalar_one()
-        assert Decimal(reconstruido) == Decimal(-2)
-        assert Decimal(consultado) == Decimal(-2)
+        assert Decimal(reconstruido) == Decimal(3), "la entrada de 3 sigue intacta"
+        assert Decimal(consultado) == Decimal(3)
     finally:
         verif.close()
 
