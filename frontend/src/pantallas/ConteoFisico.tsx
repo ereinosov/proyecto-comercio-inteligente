@@ -9,6 +9,7 @@ import { ErrorApi } from "../servicios/clienteHttp";
 import { listarProductos, type Producto } from "../servicios/productos";
 import { type ConteoFisico as Conteo, iniciarConteo } from "../servicios/conteos";
 import { ResolucionConteo } from "./ResolucionConteo";
+import { Boton } from "../componentes/Boton";
 import estilos from "./ConteoFisico.module.css";
 
 interface Props {
@@ -81,8 +82,8 @@ export function ConteoFisico({ idSucursal }: Props) {
           El ajuste quedó registrado como movimiento trazable a este conteo.
         </p>
         <div className={estilos.fila}>
-          <button
-            className={estilos.boton}
+          <Boton
+            variante="primaria"
             onClick={() => {
               setConteo(null);
               setSeleccion(new Set());
@@ -90,7 +91,7 @@ export function ConteoFisico({ idSucursal }: Props) {
             }}
           >
             Nuevo conteo
-          </button>
+          </Boton>
         </div>
       </div>
     );
@@ -128,9 +129,9 @@ export function ConteoFisico({ idSucursal }: Props) {
       {error && <p className={estilos.error}>{error}</p>}
 
       <div className={estilos.fila}>
-        <button className={estilos.boton} onClick={iniciar} disabled={iniciando}>
+        <Boton variante="primaria" onClick={iniciar} disabled={iniciando}>
           {iniciando ? "Iniciando…" : "Iniciar conteo"}
-        </button>
+        </Boton>
       </div>
     </div>
   );

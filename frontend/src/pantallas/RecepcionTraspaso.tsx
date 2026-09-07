@@ -8,6 +8,7 @@ import { useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { type Producto } from "../servicios/productos";
 import { type Traspaso, recibirTraspaso } from "../servicios/traspasos";
+import { Boton } from "../componentes/Boton";
 import estilos from "./Inventario.module.css";
 
 interface Props {
@@ -105,9 +106,9 @@ export function RecepcionTraspaso({ traspaso, productos, onConfirmado }: Props) 
           </tbody>
         </table>
         <div className={estilos.acciones}>
-          <button className={estilos.botonSecundario} onClick={() => onConfirmado(resultado)}>
+          <Boton variante="neutra" onClick={() => onConfirmado(resultado)}>
             Listo
-          </button>
+          </Boton>
         </div>
       </div>
     );
@@ -149,9 +150,9 @@ export function RecepcionTraspaso({ traspaso, productos, onConfirmado }: Props) 
       </table>
       {error && <p className={estilos.error}>{error}</p>}
       <div className={estilos.acciones}>
-        <button className={estilos.boton} onClick={confirmar} disabled={guardando}>
+        <Boton variante="primaria" onClick={confirmar} disabled={guardando}>
           {guardando ? "Confirmando…" : "Confirmar recepción"}
-        </button>
+        </Boton>
       </div>
     </div>
   );

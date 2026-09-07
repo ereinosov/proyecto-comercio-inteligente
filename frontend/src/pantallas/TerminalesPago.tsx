@@ -17,6 +17,7 @@ import {
   registrarTerminal,
   type TerminalPago,
 } from "../servicios/pagos";
+import { Boton } from "../componentes/Boton";
 import estilos from "./TerminalesPago.module.css";
 
 function EstadoFirmware({ t }: { t: TerminalPago }) {
@@ -149,9 +150,9 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
             required
           />
         </label>
-        <button className={estilos.boton} type="submit">
+        <Boton variante="primaria" type="submit">
           Registrar terminal
-        </button>
+        </Boton>
         {confirmado && <span className={estilos.confirmado}>{confirmado}</span>}
       </form>
       {errorForm && <p className={estilos.errorForm}>{errorForm}</p>}
@@ -191,13 +192,13 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
                   </td>
                   <td>{t.activa ? "sí" : "retirada"}</td>
                   <td>
-                    <button
-                      className={estilos.boton}
-                      type="button"
+                    <Boton
+                      variante="fantasma"
+                      tamano="sm"
                       onClick={() => actualizarFirmware(t)}
                     >
                       Actualizar firmware
-                    </button>
+                    </Boton>
                   </td>
                 </tr>
               ))

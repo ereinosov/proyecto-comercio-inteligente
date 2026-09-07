@@ -20,6 +20,7 @@ import {
   type ResumenCobertura,
 } from "../servicios/pagos";
 import { etiquetaMedioPago, formatearPorcentaje } from "../utilidades/formato";
+import { Boton } from "../componentes/Boton";
 import estilos from "./CoberturaPago.module.css";
 
 export function CoberturaPago({ idSucursal, idOperador }: { idSucursal: number; idOperador: number }) {
@@ -135,9 +136,9 @@ export function CoberturaPago({ idSucursal, idOperador }: { idSucursal: number; 
                 required
               />
             </label>
-            <button className={estilos.boton} type="submit">
+            <Boton variante="primaria" registro="analisis" type="submit">
               Guardar
-            </button>
+            </Boton>
             {confirmado && <span className={estilos.confirmado}>{confirmado}</span>}
           </form>
           {error && <p className={estilos.error}>{error}</p>}
@@ -162,9 +163,9 @@ export function CoberturaPago({ idSucursal, idOperador }: { idSucursal: number; 
                 ))}
               </select>
             </label>
-            <button className={estilos.boton} type="submit">
+            <Boton variante="primaria" registro="analisis" type="submit">
               Registrar
-            </button>
+            </Boton>
           </form>
         </section>
 

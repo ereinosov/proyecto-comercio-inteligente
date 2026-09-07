@@ -11,6 +11,7 @@ import { listarProductos, type Producto } from "../servicios/productos";
 import { listarSucursales, type Sucursal } from "../servicios/sucursales";
 import { type Traspaso, despacharTraspaso } from "../servicios/traspasos";
 import { RecepcionTraspaso } from "./RecepcionTraspaso";
+import { Boton } from "../componentes/Boton";
 import estilos from "./Inventario.module.css";
 
 interface Props {
@@ -161,15 +162,15 @@ export function DespachoTraspaso({ idSucursal }: Props) {
       {error && <p className={estilos.error}>{error}</p>}
 
       <div className={estilos.acciones}>
-        <button
-          className={estilos.botonSecundario}
+        <Boton
+          variante="secundaria"
           onClick={() => setLineas((p) => [...p, { id_producto: 0, cantidad: "" }])}
         >
           + Otro producto
-        </button>
-        <button className={estilos.boton} onClick={despachar} disabled={despachando}>
+        </Boton>
+        <Boton variante="primaria" onClick={despachar} disabled={despachando}>
           {despachando ? "Despachando…" : "Despachar"}
-        </button>
+        </Boton>
       </div>
     </div>
   );

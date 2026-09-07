@@ -143,25 +143,6 @@
 
 .subnav {
   flex-shrink: 0;
-  display: flex;
-  gap: 8px;
-  padding: 12px 32px 0;
+  padding: var(--espacio-3) var(--espacio-8) 0;
   background: var(--color-superficie-base);
-}
-
-.subtab,
-.subtabActiva {
-  font-family: var(--tipografia-analisis);
-  font-size: 15px;
-  background: transparent;
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-analisis);
-  padding: 6px 14px;
-  cursor: pointer;
-  color: var(--color-tinta-suave);
-}
-
-.subtabActiva {
-  color: var(--color-tinta);
-  border-color: var(--color-tinta);
 }

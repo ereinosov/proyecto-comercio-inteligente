@@ -45,21 +45,6 @@
   gap: 6px;
 }
 
-.botonNuevo {
-  font-family: var(--tipografia-analisis);
-  font-size: 14px;
-  color: var(--color-tinta);
-  background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-analisis);
-  padding: 7px 14px;
-  cursor: pointer;
-}
-
-.botonNuevo:hover {
-  background: var(--color-superficie-base);
-}
-
 .soloLectura {
   font-size: 14px;
   color: var(--color-tinta-suave);
@@ -112,21 +97,6 @@
   display: flex;
   gap: 10px;
   white-space: nowrap;
-}
-
-.accion {
-  font-family: var(--tipografia-operacion);
-  font-size: 13px;
-  color: var(--color-tinta-suave);
-  background: transparent;
-  border: none;
-  padding: 0;
-  cursor: pointer;
-  text-decoration: underline;
-}
-
-.accion:hover {
-  color: var(--color-tinta);
 }
 
 /* Campos del modal */

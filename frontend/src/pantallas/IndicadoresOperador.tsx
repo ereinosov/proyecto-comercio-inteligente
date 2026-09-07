@@ -18,6 +18,7 @@ import {
   type IndicadoresRespuesta,
 } from "../servicios/caja";
 import { formatearNumero, formatearPorcentaje } from "../utilidades/formato";
+import { Boton } from "../componentes/Boton";
 import estilos from "./CajaFraude.module.css";
 
 /** Mediana de pares: porcentaje si hay valor, o el texto explícito de "sin pares". */
@@ -138,9 +139,9 @@ export function IndicadoresOperador({ idSucursal }: { idSucursal: number }) {
           <span className={estilos.puntoHueco} aria-hidden="true" />
           Requiere el conteo físico de inventario, que todavía no está disponible.
         </p>
-        <button className={estilos.boton} type="button" onClick={intentarCruce}>
+        <Boton variante="primaria" registro="analisis" onClick={intentarCruce}>
           Ejecutar cruce inventario-ventas
-        </button>
+        </Boton>
         {avisoCruce && <p className={estilos.nota}>{avisoCruce}</p>}
       </section>
     </div>

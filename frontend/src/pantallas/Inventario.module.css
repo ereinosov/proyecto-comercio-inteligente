@@ -125,38 +125,6 @@
   padding: 4px 8px;
 }
 
-.boton {
-  font-family: var(--tipografia-operacion);
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--color-superficie-alta);
-  /* La Regla de la Sola Voz: el botón primario de operación es Tinta, NUNCA Verde Rasero
-     (--color-marca), reservado en exclusiva a .botonCobrar de Venta. */
-  background: var(--color-tinta);
-  border: 1px solid var(--color-tinta);
-  border-radius: var(--radio-operacion);
-  padding: 9px 18px;
-  cursor: pointer;
-}
-
-.boton:disabled {
-  background: var(--color-borde);
-  border-color: var(--color-borde);
-  color: var(--color-tinta-suave);
-  cursor: not-allowed;
-}
-
-.botonSecundario {
-  font-family: var(--tipografia-operacion);
-  font-size: 14px;
-  color: var(--color-tinta);
-  background: var(--color-superficie-alta);
-  border: 1px solid var(--color-tinta);
-  border-radius: var(--radio-operacion);
-  padding: 8px 14px;
-  cursor: pointer;
-}
-
 .error {
   font-size: 13px;
   color: var(--color-critico);

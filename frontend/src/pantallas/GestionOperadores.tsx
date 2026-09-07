@@ -26,6 +26,7 @@ import {
 } from "../servicios/operadores";
 import { listarSucursales, type Sucursal } from "../servicios/sucursales";
 import type { Rol } from "../hooks/useRol";
+import { Boton } from "../componentes/Boton";
 import estilos from "./Administracion.module.css";
 
 const ROLES: Rol[] = ["cajero", "encargado", "admin"];
@@ -127,9 +128,9 @@ export function GestionOperadores() {
     <>
       <div className={estilos.barra}>
         <span />
-        <button className={estilos.botonNuevo} onClick={() => abrir()}>
+        <Boton variante="primaria" onClick={() => abrir()}>
           + Nuevo operador
-        </button>
+        </Boton>
       </div>
 
       {error && <p className={estilos.error}>{error}</p>}
@@ -162,17 +163,17 @@ export function GestionOperadores() {
                   <td>{nombreSucursal(o.id_sucursal)}</td>
                   <td>{o.activo === false ? "Desactivado" : "Activo"}</td>
                   <td className={estilos.acciones}>
-                    <button className={estilos.accion} onClick={() => abrir(o)}>
+                    <Boton variante="fantasma" tamano="sm" onClick={() => abrir(o)}>
                       Editar
-                    </button>
+                    </Boton>
                     {o.activo === false ? (
-                      <button className={estilos.accion} onClick={() => fijarActivo(o, true)}>
+                      <Boton variante="fantasma" tamano="sm" onClick={() => fijarActivo(o, true)}>
                         Reactivar
-                      </button>
+                      </Boton>
                     ) : (
-                      <button className={estilos.accion} onClick={() => fijarActivo(o, false)}>
+                      <Boton variante="fantasma" tamano="sm" onClick={() => fijarActivo(o, false)}>
                         Desactivar
-                      </button>
+                      </Boton>
                     )}
                   </td>
                 </tr>

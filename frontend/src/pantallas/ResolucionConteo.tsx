@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { type Producto } from "../servicios/productos";
 import { type ConteoFisico, resolverConteo } from "../servicios/conteos";
+import { Boton } from "../componentes/Boton";
 import estilos from "./ConteoFisico.module.css";
 
 interface Props {
@@ -120,9 +121,9 @@ export function ResolucionConteo({ conteo, productos, onResuelto, onCancelar }: 
           </tbody>
         </table>
         <div className={estilos.fila}>
-          <button className={estilos.boton} onClick={() => onResuelto(resultado)}>
+          <Boton variante="neutra" onClick={() => onResuelto(resultado)}>
             Listo
-          </button>
+          </Boton>
         </div>
       </div>
     );
@@ -165,12 +166,12 @@ export function ResolucionConteo({ conteo, productos, onResuelto, onCancelar }: 
       </table>
       {error && <p className={estilos.error}>{error}</p>}
       <div className={estilos.fila}>
-        <button className={estilos.boton} onClick={resolver} disabled={guardando}>
+        <Boton variante="primaria" onClick={resolver} disabled={guardando}>
           {guardando ? "Resolviendo…" : "Resolver conteo"}
-        </button>
-        <button className={estilos.botonSecundario} onClick={onCancelar} disabled={guardando}>
+        </Boton>
+        <Boton variante="neutra" onClick={onCancelar} disabled={guardando}>
           Volver
-        </button>
+        </Boton>
       </div>
     </div>
   );

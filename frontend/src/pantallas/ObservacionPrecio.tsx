@@ -15,6 +15,7 @@ import {
   type CanalCompetencia,
   type PresentacionUnidad,
 } from "../servicios/competencia";
+import { Boton } from "../componentes/Boton";
 import estilos from "./Competencia.module.css";
 
 interface Props {
@@ -184,9 +185,9 @@ export function ObservacionPrecio({ idTurno }: Props) {
           </select>
         </div>
 
-        <button className={estilos.boton} onClick={capturar} disabled={guardando}>
+        <Boton variante="primaria" registro="analisis" onClick={capturar} disabled={guardando}>
           {guardando ? "Guardando…" : "Registrar observación"}
-        </button>
+        </Boton>
       </div>
 
       {error && <p className={estilos.error}>{error}</p>}

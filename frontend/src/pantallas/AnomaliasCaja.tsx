@@ -16,6 +16,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarAnomalias, resolverAnomalia, type AnomaliaCaja } from "../servicios/caja";
 import { formatearMoneda } from "../utilidades/formato";
+import { Boton } from "../componentes/Boton";
 import estilos from "./CajaFraude.module.css";
 
 export function AnomaliasCaja({
@@ -178,9 +179,9 @@ export function AnomaliasCaja({
                     required
                   />
                 </label>
-                <button className={estilos.boton} type="submit">
+                <Boton variante="primaria" registro="analisis" type="submit">
                   Resolver
-                </button>
+                </Boton>
                 {errorForm && <p className={estilos.error}>{errorForm}</p>}
               </form>
             ) : (

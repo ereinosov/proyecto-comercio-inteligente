@@ -23,6 +23,7 @@ import {
   type CausaMerma,
   type DesgloseMermas,
 } from "../servicios/caja";
+import { Boton } from "../componentes/Boton";
 import estilos from "./CajaFraude.module.css";
 
 const CAUSAS: { valor: CausaMerma; etiqueta: string }[] = [
@@ -129,9 +130,9 @@ export function Mermas({ idSucursal, idOperador }: { idSucursal: number; idOpera
               ))}
             </select>
           </label>
-          <button className={estilos.boton} type="submit">
+          <Boton variante="primaria" registro="analisis" type="submit">
             {confirmado ? "Merma registrada" : "Registrar merma"}
-          </button>
+          </Boton>
         </form>
         {errorForm && <p className={estilos.error}>{errorForm}</p>}
       </section>

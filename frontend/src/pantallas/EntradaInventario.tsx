@@ -9,6 +9,7 @@ import { ErrorApi } from "../servicios/clienteHttp";
 import { listarProductos, type Producto } from "../servicios/productos";
 import { registrarEntrada } from "../servicios/inventario";
 import { formatearMoneda } from "../utilidades/formato";
+import { Boton } from "../componentes/Boton";
 import estilos from "./Inventario.module.css";
 
 interface Props {
@@ -126,9 +127,9 @@ export function EntradaInventario({ idSucursal }: Props) {
             />
           </div>
         )}
-        <button className={estilos.boton} onClick={registrar} disabled={guardando}>
+        <Boton variante="primaria" onClick={registrar} disabled={guardando}>
           {guardando ? "Registrando…" : "Registrar entrada"}
-        </button>
+        </Boton>
       </div>
 
       {error && <p className={estilos.error}>{error}</p>}
