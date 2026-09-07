@@ -56,6 +56,33 @@
   min-width: 220px;
 }
 
+/* Caja del buscador de producto (SelectorProducto): footprint de un control; los resultados
+   flotan debajo sin empujar la fila que lo contiene (panel flotante, DESIGN.md). */
+.caja {
+  position: relative;
+  min-width: 220px;
+}
+
+.caja .input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.flotante {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  z-index: 30;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+}
+
 .input {
   font-family: var(--tipografia-operacion);
   font-size: 14px;
@@ -63,7 +90,9 @@
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  padding: 6px 8px;
+  padding: 8px 10px;
+  min-height: var(--alto-control);
+  box-sizing: border-box;
 }
 
 .input:focus-visible {
@@ -75,8 +104,17 @@
   list-style: none;
   margin: 0;
   padding: 0;
-  max-height: 140px;
+  max-height: 220px;
   overflow-y: auto;
+}
+
+/* Pista / "sin coincidencias" del buscador de producto: los resultados aparecen a medida que
+   se escribe, no una lista larga por defecto. */
+.pista {
+  margin: 0;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
 }
 
 .filaResultado {

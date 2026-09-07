@@ -39,12 +39,12 @@ export function SelectorProducto({
       .catch(() => setCatalogo([]));
   }, [abierto, idSucursal, catalogo.length]);
 
+  // No se muestra el catálogo entero por defecto: los resultados aparecen a medida que se
+  // escribe. Sin término no hay lista (evita el "muro" con scrollbar de todo el catálogo).
   const resultados = useMemo(() => {
     const termino = busqueda.trim().toLowerCase();
-    const base = termino
-      ? catalogo.filter((p) => p.nombre.toLowerCase().includes(termino))
-      : catalogo;
-    return base.slice(0, 20);
+    if (!termino) return [];
+    return catalogo.filter((p) => p.nombre.toLowerCase().includes(termino)).slice(0, 8);
   }, [busqueda, catalogo]);
 
   function elegir(producto: Producto) {
@@ -77,8 +77,11 @@ export function SelectorProducto({
     );
   }
 
+  // La búsqueda vive en una caja del alto de un control; los resultados FLOTAN debajo (panel
+  // flotante, DESIGN.md "Identificar cliente") para no empujar la fila de "agregar producto"
+  // ni desalinear el campo Cantidad.
   return (
-    <div className={estilos.panel}>
+    <div className={estilos.caja}>
       <input
         className={estilos.input}
         type="text"
@@ -92,19 +95,29 @@ export function SelectorProducto({
             e.preventDefault();
             elegir(resultados[0]);
           }
+          if (e.key === "Escape") {
+            setAbierto(false);
+            setBusqueda("");
+          }
         }}
         autoFocus
       />
-      <ul className={estilos.resultados}>
-        {resultados.map((p) => (
-          <li key={p.id_producto}>
-            <button type="button" className={estilos.filaResultado} onClick={() => elegir(p)}>
-              {p.nombre}
-            </button>
-          </li>
-        ))}
-      </ul>
-      <div className={estilos.acciones}>
+      <div className={estilos.flotante}>
+        {busqueda.trim() === "" ? (
+          <p className={estilos.pista}>Escribe el nombre del producto para ver resultados.</p>
+        ) : resultados.length === 0 ? (
+          <p className={estilos.pista}>Ningún producto coincide con «{busqueda.trim()}».</p>
+        ) : (
+          <ul className={estilos.resultados}>
+            {resultados.map((p) => (
+              <li key={p.id_producto}>
+                <button type="button" className={estilos.filaResultado} onClick={() => elegir(p)}>
+                  {p.nombre}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
         <button
           type="button"
           className={estilos.enlace}
