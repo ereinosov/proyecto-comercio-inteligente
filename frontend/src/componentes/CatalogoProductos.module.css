@@ -1,0 +1,148 @@
+/* Catálogo de productos en grid (US12). Registro de Operación: radio 2px, IBM Plex Sans, sin
+   sombra. Ningún elemento usa Verde Rasero (La Regla de la Sola Voz). Medidas de tokens.css. */
+
+.catalogo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-3);
+  min-height: 0;
+}
+
+.titulo {
+  margin: 0;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-md);
+  font-weight: var(--peso-fuerte);
+  color: var(--color-tinta);
+}
+
+/* Chips de categoría */
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--espacio-2);
+}
+
+.chip,
+.chipActivo {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  min-height: var(--alto-control-sm);
+  padding: 0 var(--espacio-3);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  background: var(--color-superficie-alta);
+  color: var(--color-tinta-suave);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.chip:hover {
+  color: var(--color-tinta);
+}
+
+.chipActivo {
+  color: var(--color-tinta);
+  border-color: var(--color-tinta);
+  font-weight: var(--peso-fuerte);
+}
+
+/* Grilla de tarjetas: se adapta al ancho de la columna. */
+.grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: var(--espacio-3);
+}
+
+.tarjeta {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  text-align: left;
+  padding: 0;
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  overflow: hidden;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition: border-color 120ms ease;
+}
+
+.tarjeta:hover {
+  border-color: var(--color-tinta);
+}
+
+.cuerpo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+  padding: var(--espacio-2) var(--espacio-3) var(--espacio-3);
+}
+
+.nombre {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--color-tinta);
+  line-height: var(--lh-ajustado);
+  /* Dos líneas máximo, el resto con elipsis — la altura de la tarjeta no baila. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.codigo {
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--texto-xs);
+  color: var(--color-tinta-suave);
+}
+
+.filaPrecio {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-2);
+  margin-top: var(--espacio-1);
+}
+
+.precio {
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-fuerte);
+  color: var(--color-tinta);
+}
+
+.porKg {
+  font-weight: var(--peso-normal);
+  font-size: var(--texto-xs);
+  color: var(--color-tinta-suave);
+}
+
+/* Afordancia de "agregar": contorno neutro, NUNCA Verde Rasero (La Regla de la Sola Voz).
+   No es un botón aparte —la tarjeta entera dispara la acción— sino la señal visual de que se
+   puede agregar de un toque. */
+.mas {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+  border: 1px solid var(--color-acento-secundario);
+  border-radius: var(--radio-operacion);
+  color: var(--color-acento-secundario);
+  font-size: var(--texto-md);
+  line-height: 1;
+}
+
+.tarjeta:hover .mas {
+  background: var(--color-superficie-base);
+}

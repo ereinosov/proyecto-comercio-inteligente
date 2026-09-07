@@ -23,8 +23,10 @@ interface Props {
   nombreCategoria: string | null | undefined;
   /** Nombre del producto, para el `alt` de la imagen. */
   nombreProducto: string;
-  /** Lado del recuadro en px. El glifo de fallback se escala en proporción. */
+  /** Lado del recuadro en px (recuadro cuadrado). Ignorado si `bloque`. */
   tamano?: number;
+  /** Ocupa el ancho de su contenedor con relación de aspecto 4/3 (tarjeta del catálogo). */
+  bloque?: boolean;
 }
 
 export function ImagenProducto({
@@ -32,6 +34,7 @@ export function ImagenProducto({
   nombreCategoria,
   nombreProducto,
   tamano = 44,
+  bloque = false,
 }: Props) {
   const [fallo, setFallo] = useState(false);
 
@@ -42,15 +45,16 @@ export function ImagenProducto({
   }, [urlImagen]);
 
   const mostrarIcono = !urlImagen || fallo;
+  const ladoGlifo = bloque ? 34 : Math.round(tamano * 0.55);
 
   return (
     <span
-      className={estilos.marco}
-      style={{ width: tamano, height: tamano }}
+      className={`${estilos.marco} ${bloque ? estilos.bloque : ""}`.trim()}
+      style={bloque ? undefined : { width: tamano, height: tamano }}
       data-icono={mostrarIcono ? "" : undefined}
     >
       {mostrarIcono ? (
-        <IconoCategoria nombreCategoria={nombreCategoria} tamano={Math.round(tamano * 0.55)} />
+        <IconoCategoria nombreCategoria={nombreCategoria} tamano={ladoGlifo} />
       ) : (
         <img
           className={estilos.imagen}

@@ -16,11 +16,12 @@ import { useEffect, useMemo, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarCategorias, listarProductos, type Categoria, type Producto } from "../servicios/productos";
 import { listarSucursales } from "../servicios/sucursales";
-import { IconoCategoria } from "../componentes/IconoCategoria";
+import { ImagenProducto } from "../componentes/ImagenProducto";
 import { SelectorProducto } from "../componentes/SelectorProducto";
 import { CrearProductoModal } from "../componentes/CrearProductoModal";
 import { Boton } from "../componentes/Boton";
 import { Campo } from "../componentes/Campo";
+import { CatalogoProductos } from "../componentes/CatalogoProductos";
 import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
 import { type Turno } from "../servicios/turnos";
 import { useRol, type Rol } from "../hooks/useRol";
@@ -145,35 +146,55 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
     setAgregando(false);
   }
 
+  // Única lógica de "agregar un renglón al ticket" del sistema. La usan los DOS caminos: el
+  // formulario de fila expansible (buscador `SelectorProducto`) y el catálogo en grid (US12).
+  // Un mismo producto, cantidad y cálculo de importe, no importa por dónde se agregó.
+  function agregarRenglon(producto: Producto, cantidad: { unidades: number } | { gramos: number }) {
+    setRenglones((prev) => [
+      ...prev,
+      "unidades" in cantidad
+        ? {
+            idLocal: crypto.randomUUID(),
+            producto,
+            cantidadUnidades: cantidad.unidades,
+            importeEstimado: importeEstimado(producto.precio_efectivo, cantidad.unidades),
+          }
+        : {
+            idLocal: crypto.randomUUID(),
+            producto,
+            cantidadGramos: cantidad.gramos,
+            importeEstimado: importeEstimado(producto.precio_efectivo, cantidad.gramos / 1000),
+          },
+    ]);
+  }
+
   function confirmarFila() {
     if (!productoNuevo) return;
 
     if (productoNuevo.es_granel) {
       const gramos = gramosDesdeKg(kg);
       if (gramos === null) return;
-      setRenglones((prev) => [
-        ...prev,
-        {
-          idLocal: crypto.randomUUID(),
-          producto: productoNuevo,
-          cantidadGramos: gramos,
-          importeEstimado: importeEstimado(productoNuevo.precio_efectivo, gramos / 1000),
-        },
-      ]);
+      agregarRenglon(productoNuevo, { gramos });
     } else {
       const cantidad = Number(unidades);
       if (!Number.isFinite(cantidad) || cantidad <= 0) return;
-      setRenglones((prev) => [
-        ...prev,
-        {
-          idLocal: crypto.randomUUID(),
-          producto: productoNuevo,
-          cantidadUnidades: cantidad,
-          importeEstimado: importeEstimado(productoNuevo.precio_efectivo, cantidad),
-        },
-      ]);
+      agregarRenglon(productoNuevo, { unidades: cantidad });
     }
     setAgregando(false);
+  }
+
+  // US12: click en una tarjeta del catálogo. Un producto por unidad se agrega directo (cantidad
+  // 1); uno a granel abre el formulario de fila con el producto ya elegido para capturar el peso
+  // en la báscula — mismo flujo exacto que el buscador, no una segunda lógica.
+  function agregarDesdeCatalogo(producto: Producto) {
+    if (producto.es_granel) {
+      setAgregando(true);
+      setIdProductoNuevo(producto.id_producto);
+      setUnidades("");
+      setKg("");
+      return;
+    }
+    agregarRenglon(producto, { unidades: 1 });
   }
 
   // US9 (FR-051): quitar un renglón del carrito. Acción de bajo riesgo, sin confirmación —
@@ -392,8 +413,18 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
         }
       />
 
-      <div className={estilos.cuerpo}>
-        <table className={estilos.tabla}>
+      <div className={estilos.cuerpoDoble}>
+        <section className={estilos.columnaCatalogo} aria-label="Catálogo de productos">
+          <CatalogoProductos
+            productos={productos}
+            categorias={categorias}
+            onAgregar={agregarDesdeCatalogo}
+          />
+        </section>
+
+        <section className={estilos.columnaTicket} aria-label="Ticket de venta">
+          <h2 className={estilos.tituloTicket}>Ticket de venta</h2>
+          <table className={estilos.tabla}>
           <thead>
             <tr>
               <th>Producto</th>
@@ -408,7 +439,12 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
               <tr key={r.idLocal}>
                 <td>
                   <span className={estilos.celdaProducto}>
-                    <IconoCategoria nombreCategoria={nombreCategoria(r.producto.id_categoria)} />
+                    <ImagenProducto
+                      urlImagen={r.producto.url_imagen}
+                      nombreCategoria={nombreCategoria(r.producto.id_categoria)}
+                      nombreProducto={r.producto.nombre}
+                      tamano={28}
+                    />
                     {r.producto.nombre}
                   </span>
                 </td>
@@ -516,9 +552,10 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
               </tr>
             )}
           </tbody>
-        </table>
+          </table>
 
-        {error && <p className={estilos.advertencia}>{error}</p>}
+          {error && <p className={estilos.advertencia}>{error}</p>}
+        </section>
       </div>
 
       {creandoProducto && (
