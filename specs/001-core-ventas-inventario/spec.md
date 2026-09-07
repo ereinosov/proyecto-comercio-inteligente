@@ -41,6 +41,19 @@ operaciones ejecutadas sin conectividad. Registra hechos; no decide acciones.
   en negativo y visible hasta el siguiente conteo físico. Es la única representación que mantiene
   el inventario reconstruible exactamente a partir de sus movimientos, como exige el Principio IV,
   y un saldo negativo en pantalla es además la señal de que ese producto necesita conteo.
+- **Corrección 2026-09-07**: la decisión anterior de "no bloquear" citaba el
+  Principio II de la constitución como justificación; esa cita era
+  incorrecta — el Principio II protege contra la caída de servicios
+  externos (IA, red, analítica) como camino crítico de un cobro, no aplica
+  a una consulta determinista contra la propia base de datos. Se revierte
+  la decisión: el sistema ahora BLOQUEA (código `existencia_insuficiente`,
+  409, sin excepción ni autorización de encargado) una venta o traspaso
+  cuya cantidad excede la existencia disponible. Vender o traspasar algo
+  que no existe en inventario no tiene sentido de negocio real. El saldo
+  negativo histórico previo a esta corrección sigue siendo válido y visible
+  (dato ya existente, no se migra ni se oculta). Afecta a las dos
+  Clarifications anteriores de esta sesión, a FR-047 y al Edge Case "Venta
+  que excede el saldo"; el consumo FEFO (FR-048) no cambia.
 - Q: ¿Qué límite tiene anular una venta? → A: el operador puede anular las ventas de su turno en
   curso; una venta de un turno ya cerrado solo la anula un encargado. Reutiliza la figura de
   encargado que ya existe para reasignar PIN, sin introducir un sistema de roles, y evita que la
@@ -484,9 +497,10 @@ cantidad y cálculo de importe que agregar ese producto por el buscador; (d) el 
 
 - **Peso cero o negativo en báscula**: un renglón de granel con cantidad menor o igual a cero se
   rechaza antes de cerrar la venta.
-- **Venta que excede el saldo**: el sistema advierte al operador y le permite continuar registrando
-  la venta física que ya ocurrió; la existencia queda en saldo negativo, visible, hasta el
-  siguiente conteo, porque impedir el cobro detendría la caja.
+- **Venta que excede el saldo**: (Corrección 2026-09-07) el sistema **rechaza** el renglón y la
+  venta completa con `existencia_insuficiente` (409); no registra ningún movimiento. El mensaje
+  indica la cantidad disponible y sugiere ajustar o hacer un conteo físico. No hay override de
+  encargado. Mismo criterio para un traspaso que excede la existencia de la sucursal de origen.
 - **Lote posterior que caduca antes**: el sistema consume primero el de caducidad más próxima
   aunque haya entrado después; el orden de entrada solo decide entre lotes sin caducidad o con la
   misma fecha.
@@ -585,12 +599,18 @@ cantidad y cálculo de importe que agregar ese producto por el buscador; (d) el 
   esa venta.
 - **FR-011**: La venta DEBE completarse aunque los servicios de pronóstico, analítica o telemetría
   no respondan.
-- **FR-047**: El sistema DEBE permitir registrar una venta cuya cantidad excede el saldo de
-  existencia calculado. DEBE advertir al operador antes de cerrarla, DEBE registrarla igualmente y
-  DEBE dejar que la existencia quede en saldo negativo, visible como tal, hasta el siguiente conteo
-  físico. Limitar el saldo a cero está PROHIBIDO, porque rompería la reconstrucción del inventario
-  a partir de sus movimientos. Bloquear el cobro por esta causa está PROHIBIDO: ninguna validación
-  de existencias puede ser camino crítico de un cobro.
+- **FR-047** (reescrito, Corrección 2026-09-07): El sistema DEBE **rechazar** una venta cuya
+  cantidad excede la existencia disponible del producto en la sucursal, con el código de dominio
+  `existencia_insuficiente` (409), ANTES de escribir ningún movimiento de inventario. El rechazo
+  aplica a la venta COMPLETA: si un solo renglón no alcanza, no se registra ningún renglón. No
+  hay override de encargado ni PIN de excepción. El mismo criterio aplica al despacho de un
+  traspaso contra la existencia de la sucursal de origen. El mensaje de error DEBE indicar la
+  cantidad disponible y la acción correctiva (ajustar la cantidad o hacer un conteo físico).
+  *Motivo del cambio*: la versión anterior ("no bloquear, registrar en saldo negativo") citaba
+  el Principio II, que sólo cubre la caída de servicios EXTERNOS como camino crítico de un cobro,
+  no una consulta determinista a la propia base. Un saldo negativo **histórico** (anterior a esta
+  corrección) sigue siendo un dato válido: `GET /existencias` lo expone tal cual y el consumo
+  FEFO no lo limita a cero — sólo se prohíbe **crear** uno nuevo por venta o traspaso.
 
 **Entradas, lotes y costo**
 
@@ -716,8 +736,8 @@ cantidad y cálculo de importe que agregar ese producto por el buscador; (d) el 
 - **FR-053**: La corrección del carrito es estado local de la pantalla hasta el momento de
   "Cobrar"; NO DEBE introducir ningún endpoint nuevo ni persistir el carrito parcialmente. La venta
   registrada al cobrar DEBE contener exactamente los renglones y cantidades resultantes de la
-  edición, sin efecto sobre FEFO (FR-048), el saldo negativo visible (FR-047) ni ningún otro
-  requisito de US1.
+  edición, sin efecto sobre FEFO (FR-048), el bloqueo por existencia insuficiente (FR-047,
+  reescrito 2026-09-07) ni ningún otro requisito de US1.
 
 **Roles de operador, sucursal fija y autorización centralizada (User Story 10 — Principio VI,
 enmienda constitucional v2.3.0)**

@@ -95,8 +95,21 @@ cajero —añade un paso a la caja, que es el flujo que no puede entorpecerse—
 
 ## 5. Saldo negativo
 
-**Decisión**: ni `existencia.cantidad` ni el saldo por lote llevan restricción de no negatividad. El
-esquema admite valores negativos y las consultas los muestran como tales.
+**Corrección 2026-09-07 — bloqueo duro.** Lo que sigue describía el diseño original ("no bloquear,
+imputar el exceso al último lote FEFO, dejar el saldo negativo"). Ese diseño se **revierte**: una
+venta o un traspaso que excede la existencia disponible se **rechaza** con
+`existencia_insuficiente` (409), validando la operación completa antes de escribir ningún
+movimiento (`registrar_venta` / `despachar_traspaso` en `backend/rasero/servicios/`). La cita del
+Principio II era incorrecta: ese principio cubre la caída de servicios EXTERNOS como camino
+crítico de un cobro, no una consulta determinista contra la propia base. `existencia.cantidad`
+**conserva** la ausencia de restricción de no negatividad a nivel de esquema, porque un saldo
+negativo **histórico** (anterior a esta corrección) sigue siendo un dato válido, reconstruible y
+visible — sólo se prohíbe **crear** uno nuevo. El texto original queda abajo como registro.
+
+---
+
+**Decisión original (revertida)**: ni `existencia.cantidad` ni el saldo por lote llevan restricción
+de no negatividad. El esquema admite valores negativos y las consultas los muestran como tales.
 
 Cuando una venta excede el saldo, el remanente que ningún lote cubre **se imputa al último lote
 seleccionado por el criterio de caducidad**, que queda en negativo. Si el producto no tiene ningún
@@ -111,11 +124,8 @@ y el negativo en ese lote es en sí mismo la señal de que allí hay algo que co
 **Alternativas descartadas**: limitar el saldo a cero y anotar el exceso aparte —rompe la igualdad
 entre saldo y suma de movimientos, que es el fundamento del Principio IV—; registrar todo el exceso
 sin lote —deja movimientos huérfanos y complica el costeo—; bloquear la venta —prohibido por el
-Principio II—.
-
-> Punto a ratificar por el usuario: la imputación del exceso al lote seleccionado es decisión de
-> este plan, no del spec. Si se prefiere `id_lote` nulo para todo exceso, cambia `data-model.md` y
-> la prueba obligatoria n.º 4, no el resto del diseño.
+Principio II—. *(Nota 2026-09-07: esta última alternativa es la que finalmente se adoptó; la
+prohibición citada estaba mal fundada.)*
 
 ---
 

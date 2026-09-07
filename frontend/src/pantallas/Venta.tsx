@@ -293,6 +293,9 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
       }, 450);
     } catch (e) {
       setCobrando(false);
+      // Incluye `existencia_insuficiente` (409, Corrección 2026-09-07): el backend ahora
+      // rechaza en vez de completar con advertencia `saldo_negativo`. El mensaje del dominio
+      // ya trae la acción correctiva ("Ajusta la cantidad o haz un conteo físico…").
       setError(e instanceof ErrorApi ? e.message : "No se pudo registrar la venta.");
     }
   }

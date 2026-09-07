@@ -226,7 +226,7 @@ hecho que lo origine, cuando corresponde (Principio IV).
 | `id_sucursal` | `INTEGER` | PK compuesta |
 | `id_producto` | `INTEGER` | PK compuesta |
 | `id_lote` | `INTEGER NULL` | PK compuesta |
-| `cantidad` | `NUMERIC(14,0) NOT NULL` | **Sin restricción de no negatividad** (FR-047) |
+| `cantidad` | `NUMERIC(14,0) NOT NULL` | **Sin restricción de no negatividad**: un saldo negativo histórico (previo a la Corrección 2026-09-07 de FR-047) sigue siendo válido y reconstruible. Una venta o traspaso ya NO puede crear uno nuevo — se rechaza con `existencia_insuficiente`. |
 
 *Actualización*: siempre por suma de delta en la misma transacción del movimiento
 (`ON CONFLICT DO UPDATE SET cantidad = existencia.cantidad + EXCLUDED.cantidad`). **Nunca por

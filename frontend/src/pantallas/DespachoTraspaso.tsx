@@ -65,6 +65,8 @@ export function DespachoTraspaso({ idSucursal }: Props) {
       });
       setEnTransito(traspaso);
     } catch (e) {
+      // Incluye `existencia_insuficiente` (409, Corrección 2026-09-07): traspasar más de lo
+      // disponible en origen ahora se rechaza. El mensaje del dominio ya trae la acción.
       setError(e instanceof ErrorApi ? e.message : "No se pudo despachar el traspaso.");
     } finally {
       setDespachando(false);
