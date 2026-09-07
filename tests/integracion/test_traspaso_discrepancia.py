@@ -9,13 +9,21 @@ from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 from rasero.api.aplicacion import app
+from rasero.persistencia.sesion import SesionLocal
 from rasero.errores import ExistenciaInsuficiente
 from rasero.persistencia.modelos import Existencia, MovimientoInventario, Traspaso
 from rasero.servicios.inventario import registrar_entrada
 from rasero.servicios.traspasos import RenglonDespacho, despachar_traspaso
-from tests.apoyo import crear_escenario_basico
+from tests.apoyo import crear_escenario_basico, headers_encargado
 
-cliente = TestClient(app)
+
+# Rol de pantalla `encargado` (constitución v2.5.0): estas pantallas quedaron tras
+# `exige_rol('encargado')`. Header por defecto del cliente; una llamada puntual puede
+# sobreescribirlo con `headers=`.
+_s_cab = SesionLocal()
+_CAB_ENCARGADO = headers_encargado(_s_cab)
+_s_cab.close()
+cliente = TestClient(app, headers=_CAB_ENCARGADO)
 
 
 def test_recepcion_parcial_expone_la_discrepancia_sin_clasificarla(sesion):

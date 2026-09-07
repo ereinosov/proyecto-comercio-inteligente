@@ -10,9 +10,13 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import exige_rol
 from rasero.servicios import traspasos as servicio_traspasos
 
-router = APIRouter(tags=["traspasos"])
+# Traspasos entre sucursales: rol `encargado` (constitución v2.5.0, "Autorización de pantalla").
+# Tanto el despacho como la recepción — la pantalla de recepción sólo se alcanza desde la de
+# despacho, no hay flujo de `cajero` que traspase mercancía.
+router = APIRouter(tags=["traspasos"], dependencies=[Depends(exige_rol("encargado"))])
 
 
 class RenglonDespachoNuevo(BaseModel):

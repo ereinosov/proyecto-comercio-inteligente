@@ -11,10 +11,15 @@ from sqlalchemy import delete
 from fastapi.testclient import TestClient
 
 from rasero.api.aplicacion import app
+from tests.apoyo import headers_encargado
 from rasero.persistencia.modelos import Cliente, IntervaloCompra, SenalFuga
 from rasero.persistencia.sesion import SesionLocal
 
-cliente_http = TestClient(app)
+# `/clientes/fuga/resumen` es rol `encargado` (constitución v2.5.0).
+_s_cab = SesionLocal()
+_CAB_ENCARGADO = headers_encargado(_s_cab)
+_s_cab.close()
+cliente_http = TestClient(app, headers=_CAB_ENCARGADO)
 
 _AHORA = dt.datetime(2026, 9, 7, tzinfo=dt.timezone.utc)
 

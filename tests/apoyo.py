@@ -64,6 +64,35 @@ def headers_sesion(sesion, operador, **kwargs) -> dict:
     return sesion_turno_abierto(sesion, operador, **kwargs)[1]
 
 
+def headers_encargado(sesion, *, id_sucursal: int | None = None) -> dict:
+    """Crea un operador `encargado`, le abre un turno y comitea; devuelve el header
+    `Authorization: Bearer`. Para las pantallas de rol `encargado` (constitución v2.5.0,
+    "Autorización de pantalla"): precios, competencia, pronóstico, traspasos, capital,
+    caja/fraude, promociones (gestión), listado y detalle de clientes, cobertura/bitácora.
+    """
+    if id_sucursal is None:
+        sucursal = Sucursal(
+            nombre=f"Sucursal encargado {uuid.uuid4().hex[:6]}",
+            zona_horaria="America/Guayaquil",
+        )
+        sesion.add(sucursal)
+        sesion.flush()
+        id_sucursal = sucursal.id_sucursal
+    operador = Operador(
+        nombre=f"Encargado {uuid.uuid4().hex[:6]}",
+        pin_hash="",
+        rol="encargado",
+        id_sucursal=id_sucursal,
+        activo=True,
+    )
+    sesion.add(operador)
+    sesion.flush()
+    operador.pin_hash = hashear_pin("1234", str(operador.id_operador))
+    cabeceras = headers_sesion(sesion, operador, id_sucursal=id_sucursal)
+    sesion.commit()
+    return cabeceras
+
+
 def anulacion_de_prueba(sesion, *, id_venta: int, id_operador: int, instante: datetime) -> int:
     """Crea una `anulacion_venta` mínima para colgar de ella un movimiento `entrada_anulacion`
     con un instante controlado (el servicio real `anular_venta` usa `datetime.now`, no

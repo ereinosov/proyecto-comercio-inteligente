@@ -13,6 +13,8 @@ from fastapi.testclient import TestClient
 from decimal import Decimal
 
 from rasero.api.aplicacion import app
+from tests.apoyo import headers_encargado
+from rasero.persistencia.sesion import SesionLocal
 from rasero.persistencia.modelos import ConteoFisico, ConteoRenglon
 from tests.apoyo_caja import (
     crear_lote,
@@ -22,7 +24,14 @@ from tests.apoyo_caja import (
     escenario_arqueo,
 )
 
-cliente = TestClient(app)
+
+# Rol de pantalla `encargado` (constitución v2.5.0): estas pantallas quedaron tras
+# `exige_rol('encargado')`. Header por defecto del cliente; una llamada puntual puede
+# sobreescribirlo con `headers=`.
+_s_cab = SesionLocal()
+_CAB_ENCARGADO = headers_encargado(_s_cab)
+_s_cab.close()
+cliente = TestClient(app, headers=_CAB_ENCARGADO)
 _MARCA = datetime.now(timezone.utc).isoformat()
 _HOY = datetime.now(timezone.utc).date()
 _DESDE = (_HOY - timedelta(days=2)).isoformat()

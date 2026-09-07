@@ -13,12 +13,16 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import exige_rol
 from rasero.servicios import demanda as servicio_demanda
 from rasero.servicios import demanda_sintetica as servicio_sintetica
 from rasero.servicios import pronostico as servicio_pronostico
 from rasero.servicios import sustitucion as servicio_sustitucion
 
-router = APIRouter(tags=["pronostico"])
+# Pantalla "Pronóstico de demanda": táctica/gerencial, rol `encargado` (constitución v2.5.0).
+# El módulo 004 consume el pronóstico máquina a máquina (llamadas de servicio internas), no por
+# HTTP, así que la puerta de rol no afecta a esa integración.
+router = APIRouter(tags=["pronostico"], dependencies=[Depends(exige_rol("encargado"))])
 
 
 @router.get("/demanda")

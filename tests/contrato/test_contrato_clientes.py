@@ -14,9 +14,15 @@ from rasero.persistencia.modelos import Cliente, IntervaloCompra, SenalFuga
 from rasero.persistencia.sesion import SesionLocal, engine
 from rasero.servicios import clientes as servicio_clientes
 from rasero.servicios.ventas import RenglonEntrada, registrar_venta
-from tests.apoyo import crear_escenario_basico
+from tests.apoyo import crear_escenario_basico, headers_encargado
 
-cliente_http = TestClient(app)
+# El listado y el detalle de clientes son rol `encargado` (constitución v2.5.0). El alta, la
+# edición, la búsqueda por nombre y la visita quedan abiertas; el header por defecto (encargado)
+# también las cubre. Un caso que pruebe explícitamente "sin token" usa `headers={}`.
+_s_cab = SesionLocal()
+_CAB_ENCARGADO = headers_encargado(_s_cab)
+_s_cab.close()
+cliente_http = TestClient(app, headers=_CAB_ENCARGADO)
 
 
 def test_post_clientes_devuelve_201_con_las_claves_del_contrato():

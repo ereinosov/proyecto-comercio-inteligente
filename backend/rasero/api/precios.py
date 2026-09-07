@@ -26,10 +26,14 @@ from rasero.persistencia.modelos import (
     ZonaExhibicion,
 )
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import exige_rol
 from rasero.servicios import margenes as servicio_margenes
 from rasero.servicios import precios as servicio_precios
 
-router = APIRouter(tags=["precios"])
+# Pantalla "Precios y márgenes": táctica/gerencial, rol `encargado` (constitución v2.5.0,
+# "Autorización de pantalla"). Ningún flujo de caja de un `cajero` consulta márgenes ni roles
+# de producto: Venta usa `/productos`, no este router.
+router = APIRouter(tags=["precios"], dependencies=[Depends(exige_rol("encargado"))])
 
 
 class RolNuevo(BaseModel):

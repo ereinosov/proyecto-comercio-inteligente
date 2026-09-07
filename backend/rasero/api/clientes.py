@@ -18,9 +18,16 @@ from rasero.api.paginacion import paginar
 from rasero.errores import RecursoNoEncontrado
 from rasero.persistencia.modelos import Visita
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import exige_rol
 from rasero.servicios import clientes as servicio_clientes
 
 router = APIRouter(tags=["clientes"])
+
+# La PANTALLA de análisis de clientes (puntuación de valor, señal de fuga, segmentos) y sus
+# lecturas agregadas son de rol `encargado` (constitución v2.5.0). Lo que un `cajero` necesita
+# desde `IdentificarCliente` en Venta —buscar por nombre, dar de alta, editar (Excepción
+# explícita del Principio VI), registrar la visita— queda abierto.
+_soloEncargado = [Depends(exige_rol("encargado"))]
 
 
 # `nombre` y `fecha_nacimiento` son OPCIONALES: un cliente puede quedar registrado sólo por su
@@ -97,7 +104,7 @@ def registrar_cliente(cuerpo: ClienteNuevo, sesion: Session = Depends(obtener_se
     return _cliente_a_respuesta(cliente)
 
 
-@router.get("/clientes")
+@router.get("/clientes", dependencies=_soloEncargado)
 def listar_clientes(
     orden: str = "valor",
     busqueda: str | None = None,
@@ -116,7 +123,7 @@ def buscar_clientes(q: str, sesion: Session = Depends(obtener_sesion)) -> list[d
     return [_resumen_a_respuesta(f) for f in filas]
 
 
-@router.get("/clientes/fuga/resumen")
+@router.get("/clientes/fuga/resumen", dependencies=_soloEncargado)
 def resumen_fuga(sesion: Session = Depends(obtener_sesion)) -> dict:
     """US6: distribución instantánea de clientes por segmento de fuga, para el gráfico de la
     pantalla de Clientes. Lectura pura; snapshot (no serie temporal — `senal_fuga` no guarda
@@ -126,7 +133,7 @@ def resumen_fuga(sesion: Session = Depends(obtener_sesion)) -> dict:
     return servicio_clientes.resumen_fuga_por_segmento(sesion)
 
 
-@router.get("/clientes/cumpleanos")
+@router.get("/clientes/cumpleanos", dependencies=_soloEncargado)
 def clientes_con_cumpleanos(
     desde: date, hasta: date, sesion: Session = Depends(obtener_sesion)
 ) -> list[dict]:
@@ -141,7 +148,7 @@ def clientes_con_cumpleanos(
     ]
 
 
-@router.get("/clientes/{id_cliente:int}")
+@router.get("/clientes/{id_cliente:int}", dependencies=_soloEncargado)
 def obtener_cliente(id_cliente: int, sesion: Session = Depends(obtener_sesion)) -> dict:
     detalle = servicio_clientes.obtener_detalle_cliente(sesion, id_cliente=id_cliente)
     if detalle is None:

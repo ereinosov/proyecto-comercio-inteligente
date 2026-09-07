@@ -15,9 +15,12 @@ from sqlalchemy.orm import Session
 
 from rasero.persistencia.modelos import CanalCompetencia
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import exige_rol
 from rasero.servicios import competencia as servicio_competencia
 
-router = APIRouter(tags=["competencia"])
+# Pantalla "Competencia": táctica/gerencial, rol `encargado` (constitución v2.5.0). Sin uso en
+# ningún flujo de caja de un `cajero`.
+router = APIRouter(tags=["competencia"], dependencies=[Depends(exige_rol("encargado"))])
 
 
 class CanalNuevo(BaseModel):

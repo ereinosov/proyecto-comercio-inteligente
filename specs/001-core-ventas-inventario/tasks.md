@@ -516,4 +516,17 @@ Aditiva, sólo lectura, sin cambio de esquema.
 - [X] T155 [US14] `backend/rasero/api/inventario.py`: `GET /existencias/lotes` con `id_sucursal`, `id_producto` (obligatorios) e `incluir_costo` (bool, default false).
 - [X] T156 [US14] `specs/001-core-ventas-inventario/contracts/openapi.yaml`: path `/existencias/lotes`.
 - [X] T157 [US14] `tests/integracion/test_existencia_por_lote.py`: orden FEFO, sin costo por defecto, `incluir_costo=true` expone costo, saldo negativo histórico visible, 404.
+### Autorización de pantalla (constitución v2.5.0 — Principio VI)
+
+Enforcement de "Ocultar, no deshabilitar" en las 13 pantallas que sólo tenía "Administración".
+
+- [X] T159 Constitución v2.5.0: sub-sección "Autorización de pantalla" en el Principio VI, tabla rol→pantalla. Sin cambio de esquema; conteo de 001 sigue en 20.
+- [X] T160 Backend — `exige_rol("encargado")` a nivel de router en `precios.py`, `competencia.py`, `pronostico.py`, `traspasos.py` (ningún flujo de `cajero` los consulta). Reutiliza el mecanismo central `exige_rol`, no un chequeo por endpoint.
+- [X] T161 Backend — por ruta: `GET /capital-inmovilizado` (`inventario.py`); todo `caja.py` MENOS `/caja/arqueos*` (mermas, alertas, indicadores, cruce, anomalías); gestión de `promociones.py` (`/cupones/generacion`, `/ofertas-recompra/deteccion`, `/experimentos*`); `GET /clientes`, `GET /clientes/fuga/resumen`, `GET /clientes/cumpleanos`, `GET /clientes/{id}` (`clientes.py`). Se dejan abiertas las lecturas que un flujo de `cajero` necesita: `/cupones` GET, `/ofertas-recompra` GET, `/redenciones` POST, `/marca-activa`, `/clientes/busqueda`, alta/edición/visita de cliente (Excepción explícita del Principio VI), `/existencias*`, `/entradas-inventario`, `/caja/arqueos*`.
+- [X] T162 Backend — NO se gatean `GET /pagos/cobertura` ni `GET /pagos/bitacora`: un test de contrato de 007 afirma que un `GET` sin token devuelve `pagos_sucursal_requerida` (comportamiento pre-auth), y el marginal de seguridad es bajo (la pantalla ya la oculta el nav; los `PUT/POST` de pagos ya estaban gateados). Decisión conservadora, documentada.
+- [X] T163 Frontend — `App.tsx`: cada opción de `GRUPOS` lleva `rol` mínimo; un grupo sin opciones visibles para el rol activo no se renderiza; `Arqueo` sale del grupo "Caja y seguridad" y va junto a `Venta` (tarea diaria de `cajero`). Efecto de guarda: si el rol no alcanza la pantalla actual, se vuelve a `Venta`. Doble capa (nav + backend), ninguna exime a la otra.
+- [X] T164 Tests — helper `tests/apoyo.py::headers_encargado`; 18 suites de contrato/integración de 002–006 migradas a `TestClient(app, headers=_CAB_ENCARGADO)` (o `headers=` puntual donde había negativos tokenless). Suite completa (pytest 422, tsc/eslint/vite build/vitest) en verde.
+
+### User Story 14 — Existencia por lote visible en Venta y Traspasos (2026-09-07) — frontend
+
 - [X] T158 [US14] Frontend: `existenciasPorLote` + `LoteExistencia` en `servicios/inventario.ts`; componente compartido `ExistenciaProducto` (badge "Stock N", crítico si ≤ 0, expansión perezosa al desglose por lote en orden FEFO, **sin costo**); consumo en `CatalogoProductos.tsx` (Venta carga `listarExistencias` una vez y la pasa), `SelectorProducto` (stock junto a cada resultado) y `DespachoTraspaso.tsx` (columna "En origen"). El desglose de traspaso NO muestra costo en esta ronda (aunque el endpoint lo permitiría con `incluir_costo`) — decisión documentada, mejora futura.

@@ -19,11 +19,18 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import exige_rol
 from rasero.servicios import arqueos as servicio_arqueos
 from rasero.servicios import deteccion_fraude as servicio_fraude
 from rasero.servicios import mermas as servicio_mermas
 
 router = APIRouter(tags=["caja"], prefix="/caja")
+
+# El ARQUEO (`/caja/arqueos*`) es tarea diaria de `cajero`. Todo lo demás de este router
+# —mermas, alertas de caducidad, indicadores por operador, cruce inventario-ventas, anomalías—
+# es la pantalla "Caja y fraude", de rol `encargado` (constitución v2.5.0, "Autorización de
+# pantalla"). Se aplica por ruta, no al router, para dejar el arqueo abierto.
+_soloEncargado = [Depends(exige_rol("encargado"))]
 
 
 # ==========================================================================
@@ -117,7 +124,7 @@ class MermaNueva(BaseModel):
     nota: str | None = None
 
 
-@router.post("/mermas", status_code=status.HTTP_201_CREATED)
+@router.post("/mermas", status_code=status.HTTP_201_CREATED, dependencies=_soloEncargado)
 def registrar_merma(cuerpo: MermaNueva, sesion: Session = Depends(obtener_sesion)) -> dict:
     merma = servicio_mermas.clasificar_merma(
         sesion,
@@ -134,7 +141,7 @@ def registrar_merma(cuerpo: MermaNueva, sesion: Session = Depends(obtener_sesion
     return servicio_mermas.merma_a_respuesta(merma)
 
 
-@router.get("/mermas")
+@router.get("/mermas", dependencies=_soloEncargado)
 def listar_mermas(
     id_sucursal: int | None = None,
     causa: str | None = None,
@@ -153,7 +160,7 @@ def listar_mermas(
     )
 
 
-@router.get("/mermas/resumen")
+@router.get("/mermas/resumen", dependencies=_soloEncargado)
 def resumen_mermas(
     id_sucursal: int,
     desde: date | None = None,
@@ -168,7 +175,7 @@ def resumen_mermas(
     )
 
 
-@router.get("/alertas-caducidad")
+@router.get("/alertas-caducidad", dependencies=_soloEncargado)
 def alertas_caducidad(
     id_sucursal: int | None = None,
     dentro_de_dias: int | None = None,
@@ -191,7 +198,7 @@ class CruceOperador(BaseModel):
     id_conteo_fisico: int | None = None
 
 
-@router.get("/indicadores-operador")
+@router.get("/indicadores-operador", dependencies=_soloEncargado)
 def indicadores_operador(
     id_sucursal: int | None = None,
     desde: date | None = None,
@@ -203,7 +210,7 @@ def indicadores_operador(
     )
 
 
-@router.post("/cruce-operador")
+@router.post("/cruce-operador", dependencies=_soloEncargado)
 def cruce_operador(cuerpo: CruceOperador, sesion: Session = Depends(obtener_sesion)) -> dict:
     resultado = servicio_fraude.cruce_inventario_ventas(
         sesion,
@@ -227,7 +234,7 @@ class ResolucionAnomalia(BaseModel):
     nota: str | None = None
 
 
-@router.get("/anomalias")
+@router.get("/anomalias", dependencies=_soloEncargado)
 def listar_anomalias(
     id_sucursal: int | None = None,
     estado: str | None = None,
@@ -247,7 +254,7 @@ def listar_anomalias(
     return [servicio_fraude.anomalia_a_respuesta(a) for a in anomalias]
 
 
-@router.get("/anomalias/{id_anomalia_caja}")
+@router.get("/anomalias/{id_anomalia_caja}", dependencies=_soloEncargado)
 def obtener_anomalia(
     id_anomalia_caja: int, sesion: Session = Depends(obtener_sesion)
 ) -> dict:
@@ -255,7 +262,7 @@ def obtener_anomalia(
     return servicio_fraude.anomalia_a_respuesta(anomalia)
 
 
-@router.post("/anomalias/{id_anomalia_caja}/resolucion")
+@router.post("/anomalias/{id_anomalia_caja}/resolucion", dependencies=_soloEncargado)
 def resolver_anomalia(
     id_anomalia_caja: int,
     cuerpo: ResolucionAnomalia,

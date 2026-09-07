@@ -19,10 +19,18 @@ from sqlalchemy.orm import Session
 
 from rasero.api.paginacion import paginar
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import exige_rol
 from rasero.servicios import experimentos as servicio_experimentos
 from rasero.servicios import promociones as servicio_promociones
 
 router = APIRouter(tags=["promociones"], prefix="/promociones")
+
+# La GESTIÓN de promociones (generar cupones, detectar ofertas, crear/cerrar experimentos) es
+# la pantalla "Promociones", de rol `encargado` (constitución v2.5.0). Pero el flujo de CAJA de
+# un `cajero` consulta cupones y ofertas vigentes para aplicarlos en la venta y registra la
+# redención después del cobro (`AplicarPromocionVenta`): esas rutas de LECTURA y `/redenciones`
+# quedan abiertas. `/marca-activa` es una lectura que 004 consume, también abierta.
+_soloEncargado = [Depends(exige_rol("encargado"))]
 
 
 # ==========================================================================
@@ -45,7 +53,7 @@ class RedencionNueva(BaseModel):
     id_producto: int | None = None
 
 
-@router.post("/cupones/generacion")
+@router.post("/cupones/generacion", dependencies=_soloEncargado)
 def generar_cupones(cuerpo: GeneracionCupones, sesion: Session = Depends(obtener_sesion)) -> dict:
     resultado = servicio_promociones.generar_cupones(
         sesion,
@@ -102,7 +110,7 @@ class DeteccionRecompra(BaseModel):
     id_sucursal: int
 
 
-@router.post("/ofertas-recompra/deteccion")
+@router.post("/ofertas-recompra/deteccion", dependencies=_soloEncargado)
 def detectar_ofertas_recompra(
     cuerpo: DeteccionRecompra, sesion: Session = Depends(obtener_sesion)
 ) -> dict:
@@ -140,7 +148,7 @@ class ExperimentoNuevo(BaseModel):
     nombre_campania: str | None = None
 
 
-@router.post("/experimentos", status_code=status.HTTP_201_CREATED)
+@router.post("/experimentos", status_code=status.HTTP_201_CREATED, dependencies=_soloEncargado)
 def crear_experimento(cuerpo: ExperimentoNuevo, sesion: Session = Depends(obtener_sesion)) -> dict:
     experimento = servicio_experimentos.crear_experimento(
         sesion,
@@ -155,7 +163,7 @@ def crear_experimento(cuerpo: ExperimentoNuevo, sesion: Session = Depends(obtene
     return servicio_experimentos.experimento_a_respuesta(experimento)
 
 
-@router.get("/experimentos/{id_experimento_reactivacion}")
+@router.get("/experimentos/{id_experimento_reactivacion}", dependencies=_soloEncargado)
 def obtener_experimento(
     id_experimento_reactivacion: int, sesion: Session = Depends(obtener_sesion)
 ) -> dict:
@@ -165,7 +173,7 @@ def obtener_experimento(
     return servicio_experimentos.experimento_a_respuesta(experimento)
 
 
-@router.get("/experimentos/{id_experimento_reactivacion}/asignaciones")
+@router.get("/experimentos/{id_experimento_reactivacion}/asignaciones", dependencies=_soloEncargado)
 def listar_asignaciones(
     id_experimento_reactivacion: int,
     grupo: str | None = None,
@@ -176,7 +184,7 @@ def listar_asignaciones(
     )
 
 
-@router.post("/experimentos/{id_experimento_reactivacion}/cierre")
+@router.post("/experimentos/{id_experimento_reactivacion}/cierre", dependencies=_soloEncargado)
 def cerrar_experimento(
     id_experimento_reactivacion: int, sesion: Session = Depends(obtener_sesion)
 ) -> dict:

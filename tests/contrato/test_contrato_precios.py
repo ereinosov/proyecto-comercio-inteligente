@@ -8,9 +8,16 @@ from fastapi.testclient import TestClient
 from rasero.api.aplicacion import app
 from rasero.persistencia.modelos import ZonaExhibicion
 from rasero.persistencia.sesion import SesionLocal
-from tests.apoyo import crear_escenario_basico
+from tests.apoyo import crear_escenario_basico, headers_encargado
 
-cliente = TestClient(app)
+
+# Rol de pantalla `encargado` (constitución v2.5.0): estas pantallas quedaron tras
+# `exige_rol('encargado')`. Header por defecto del cliente; una llamada puntual puede
+# sobreescribirlo con `headers=`.
+_s_cab = SesionLocal()
+_CAB_ENCARGADO = headers_encargado(_s_cab)
+_s_cab.close()
+cliente = TestClient(app, headers=_CAB_ENCARGADO)
 
 CLAVES_MARGEN_PRODUCTO = (
     "id_producto",

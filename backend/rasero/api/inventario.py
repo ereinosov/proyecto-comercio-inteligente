@@ -13,9 +13,15 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import exige_rol
 from rasero.servicios import inventario as servicio_inventario
 
 router = APIRouter(tags=["inventario"])
+
+# `/capital-inmovilizado` es la pantalla "Capital inmovilizado", táctica/gerencial → `encargado`
+# (constitución v2.5.0). Las entradas de inventario y la consulta de existencias siguen siendo
+# de `cajero`: son el día a día del inventario.
+_Encargado = Depends(exige_rol("encargado"))
 
 
 class EntradaInventarioNueva(BaseModel):
@@ -83,6 +89,8 @@ def existencias_por_lote(
 
 @router.get("/capital-inmovilizado")
 def capital_inmovilizado(
-    id_sucursal: int | None = None, sesion: Session = Depends(obtener_sesion)
+    id_sucursal: int | None = None,
+    sesion: Session = Depends(obtener_sesion),
+    _operador=_Encargado,
 ) -> list[dict]:
     return servicio_inventario.capital_inmovilizado(sesion, id_sucursal=id_sucursal)

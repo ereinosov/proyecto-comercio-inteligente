@@ -24,8 +24,16 @@ from rasero.persistencia.modelos import (
 from rasero.persistencia.movimientos import registrar_movimiento
 from rasero.persistencia.sesion import SesionLocal
 from rasero.seguridad import hashear_pin
+from tests.apoyo import headers_encargado
 
 cliente = TestClient(app)
+
+# Traspasos, competencia y capital inmovilizado son rol `encargado` (constitución v2.5.0). Estos
+# escenarios de quickstart no abren turno, así que llevan un header de encargado sólo en esas
+# llamadas.
+_s_cab = SesionLocal()
+_CAB_ENC = headers_encargado(_s_cab)
+_s_cab.close()
 
 
 def _sucursal(sesion, nombre):
@@ -254,14 +262,14 @@ def test_escenario_5_traspaso_con_mercancia_en_transito():
             v.close()
 
     antes = total_sistema()
-    despacho = cliente.post("/traspasos", json={
+    despacho = cliente.post("/traspasos", headers=_CAB_ENC, json={
         "id_sucursal_origen": origen.id_sucursal, "id_sucursal_destino": destino.id_sucursal,
         "renglones": [{"id_producto": p.id_producto, "cantidad": 8}]})
     assert despacho.status_code == 201
     id_traspaso = despacho.json()["id_traspaso"]
     assert total_sistema() == antes, "el total no cambia al despachar"
 
-    recepcion = cliente.post(f"/traspasos/{id_traspaso}/recepcion", json={
+    recepcion = cliente.post(f"/traspasos/{id_traspaso}/recepcion", headers=_CAB_ENC, json={
         "renglones": [{"id_producto": p.id_producto, "cantidad_recibida": 7}]})
     assert recepcion.status_code == 200
     assert recepcion.json()["renglones"][0]["discrepancia"] == -1
@@ -326,25 +334,26 @@ def test_escenario_8_comparacion_de_precios_con_antiguedad():
 
     canales = []
     for nombre in ("Canal Uno", "Canal Dos", "Canal Tres"):
-        c = cliente.post("/canales-competencia", json={"nombre": f"{nombre} {uuid.uuid4().hex[:4]}"})
+        c = cliente.post("/canales-competencia", headers=_CAB_ENC, json={"nombre": f"{nombre} {uuid.uuid4().hex[:4]}"})
         canales.append(c.json())
 
     # Dos comparables (gramos) y una en otra presentación no convertible (unidad).
-    cliente.post("/observaciones-precio", json={
+    cliente.post("/observaciones-precio", headers=_CAB_ENC, json={
         "id_producto": p.id_producto, "id_canal_competencia": canales[0]["id_canal_competencia"],
         "presentacion_cantidad": "500", "presentacion_unidad": "gramo",
         "precio_observado": "3.10", "fuente": "visita", "origen_captura": "manual"})
-    cliente.post("/observaciones-precio", json={
+    cliente.post("/observaciones-precio", headers=_CAB_ENC, json={
         "id_producto": p.id_producto, "id_canal_competencia": canales[1]["id_canal_competencia"],
         "presentacion_cantidad": "1000", "presentacion_unidad": "gramo",
         "precio_observado": "6.40", "fuente": "folleto", "origen_captura": "archivo"})
-    cliente.post("/observaciones-precio", json={
+    cliente.post("/observaciones-precio", headers=_CAB_ENC, json={
         "id_producto": p.id_producto, "id_canal_competencia": canales[2]["id_canal_competencia"],
         "presentacion_cantidad": "1", "presentacion_unidad": "unidad",
         "precio_observado": "5.00", "fuente": "foto", "origen_captura": "manual"})
 
     comp = cliente.get(
-        f"/productos/{p.id_producto}/comparacion-precios?id_sucursal={suc.id_sucursal}"
+        f"/productos/{p.id_producto}/comparacion-precios?id_sucursal={suc.id_sucursal}",
+        headers=_CAB_ENC,
     ).json()
     assert comp["precio_propio_por_unidad_medida"] == "6.0000"
     assert len(comp["observaciones"]) == 3
@@ -427,7 +436,7 @@ def test_escenario_10_capital_inmovilizado_por_categoria():
     s.commit()
     s.close()
 
-    listado = cliente.get(f"/capital-inmovilizado?id_sucursal={suc.id_sucursal}").json()
+    listado = cliente.get(f"/capital-inmovilizado?id_sucursal={suc.id_sucursal}", headers=_CAB_ENC).json()
     por_lote = {f["id_lote"]: f for f in listado}
     assert l_fresco.id_lote in por_lote
     assert l_largo.id_lote not in por_lote
