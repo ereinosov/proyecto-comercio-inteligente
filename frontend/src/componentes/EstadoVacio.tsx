@@ -4,8 +4,12 @@
  * Tres partes, nunca una sola línea de texto plano: ícono propio en SVG de línea simple
  * (stroke, sin relleno, color Borde/Tinta Suave) · título corto en el registro de la pantalla ·
  * una frase que explica QUÉ aparecerá ahí cuando haya datos — nunca "no hay nada".
+ *
+ * Detrás de las tres partes va una marca de agua del logo mono del comercio al 8 % (DESIGN.md
+ * v1.4.0): refuerzo visual, `pointer-events: none`, nunca reemplaza ninguna de las tres partes.
  */
 
+import marcaAgua from "../activos/marca/despensa-logo-mono-800w.png";
 import estilos from "./EstadoVacio.module.css";
 
 type Glifo = "lista" | "seleccion" | "caja" | "grafico";
@@ -63,6 +67,7 @@ interface Props {
 export function EstadoVacio({ glifo = "lista", titulo, descripcion, registro = "analisis" }: Props) {
   return (
     <div className={`${estilos.hueco} ${registro === "operacion" ? estilos.operacion : estilos.analisis}`}>
+      <img className={estilos.marcaAgua} src={marcaAgua} alt="" aria-hidden="true" />
       <span className={estilos.icono}>
         <IconoVacio glifo={glifo} />
       </span>
