@@ -133,13 +133,15 @@ sucursal). Ningún `encargado` asciende a otro operador. La edición de `cliente
 restricción de rol.
 
 *Identidad de sesión* (Principio VI, enmienda **v2.4.0** — User Story 11): al abrir turno, tras
-validar el PIN, el backend emite un JWT de sesión de turno (HS256, claims `id_operador`,
-`id_turno`, `rol`, `exp` a 12 h). Viaja en `Authorization: Bearer <token>`. La dependency
-`operador_de_sesion` lo verifica en cada petición sujeta a rol: firma, expiración, turno abierto
-(`turno.instante_cierre IS NULL`) y `operador.activo`. El `id_operador` del cuerpo queda
-DEPRECADO para autorización y se retira de los schemas de escritura sujetos a rol. **Sin cambio
-de esquema**: no hay tabla de token ni columna de revocación; el cierre de turno ya deja
-`instante_cierre`.
+validar el PIN, el backend emite un JWT de sesión de turno (`emitir_token_turno`, HS256, claims
+de identidad `id_operador`/`id_turno`/`rol` más `iat`/`exp` estándar, `exp` a 12 h). Viaja en
+`Authorization: Bearer <token>`. La dependency de FastAPI `operador_de_sesion` (y su equivalente
+puro `resolver_operador_de_sesion`, en `backend/rasero/seguridad.py`) lo verifica en cada
+petición sujeta a rol: firma, expiración, turno abierto (`turno.instante_cierre IS NULL`) y
+`operador.activo`; devuelve el `Operador`. `exige_rol(rol_minimo)` compone esa dependency con
+`requiere_rol(operador, rol_minimo)`. El `id_operador` del cuerpo queda DEPRECADO para
+autorización y se retira de los schemas de escritura sujetos a rol. **Sin cambio de esquema**:
+no hay tabla de token ni columna de revocación; el cierre de turno ya deja `instante_cierre`.
 
 *Autenticación* (sin cambio, FR-006): el PIN + hash SHA-256 sigue siendo la única credencial,
 presentada al abrir turno. Sin recuperación de PIN por correo, sin bloqueo por intentos. El

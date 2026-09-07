@@ -48,8 +48,11 @@ info:
       y `GET /pagos/bitacora` lo EXIGEN y NUNCA agregan dos sucursales sin discriminar (FR-006,
       FR-034).
     - Cambiar el catálogo o la cobertura de medios, registrar o mover terminales y editar las listas
-      de firmware están reservados al encargado (`operador.es_encargado` de 001, FR-007, FR-015);
-      cada cambio queda en la bitácora (FR-028).
+      de firmware están reservados a rol `encargado` o superior (mecanismo central `requiere_rol`,
+      Principio VI, FR-007/FR-015). **User Story 11 de 001 (enmienda v2.4.0)**: la identidad del
+      operador sale del token de sesión de turno (`Authorization: Bearer`, ver `securitySchemes`),
+      no del `id_operador` del cuerpo, que se retiró de esos schemas. Cada cambio queda en la
+      bitácora (FR-028).
     - Formato de error unificado con 001-006: `{ codigo, mensaje }`, el mensaje redactado para el
       operador con la acción correctiva, nunca una traza técnica (Principio IV).
 
@@ -94,13 +97,15 @@ paths:
         `(id_medio_pago, id_sucursal)` y CIERRA el tramo anterior (`fecha_hasta = fecha_desde − 1
         día`). La cobertura de un período pasado se resuelve por esos tramos, no por el estado
         actual. Anexa un evento `cobertura_declarada` a la bitácora.
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [id_sucursal, id_medio_pago, acepta, fecha_desde, id_operador]
+              required: [id_sucursal, id_medio_pago, acepta, fecha_desde]
               properties:
                 id_sucursal: { type: integer }
                 id_medio_pago: { type: integer }
@@ -110,9 +115,8 @@ paths:
                     `true` abre un tramo de aceptación; `false` cierra el tramo vigente en
                     `fecha_desde − 1 día` (la sucursal deja de aceptar el medio).
                 fecha_desde: { type: string, format: date, description: Día local de la sucursal. }
-                id_operador:
-                  type: integer
-                  description: Debe ser `es_encargado` en 001 (FR-007).
+                # User Story 11 (enmienda v2.4.0): la identidad del operador sale del token de
+                # sesión de turno (Authorization: Bearer), no del cuerpo.
       responses:
         '200':
           description: Cobertura actualizada
@@ -206,7 +210,7 @@ paths:
           application/json:
             schema:
               type: object
-              required: [identificador, modelo, id_sucursal, version_firmware, id_operador]
+              required: [identificador, modelo, id_sucursal, version_firmware]
               properties:
                 identificador: { type: string }
                 modelo: { type: string }
@@ -215,7 +219,8 @@ paths:
                   type: string
                   pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
                 fecha_ultima_actualizacion_firmware: { type: string, format: date, nullable: true }
-                id_operador: { type: integer, description: 'Debe ser `es_encargado` (FR-015).' }
+      security:
+        - bearerAuth: []
       responses:
         '201':
           description: Terminal registrada
@@ -278,12 +283,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [id_operador]
               properties:
                 id_sucursal_destino: { type: integer, nullable: true, description: Presente para un movimiento. }
                 fecha_movimiento: { type: string, format: date, nullable: true }
                 retirar: { type: boolean, default: false }
-                id_operador: { type: integer }
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Terminal actualizada
@@ -312,11 +317,12 @@ paths:
           application/json:
             schema:
               type: object
-              required: [version, fecha, id_operador]
+              required: [version, fecha]
               properties:
                 version: { type: string, pattern: '^[0-9]+\.[0-9]+\.[0-9]+$' }
                 fecha: { type: string, format: date }
-                id_operador: { type: integer }
+      security:
+        - bearerAuth: []
       responses:
         '200':
           description: Firmware actualizado, terminal reevaluada
@@ -488,6 +494,18 @@ paths:
               schema: { $ref: '#/components/schemas/Error' }
 
 components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token de sesion de turno (User Story 11 de 001, enmienda constitucional v2.4.0).
+        Emitido por POST /turnos; enviado como Authorization: Bearer <token>. Requerido en
+        las acciones reservadas al encargado de este contrato (cobertura y terminales). El
+        backend deriva la identidad del operador SOLO del token; id_operador en el cuerpo se
+        retiro. Fallos: 401 sesion_invalida / 401 sesion_expirada.
   schemas:
 
     RespuestaPaginada:

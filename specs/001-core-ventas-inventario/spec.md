@@ -720,10 +720,11 @@ enmienda constitucional v2.4.0)**
 - **FR-065**: Al abrir turno (`POST /turnos`), y sólo tras validar el PIN (FR-005/FR-006), el
   sistema DEBE emitir un token de sesión de turno y devolverlo en la respuesta. El token es un
   JSON Web Token firmado con clave simétrica (HS256). Se emite un token por turno abierto.
-- **FR-066**: El token DEBE llevar exactamente estos claims: `id_operador`, `id_turno`, `rol` y
-  `exp` (expiración). El backend NUNCA DEBE usar el `rol` del claim para autorizar: `requiere_rol`
-  sigue resolviendo el rol real desde la tabla `operador` en cada verificación. El claim `rol`
-  existe sólo para la interfaz.
+- **FR-066**: El token DEBE llevar estos claims de identidad —`id_operador`, `id_turno`, `rol`—
+  además de los claims registrados estándar de expiración (`exp`, fijo a 12 h) y emisión (`iat`).
+  Ningún otro. El backend NUNCA DEBE usar el `rol` del claim para autorizar: `requiere_rol` sigue
+  resolviendo el rol real desde la tabla `operador` en cada verificación. El claim `rol` existe
+  sólo para la interfaz.
 - **FR-067**: Toda petición a un endpoint que hoy verifica rol (`requiere_rol` / `exige_rol`)
   DEBE exigir el token en el header `Authorization: Bearer <token>`. La identidad del operador
   DEBE derivarse EXCLUSIVAMENTE de ese token. El campo `id_operador` (o `id_operador_solicitante`)
