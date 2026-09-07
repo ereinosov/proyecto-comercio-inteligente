@@ -11,6 +11,11 @@ disponible en ninguna sucursal, pero **sigue contando en el inventario total del
 tránsito. La discrepancia entre lo despachado y lo confirmado se **expone**, sin clasificar ni
 absorber (FR-019).
 
+Existencia insuficiente en origen: **bloqueo duro** (spec 001, Corrección 2026-09-07), mismo
+criterio que la venta. Se validan TODOS los renglones contra la existencia disponible en origen
+ANTES de escribir ningún movimiento; si cualquiera no alcanza, se rechaza el traspaso COMPLETO
+con `ExistenciaInsuficiente` (409). Antes el excedente se imputaba a saldo negativo.
+
 El servicio comitea; `existencia` se mueve por delta en la misma transacción de cada movimiento.
 """
 
@@ -22,9 +27,18 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from rasero.dominio.seleccion_lote import ordenar_fefo
-from rasero.errores import RecursoNoEncontrado, RenglonInvalido, TraspasoInvalido
-from rasero.persistencia.modelos import Lote, MovimientoInventario, Sucursal, Traspaso
-from rasero.persistencia.movimientos import obtener_existencia, registrar_movimiento
+from rasero.errores import (
+    ExistenciaInsuficiente,
+    RecursoNoEncontrado,
+    RenglonInvalido,
+    TraspasoInvalido,
+)
+from rasero.persistencia.modelos import Lote, MovimientoInventario, Producto, Sucursal, Traspaso
+from rasero.persistencia.movimientos import (
+    obtener_existencia,
+    obtener_existencia_total,
+    registrar_movimiento,
+)
 
 
 @dataclass
@@ -82,6 +96,24 @@ def despachar_traspaso(
         if sesion.get(Sucursal, id_s) is None:
             raise RecursoNoEncontrado(f"La sucursal de {nombre} ({id_s}) no existe.")
 
+    # Bloqueo duro por existencia insuficiente (Corrección 2026-09-07): se valida el traspaso
+    # COMPLETO contra la existencia disponible en origen ANTES de escribir ningún movimiento.
+    requerido_por_producto: dict[int, Decimal] = {}
+    for renglon in renglones:
+        if renglon.cantidad <= 0:
+            raise RenglonInvalido("La cantidad de un renglón de traspaso debe ser positiva.")
+        requerido_por_producto[renglon.id_producto] = (
+            requerido_por_producto.get(renglon.id_producto, Decimal(0)) + Decimal(renglon.cantidad)
+        )
+    for id_producto, requerido in requerido_por_producto.items():
+        disponible = obtener_existencia_total(
+            sesion, id_sucursal=id_sucursal_origen, id_producto=id_producto
+        )
+        if disponible < requerido:
+            producto = sesion.get(Producto, id_producto)
+            nombre = producto.nombre if producto is not None else f"producto {id_producto}"
+            raise ExistenciaInsuficiente(nombre, disponible, requerido)
+
     instante = datetime.now(timezone.utc)
     traspaso = Traspaso(
         id_sucursal_origen=id_sucursal_origen,
@@ -93,8 +125,6 @@ def despachar_traspaso(
     sesion.flush()
 
     for renglon in renglones:
-        if renglon.cantidad <= 0:
-            raise RenglonInvalido("La cantidad de un renglón de traspaso debe ser positiva.")
         lotes = ordenar_fefo(
             sesion.execute(
                 select(Lote)
@@ -129,20 +159,15 @@ def despachar_traspaso(
                 )
                 restante -= tomar
         if restante > 0:
-            # No alcanza la existencia disponible: el excedente se imputa al último lote FEFO
-            # (o al saldo sin lote si el producto no tiene ninguno en origen), coherente con
-            # cómo la venta representa el exceso — el inventario sigue reconstruible.
-            id_lote_destino = lotes[-1].id_lote if lotes else None
-            registrar_movimiento(
-                sesion,
-                id_sucursal=id_sucursal_origen,
-                id_producto=renglon.id_producto,
-                id_lote=id_lote_destino,
-                tipo="salida_traspaso",
-                cantidad=-restante,
-                instante=instante,
-                id_traspaso=traspaso.id_traspaso,
+            # Inalcanzable en el flujo normal: ya se validó la existencia total de cada producto
+            # en origen antes de crear el traspaso. Defensa por si el saldo disponible está en una
+            # fila sin lote que FEFO no puede consumir — bloqueo duro, nunca un saldo negativo.
+            disponible = obtener_existencia_total(
+                sesion, id_sucursal=id_sucursal_origen, id_producto=renglon.id_producto
             )
+            producto = sesion.get(Producto, renglon.id_producto)
+            nombre = producto.nombre if producto is not None else f"producto {renglon.id_producto}"
+            raise ExistenciaInsuficiente(nombre, disponible, Decimal(renglon.cantidad))
 
     sesion.commit()
     return traspaso

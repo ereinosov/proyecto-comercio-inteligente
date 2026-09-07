@@ -4,11 +4,13 @@ discrepancia por producto, sin clasificarla ni absorberla (FR-019).
 
 from decimal import Decimal
 
+import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy import func, select
 
 from rasero.api.aplicacion import app
-from rasero.persistencia.modelos import Existencia
+from rasero.errores import ExistenciaInsuficiente
+from rasero.persistencia.modelos import Existencia, MovimientoInventario, Traspaso
 from rasero.servicios.inventario import registrar_entrada
 from rasero.servicios.traspasos import RenglonDespacho, despachar_traspaso
 from tests.apoyo import crear_escenario_basico
@@ -56,6 +58,74 @@ def test_recepcion_parcial_expone_la_discrepancia_sin_clasificarla(sesion):
         )
     ).scalar_one()
     assert Decimal(saldo_destino) == Decimal(7)
+
+
+def test_despacho_que_excede_la_existencia_de_origen_es_rechazado(sesion):
+    # Corrección 2026-09-07: traspasar más de lo disponible en origen es bloqueo duro
+    # (409 `existencia_insuficiente`), no un saldo negativo. No queda ni traspaso ni movimiento.
+    origen = crear_escenario_basico(sesion, existencia_inicial=0)
+    destino = crear_escenario_basico(sesion, existencia_inicial=0)
+    id_producto = origen["producto"].id_producto
+    registrar_entrada(
+        sesion,
+        id_sucursal=origen["sucursal"].id_sucursal,
+        id_producto=id_producto,
+        cantidad=5,
+        costo_unitario=Decimal("2.0000"),
+    )
+    sesion.commit()
+    movs_antes = sesion.execute(
+        select(func.count()).select_from(MovimientoInventario)
+    ).scalar_one()
+    traspasos_antes = sesion.execute(
+        select(func.count()).select_from(Traspaso)
+    ).scalar_one()
+
+    with pytest.raises(ExistenciaInsuficiente):
+        despachar_traspaso(
+            sesion,
+            id_sucursal_origen=origen["sucursal"].id_sucursal,
+            id_sucursal_destino=destino["sucursal"].id_sucursal,
+            renglones=[RenglonDespacho(id_producto=id_producto, cantidad=6)],
+        )
+    sesion.rollback()
+
+    assert (
+        sesion.execute(select(func.count()).select_from(MovimientoInventario)).scalar_one()
+        == movs_antes
+    )
+    assert (
+        sesion.execute(select(func.count()).select_from(Traspaso)).scalar_one()
+        == traspasos_antes
+    )
+    saldo_origen = sesion.execute(
+        select(func.coalesce(func.sum(Existencia.cantidad), 0)).where(
+            Existencia.id_sucursal == origen["sucursal"].id_sucursal,
+            Existencia.id_producto == id_producto,
+        )
+    ).scalar_one()
+    assert Decimal(saldo_origen) == Decimal(5)
+
+
+def test_despacho_con_la_existencia_exacta_de_origen_tiene_exito(sesion):
+    origen = crear_escenario_basico(sesion, existencia_inicial=0)
+    destino = crear_escenario_basico(sesion, existencia_inicial=0)
+    id_producto = origen["producto"].id_producto
+    registrar_entrada(
+        sesion,
+        id_sucursal=origen["sucursal"].id_sucursal,
+        id_producto=id_producto,
+        cantidad=5,
+        costo_unitario=Decimal("2.0000"),
+    )
+    traspaso = despachar_traspaso(
+        sesion,
+        id_sucursal_origen=origen["sucursal"].id_sucursal,
+        id_sucursal_destino=destino["sucursal"].id_sucursal,
+        renglones=[RenglonDespacho(id_producto=id_producto, cantidad=5)],
+    )
+    sesion.commit()
+    assert traspaso.estado == "en_transito"
 
 
 def test_no_se_puede_recibir_dos_veces(sesion):
