@@ -30,10 +30,6 @@ import estilos from "./Administracion.module.css";
 
 const ROLES: Rol[] = ["cajero", "encargado", "admin"];
 
-interface Props {
-  idOperador: number;
-}
-
 interface Form {
   nombre: string;
   rol: Rol;
@@ -43,7 +39,7 @@ interface Form {
 
 const FORM_VACIO: Form = { nombre: "", rol: "cajero", id_sucursal: "", pin: "" };
 
-export function GestionOperadores({ idOperador }: Props) {
+export function GestionOperadores() {
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [cargando, setCargando] = useState(true);
@@ -103,7 +99,6 @@ export function GestionOperadores({ idOperador }: Props) {
         rol: form.rol,
         id_sucursal: Number(form.id_sucursal),
         pin: form.pin.length === 4 ? form.pin : undefined,
-        id_operador_solicitante: idOperador,
       };
       if (modal.operador) {
         await actualizarOperador(modal.operador.id_operador, cuerpo);
@@ -121,10 +116,7 @@ export function GestionOperadores({ idOperador }: Props) {
 
   async function fijarActivo(operador: Operador, activo: boolean) {
     try {
-      await fijarActivoOperador(operador.id_operador, {
-        activo,
-        id_operador_solicitante: idOperador,
-      });
+      await fijarActivoOperador(operador.id_operador, { activo });
       recargar();
     } catch (e) {
       setError(e instanceof ErrorApi ? e.message : "No se pudo cambiar el estado del operador.");

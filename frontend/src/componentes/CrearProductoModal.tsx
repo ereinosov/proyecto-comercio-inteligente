@@ -18,12 +18,11 @@ import { listarCategorias, type Categoria } from "../servicios/productos";
 import estilos from "../pantallas/Administracion.module.css";
 
 interface Props {
-  idOperador: number;
   onCerrar: () => void;
   onCreado: (producto: ProductoMaestro) => void;
 }
 
-export function CrearProductoModal({ idOperador, onCerrar, onCreado }: Props) {
+export function CrearProductoModal({ onCerrar, onCreado }: Props) {
   const [nombre, setNombre] = useState("");
   const [idCategoria, setIdCategoria] = useState("");
   const [precio, setPrecio] = useState("");
@@ -47,7 +46,6 @@ export function CrearProductoModal({ idOperador, onCerrar, onCreado }: Props) {
         precio_vigente: precio.trim() === "" ? null : Number(precio),
         es_granel: esGranel,
         lleva_caducidad: llevaCaducidad,
-        id_operador: idOperador,
       })) as ProductoMaestro;
       onCreado(creado);
     } catch (e) {

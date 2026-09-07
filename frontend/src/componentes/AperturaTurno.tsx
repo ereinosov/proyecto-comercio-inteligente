@@ -46,9 +46,11 @@ function ultimaAperturaTexto(iso: string): string {
 
 interface Props {
   onTurnoAbierto: (turno: Turno) => void;
+  // User Story 11: mensaje cuando se vuelve aquí porque la sesión de turno expiró o se cerró.
+  avisoSesion?: string | null;
 }
 
-export function AperturaTurno({ onTurnoAbierto }: Props) {
+export function AperturaTurno({ onTurnoAbierto, avisoSesion }: Props) {
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [idOperador, setIdOperador] = useState<number | "">("");
@@ -188,6 +190,7 @@ export function AperturaTurno({ onTurnoAbierto }: Props) {
           </div>
         </div>
 
+        {!error && avisoSesion && <p className={estilos.error}>{avisoSesion}</p>}
         {error && <p className={estilos.error}>{error}</p>}
 
         <button

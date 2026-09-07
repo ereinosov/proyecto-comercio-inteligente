@@ -283,7 +283,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
     if (!ventaConfirmada) return;
     setAnulando(true);
     try {
-      await anularVenta(ventaConfirmada.id_venta, { id_operador: turno.id_operador });
+      await anularVenta(ventaConfirmada.id_venta);
       setVentaConfirmada({ ...ventaConfirmada, anulada: true });
     } catch (e) {
       setError(e instanceof ErrorApi ? e.message : "No se pudo anular la venta.");
@@ -493,7 +493,6 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
 
       {creandoProducto && (
         <CrearProductoModal
-          idOperador={turno.id_operador}
           onCerrar={() => setCreandoProducto(false)}
           onCreado={(p) => tomarProductoNuevo(p.id_producto)}
         />

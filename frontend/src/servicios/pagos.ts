@@ -111,7 +111,6 @@ export function declararCobertura(cuerpo: {
   id_medio_pago: number;
   acepta: boolean;
   fecha_desde: string;
-  id_operador: number;
 }): Promise<TramoCobertura> {
   return clienteHttp.put<TramoCobertura>("/pagos/cobertura", cuerpo);
 }
@@ -144,7 +143,6 @@ export function registrarTerminal(cuerpo: {
   id_sucursal: number;
   version_firmware: string;
   fecha_ultima_actualizacion_firmware?: string | null;
-  id_operador: number;
 }): Promise<TerminalPago> {
   return clienteHttp.post<TerminalPago>("/pagos/terminales", cuerpo);
 }
@@ -164,7 +162,6 @@ export function moverTerminal(
     id_sucursal_destino?: number | null;
     fecha_movimiento?: string | null;
     retirar?: boolean;
-    id_operador: number;
   }
 ): Promise<TerminalPago> {
   return clienteHttp.patch<TerminalPago>(`/pagos/terminales/${idTerminal}`, cuerpo);
@@ -172,7 +169,7 @@ export function moverTerminal(
 
 export function registrarActualizacionFirmware(
   idTerminal: number,
-  cuerpo: { version: string; fecha: string; id_operador: number }
+  cuerpo: { version: string; fecha: string }
 ): Promise<TerminalPago> {
   return clienteHttp.post<TerminalPago>(`/pagos/terminales/${idTerminal}/firmware`, cuerpo);
 }

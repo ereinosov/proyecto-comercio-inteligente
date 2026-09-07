@@ -59,7 +59,8 @@ export function registrarVenta(datos: {
 
 export function anularVenta(
   idVenta: number,
-  datos: { id_operador: number; motivo?: string },
+  datos: { motivo?: string } = {},
 ): Promise<{ id_anulacion_venta: number; id_venta: number; id_operador: number; instante: string; motivo: string | null }> {
+  // User Story 11: el operador que anula lo resuelve el backend del token de sesión de turno.
   return clienteHttp.post(`/ventas/${idVenta}/anulacion`, datos);
 }

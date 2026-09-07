@@ -5,6 +5,9 @@
  * User Story 10 (Principio VI): `Operador` lleva `rol` (`cajero`|`encargado`|`admin`) e
  * `id_sucursal` en vez del booleano de encargado anterior. El alta / edición / desactivación
  * son exclusivas del rol `admin` (el backend lo verifica con `requiere_rol`).
+ *
+ * User Story 11 (enmienda v2.4.0): la identidad del solicitante ya no viaja en el cuerpo; la
+ * resuelve el backend del token de sesión de turno (header `Authorization`, lo añade clienteHttp).
  */
 
 import { clienteHttp } from "./clienteHttp";
@@ -23,7 +26,6 @@ export interface OperadorNuevo {
   rol: Rol;
   id_sucursal: number;
   pin?: string;
-  id_operador_solicitante: number;
 }
 
 export function listarOperadores(): Promise<Operador[]> {
@@ -43,7 +45,7 @@ export function actualizarOperador(
 
 export function fijarActivoOperador(
   idOperador: number,
-  datos: { activo: boolean; id_operador_solicitante: number },
+  datos: { activo: boolean },
 ): Promise<Operador> {
   return clienteHttp.post<Operador>(`/operadores/${idOperador}/activo`, datos);
 }

@@ -17,6 +17,11 @@ import { Pagos } from "./pantallas/Pagos";
 import { Administracion } from "./pantallas/Administracion";
 import { cerrarTurno, listarOperadores, type Turno } from "./servicios/turnos";
 import { listarSucursales } from "./servicios/sucursales";
+import {
+  fijarTokenSesion,
+  limpiarTokenSesion,
+  alPerderSesionDeTurno,
+} from "./servicios/clienteHttp";
 import { useRol, type Rol } from "./hooks/useRol";
 import marcaSistema from "./activos/marca/rasero-wordmark-512w.png";
 import iconoComercioPorDefecto from "./activos/marca/despensa-icon-verde-512.png";
@@ -171,11 +176,35 @@ function GrupoNav({
 }
 
 export function App() {
-  const [turno, setTurno] = useState<Turno | null>(null);
+  const [turno, setTurnoEstado] = useState<Turno | null>(null);
   const [pantalla, setPantalla] = useState<Pantalla>("venta");
   const [nombreOperador, setNombreOperador] = useState<string>("");
   const [rol, setRol] = useState<Rol | null>(null);
   const [nombreSucursal, setNombreSucursal] = useState<string>("");
+  // User Story 11 (Principio VI, "Identidad de sesión"): el token JWT de la sesión de turno
+  // vive junto al turno, en memoria. `setTurno` lo sincroniza con el cliente HTTP.
+  const [avisoSesion, setAvisoSesion] = useState<string | null>(null);
+
+  function setTurno(nuevo: Turno | null) {
+    if (nuevo?.token) {
+      fijarTokenSesion(nuevo.token);
+      setAvisoSesion(null);
+    } else {
+      limpiarTokenSesion();
+    }
+    setTurnoEstado(nuevo);
+  }
+
+  // Sesión perdida (401 sesion_invalida / sesion_expirada): volver a la apertura de turno con
+  // un mensaje claro, nunca el error genérico (FR-071).
+  useEffect(() => {
+    alPerderSesionDeTurno((error) => {
+      setTurnoEstado(null);
+      setAvisoSesion(error.message);
+      setPantalla("venta");
+    });
+    return () => alPerderSesionDeTurno(null);
+  }, []);
   // Hook único de rol (User Story 10, Principio VI). Los componentes deciden qué OFRECER con
   // `puedeVer` / `esAdmin` / `esEncargadoOMas`; nunca leen `rol` a mano.
   const autoriz = useRol(rol);
@@ -200,7 +229,7 @@ export function App() {
   }, [turno]);
 
   if (!turno) {
-    return <AperturaTurno onTurnoAbierto={setTurno} />;
+    return <AperturaTurno onTurnoAbierto={setTurno} avisoSesion={avisoSesion} />;
   }
 
   async function manejarCierre() {
@@ -292,14 +321,12 @@ export function App() {
         {pantalla === "cajafraude" && (
           <CajaFraude idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
         )}
-        {pantalla === "terminales" && (
-          <TerminalesPago idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
-        )}
+        {pantalla === "terminales" && <TerminalesPago idSucursal={turno.id_sucursal} />}
         {pantalla === "pagos" && (
           <Pagos idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
         )}
         {pantalla === "administracion" && autoriz.esEncargadoOMas() && (
-          <Administracion idOperador={turno.id_operador} rol={rol} />
+          <Administracion rol={rol} />
         )}
       </div>
       {nombreSucursal && (

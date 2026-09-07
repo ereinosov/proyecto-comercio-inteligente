@@ -51,12 +51,12 @@ export function CoberturaPago({ idSucursal, idOperador }: { idSucursal: number; 
     evento.preventDefault();
     setError(null);
     try {
+      // User Story 11: la identidad va en el header (token de sesión), no en el cuerpo.
       await declararCobertura({
         id_sucursal: idSucursal,
         id_medio_pago: Number(medioDeclarar),
         acepta: aceptar,
         fecha_desde: fechaDesde,
-        id_operador: idOperador,
       });
       setConfirmado("Cobertura actualizada.");
       setTimeout(() => setConfirmado(null), 1600);

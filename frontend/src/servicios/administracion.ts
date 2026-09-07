@@ -3,7 +3,9 @@
  * de sucursal, producto, categoría, zona de exhibición y medio de pago.
  *
  * Escritura reservada a rol encargado o admin (backend: mecanismo central `requiere_rol`,
- * Principio VI). El `id_operador` viaja en el cuerpo, igual que en `POST /pagos/terminales`.
+ * Principio VI). User Story 11 (enmienda v2.4.0): la identidad del operador la resuelve el
+ * backend del token de sesión de turno (header `Authorization`, lo añade `clienteHttp`); ya no
+ * viaja en el cuerpo.
  *
  * Listados paginados: el backend responde `{ items, total }` (schema RespuestaPaginada); ver
  * clienteHttp.getPagina.
@@ -109,7 +111,7 @@ export function dependenciasMaestro(
 export function fijarActivoMaestro(
   entidad: EntidadMaestra,
   id: number,
-  cuerpo: { activo: boolean; id_operador: number },
+  cuerpo: { activo: boolean },
 ): Promise<FilaMaestra> {
   return clienteHttp.post(`/administracion/${entidad}/${id}/desactivacion`, cuerpo);
 }

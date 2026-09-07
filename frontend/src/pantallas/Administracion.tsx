@@ -44,7 +44,6 @@ import { GestionOperadores } from "./GestionOperadores";
 import estilos from "./Administracion.module.css";
 
 interface Props {
-  idOperador: number;
   rol: Rol | null;
 }
 
@@ -152,8 +151,9 @@ function valoresIniciales(campos: Campo[], fila?: FilaMaestra): ValoresForm {
   return v;
 }
 
-function payload(campos: Campo[], valores: ValoresForm, idOperador: number): Record<string, unknown> {
-  const cuerpo: Record<string, unknown> = { id_operador: idOperador };
+function payload(campos: Campo[], valores: ValoresForm): Record<string, unknown> {
+  // User Story 11: la identidad del operador va en el header (token de sesión), no en el cuerpo.
+  const cuerpo: Record<string, unknown> = {};
   for (const c of campos) {
     const bruto = valores[c.clave];
     if (c.tipo === "bool") {
@@ -168,7 +168,7 @@ function payload(campos: Campo[], valores: ValoresForm, idOperador: number): Rec
   return cuerpo;
 }
 
-export function Administracion({ idOperador, rol }: Props) {
+export function Administracion({ rol }: Props) {
   const { esEncargadoOMas, esAdmin } = useRol(rol);
   const esEncargado = esEncargadoOMas();
 
@@ -265,7 +265,7 @@ export function Administracion({ idOperador, rol }: Props) {
     setGuardando(true);
     setErrorModal(null);
     try {
-      const cuerpo = payload(vista.campos, valores, idOperador);
+      const cuerpo = payload(vista.campos, valores);
       if (modal.fila) {
         await editarMaestro(entidad, idDeFila(entidad, modal.fila), cuerpo);
       } else {
@@ -294,10 +294,7 @@ export function Administracion({ idOperador, rol }: Props) {
     if (!aDesactivar) return;
     setDesactivando(true);
     try {
-      await fijarActivoMaestro(entidad, idDeFila(entidad, aDesactivar.fila), {
-        activo: false,
-        id_operador: idOperador,
-      });
+      await fijarActivoMaestro(entidad, idDeFila(entidad, aDesactivar.fila), { activo: false });
       setADesactivar(null);
       recargar();
     } catch (e) {
@@ -310,10 +307,7 @@ export function Administracion({ idOperador, rol }: Props) {
 
   async function reactivar(fila: FilaMaestra) {
     try {
-      await fijarActivoMaestro(entidad, idDeFila(entidad, fila), {
-        activo: true,
-        id_operador: idOperador,
-      });
+      await fijarActivoMaestro(entidad, idDeFila(entidad, fila), { activo: true });
       recargar();
     } catch (e) {
       setError(e instanceof ErrorApi ? e.message : "No se pudo reactivar.");
@@ -356,7 +350,7 @@ export function Administracion({ idOperador, rol }: Props) {
       </div>
 
       {segmento === "operadores" ? (
-        <GestionOperadores idOperador={idOperador} />
+        <GestionOperadores />
       ) : (
       <>
       {/* --- vistas de datos maestros --- */}

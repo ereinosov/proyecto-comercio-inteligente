@@ -12,6 +12,9 @@ export interface Turno {
   caja: string;
   instante_apertura: string;
   instante_cierre: string | null;
+  // Token de sesión de turno (User Story 11, enmienda v2.4.0). Sólo lo puebla la respuesta de
+  // `POST /turnos`; `null` en el cierre. Se guarda en memoria (clienteHttp), nunca en storage.
+  token?: string | null;
 }
 
 export function abrirTurno(datos: {

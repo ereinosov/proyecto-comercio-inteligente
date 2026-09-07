@@ -48,7 +48,7 @@ function EstadoFirmware({ t }: { t: TerminalPago }) {
   return <span className={estilos.aldia}>al día</span>;
 }
 
-export function TerminalesPago({ idSucursal, idOperador }: { idSucursal: number; idOperador: number }) {
+export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
   const [terminales, setTerminales] = useState<TerminalPago[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -81,7 +81,6 @@ export function TerminalesPago({ idSucursal, idOperador }: { idSucursal: number;
         modelo: modelo.trim(),
         id_sucursal: idSucursal,
         version_firmware: version.trim(),
-        id_operador: idOperador,
       });
       setConfirmado("Terminal registrada.");
       setTimeout(() => setConfirmado(null), 1600);
@@ -103,7 +102,6 @@ export function TerminalesPago({ idSucursal, idOperador }: { idSucursal: number;
       await registrarActualizacionFirmware(t.id_terminal_pago, {
         version: version.trim(),
         fecha: new Date().toISOString().slice(0, 10),
-        id_operador: idOperador,
       });
       setConfirmado("Firmware actualizado.");
       setTimeout(() => setConfirmado(null), 1600);
