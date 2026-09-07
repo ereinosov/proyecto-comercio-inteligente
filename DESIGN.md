@@ -2,13 +2,14 @@
 name: Rasero
 description: Punto de venta e inventario para comercio físico multi-sucursal
 colors:
-  superficie-base: "#F1F4F1"
+  superficie-base: "#E9EDE9"
   superficie-alta: "#FFFFFF"
   tinta: "#1B2621"
   tinta-suave: "#5A6862"
   marca: "#0F5132"
   acento-secundario: "#7A6A56"
   borde: "#D5DCD6"
+  borde-fuerte: "#BCC6BD"
   atencion: "#9A5B08"
   critico: "#8E2A2A"
   estimado: "#1F5673"
@@ -56,6 +57,58 @@ components:
 <!--
 INFORME DE IMPACTO — enmienda del sistema de diseño
 ==================================================
+Cambio de versión: 1.4.0 → 1.5.0 (MENOR — ronda de evolución visual: todo aditivo o
+refinamiento de una regla ya existente; ninguna regla se elimina ni se invierte).
+
+Motivo de la ronda: la austeridad del sistema —correcta como identidad ("el rasero nivela,
+no adorna")— se estaba leyendo como "incompleta" en vez de "intencional". La causa no era
+incoherencia sino coherencia por sustracción sin compensación: se habían quitado casi todos
+los recursos que dan carácter (profundidad, color, movimiento) sin poner en su lugar los que
+hacen que lo austero se vea deliberado (una escala de espaciado precisa, jerarquía tipográfica
+con contraste real, una jerarquía de borde, un acento usado con seguridad). Esta enmienda no
+cambia los principios; mejora la ejecución.
+
+Escalas nuevas (tokenizadas en `frontend/src/estilos/tokens.css`, en sync con
+`.impeccable/design.json`), documentadas abajo en "Layout":
+  - Espaciado: 7 valores (4 / 8 / 12 / 16 / 24 / 32 / 48px), ni uno más.
+  - Tipografía: escala de 12 → display, formaliza los tamaños que dejó la ronda de tipografía
+    previa en vez de repetir literales por archivo.
+  - Alturas de control: 30 / 36 / 44px — un input, un select y un botón de la misma variante
+    miden lo mismo en todas las pantallas.
+  - Anillo de foco único (`--foco-anillo`): reemplaza el "2px tinta aquí / cambio de
+    border-color allá / outline:none en Arqueo" por un solo tratamiento.
+
+Reglas refinadas (sin reabrirse, sólo se precisa su aplicación):
+  - La Regla de la Sola Voz: se FORMALIZA el rol del Verde Rasero. Sigue siendo "una vez por
+    pantalla, en la acción que compromete dinero" para el CONTENIDO de la pantalla. Se añade,
+    en la capa de CHROME compartido (no en el contenido), un uso de identidad: el acento
+    estructural de 2px que marca el ítem de navegación activo. No es decoración ni un segundo
+    CTA; es "esto es Rasero" y "aquí estás". La Regla del Registro Sin Dinero queda intacta
+    para el área de contenido.
+  - La Regla del Filo, No la Sombra: se añade una jerarquía de borde de DOS niveles —hairline
+    (`borde` #D5DCD6, 1px entre filas/columnas) y estructural (`borde-fuerte` #BCC6BD, entre
+    regiones). Sigue sin haber una sola sombra.
+  - Elevation & Depth: Superficie Base pasa de #F1F4F1 a #E9EDE9 — el salto a Superficie Alta
+    sube de ~4% a ~7% de luminosidad, suficiente para que una tabla o tarjeta blanca se
+    separe del fondo sin sombra. No es una paleta nueva: es el mismo verde agrisado, un punto
+    más profundo.
+  - Typography: se añade La Regla de la Voz de Análisis — Source Serif 4 vive SÓLO en títulos
+    (≥ 20px) y prosa de Análisis; todo control de formulario, tabla, etiqueta y cifra usa IBM
+    Plex Sans en ambos registros. Serif a 13-14px en un botón se leía como "sin estilar".
+  - Shapes: se evaluó un tercer radio intermedio y se DESCARTÓ. Siguen siendo dos, 2px
+    Operación / 6px Análisis; cada componente toma el de su registro.
+
+Componentes nuevos con especificación (abajo, en "Components"): Botón (spec general, no sólo
+el de cobro), Campo (input/select), Encabezado de pantalla. La implementación de esta ronda
+crea `Boton`, `Campo`, `EncabezadoPantalla` y `SeccionPantalla` y los aplica SÓLO en Venta y
+en la navegación; el resto del sistema migra en rondas posteriores, pantalla por pantalla.
+
+Reglas eliminadas o invertidas: ninguna. Sincronización con la constitución: PENDIENTE, junto
+con la de v1.4.0 (misma acción de seguimiento).
+
+--><!--
+INFORME DE IMPACTO — enmienda del sistema de diseño (histórico)
+==============================================================
 Cambio de versión: 1.3.1 → 1.4.0 (MENOR — una regla nueva, una regla
 reescrita y una extensión de regla; ninguna regla se elimina).
 
@@ -238,6 +291,18 @@ visual o por rellenar una zona apagada está prohibido: si aparece el crítico, 
 **La Regla de la Sola Voz.** El Verde Rasero aparece una vez por pantalla, en la acción que
 compromete dinero. Una segunda aparición lo convierte en decoración y anula la primera.
 
+*Formalización del rol (v1.5.0).* El verde tiene exactamente estos usos y ningún otro:
+(1) la **acción primaria que compromete dinero** —el botón de cobro— una vez, en el área de
+contenido de la pantalla; (2) el **wordmark de Rasero** en el nav global; (3) un **acento
+estructural de 2px** que marca el ítem de navegación activo. Los usos (2) y (3) viven en el
+**chrome compartido** —el armazón que rodea a toda pantalla—, no en el contenido, y son
+identidad ("esto es Rasero", "aquí estás"), no una acción ni un énfasis. El chrome es una capa
+aparte: que el wordmark y el subrayado de nav activo coexistan con el botón de cobro no cuenta
+como "dos voces" —la Sola Voz rige el **contenido** de la pantalla, donde el verde sigue
+apareciendo una sola vez—. Nunca en fondos grandes, nunca en dos elementos del contenido a la
+vez, nunca decorativo. **La Regla del Registro Sin Dinero sigue intacta**: una pantalla sin
+acción de dinero tiene cero verde en su contenido; el acento del nav activo es del armazón.
+
 **La Regla del Ícono.** Todo ícono de la interfaz es un SVG —propio, o de una única librería
 coherente con el resto del sistema— y **nunca** un emoji. Un emoji no respeta el sistema tipográfico
 (no se compone en IBM Plex Sans ni en Source Serif 4); no respeta el sistema cromático (trae su
@@ -302,6 +367,15 @@ al cajero a leer dígito por dígito en vez de de un vistazo.
 familia: es el valor por defecto al que deriva cualquier herramienta que no recibió instrucciones,
 y su presencia significa que alguien se saltó este documento.
 
+**La Regla de la Voz de Análisis.** Source Serif 4 baja el ritmo de lectura, y eso sólo sirve
+donde el usuario lee: **títulos de pantalla y de sección (≥ 20px) y prosa** (descripciones,
+frases de estado vacío, cuerpo de un modal explicativo). **Nunca** en un control de formulario,
+una etiqueta de campo, un encabezado de columna, una celda de tabla ni un botón. Una serif a
+13-14px en un botón o un `<label>` no "baja el ritmo": se lee como texto sin estilar, como si
+la hoja no hubiera cargado. En esos elementos —en los dos registros— la voz es IBM Plex Sans.
+El contraste entre Operación y Análisis lo dan el radio, la densidad y el aire, no ponerle
+serif a los widgets.
+
 ## Layout
 
 Registro de **Operación**: alta densidad de información, la tabla ocupa el ancho disponible y es
@@ -312,16 +386,40 @@ derecha; las etiquetas, a la izquierda.
 Registro de **Análisis**: una decisión por bloque, con aire alrededor. Las líneas de texto se
 mantienen por debajo de 80 caracteres.
 
-No hay todavía una escala de espaciado tokenizada; el sistema la adquirirá cuando la primera
-pantalla la establezca. Documentar aquí una escala inventada la convertiría en norma sin que
-ningún código la haya usado.
+**Escala de espaciado (v1.5.0).** Siete valores, tokenizados en `tokens.css`, y ninguno más:
+`--espacio-1: 4px` · `--espacio-2: 8px` · `--espacio-3: 12px` · `--espacio-4: 16px` ·
+`--espacio-6: 24px` · `--espacio-8: 32px` · `--espacio-12: 48px`. Todo padding, margin y gap
+sale de aquí. Antes de v1.5.0 no había escala y cada pantalla inventaba sus valores (`7/8/10/12/
+14/18/20/22px` mezclados); esa deriva era una de las causas de que el sistema se leyera como
+"hecho por partes".
+
+**Escala tipográfica (v1.5.0).** `--texto-xs: 12px` (unidades, chips menores) · `--texto-sm:
+13px` (encabezados de columna, etiquetas de campo, apoyo) · `--texto-base: 15px` (cuerpo,
+celdas, controles) · `--texto-md: 17px` · `--texto-lg: 20px` · `--texto-xl: 24px` (título de
+pantalla) · `--texto-2xl: 32px` · `--texto-display` (`clamp(36px, 4vw, 52px)`, la cifra que
+domina una pantalla — el total de cobro). Tres pesos: `--peso-normal: 400`, `--peso-medio:
+500`, `--peso-fuerte: 600`.
+
+**Alturas de control (v1.5.0).** `--alto-control-sm: 30px` · `--alto-control: 36px` ·
+`--alto-control-lg: 44px` (acción primaria de alta frecuencia). Un input, un select y un botón
+de la misma variante miden lo mismo en toda pantalla.
 
 ## Elevation & Depth
 
 **Este sistema no usa sombras.** Ninguna. La profundidad se transmite con dos recursos: el salto
-de tono entre Superficie Base (#F1F4F1) y Superficie Alta (#FFFFFF), y el borde de 1px en
-#D5DCD6. Un plano blanco sobre el fondo agrisado ya está "arriba"; no necesita simular que
-flota.
+de tono entre Superficie Base (#E9EDE9) y Superficie Alta (#FFFFFF), y el borde. Un plano blanco
+sobre el fondo agrisado ya está "arriba"; no necesita simular que flota.
+
+**Salto de tono (v1.5.0).** Superficie Base pasó de #F1F4F1 a **#E9EDE9**: el mismo verde
+agrisado, un punto más profundo. El salto de luminosidad a Superficie Alta sube de ~4% a ~7% —
+antes era tan sutil que en muchos monitores la tabla no se distinguía del fondo y la pantalla
+se leía como un solo plano.
+
+**Jerarquía de borde (v1.5.0).** Dos niveles, ambos sin sombra: **hairline** (`borde` #D5DCD6,
+1px) separa filas, columnas y el contorno de una tabla o tarjeta; **estructural**
+(`borde-fuerte` #BCC6BD) separa regiones y secciones —el borde inferior del nav, la franja del
+pie, el corte entre un formulario fijo y su tabla— donde el hairline se perdía contra el
+contenido.
 
 ### Named Rules
 
@@ -335,6 +433,11 @@ Dos radios, uno por registro: **2px en Operación**, **6px en Análisis**. El de
 cuadrado por timidez" — es el filo del rasero: suficiente para que no corte, insuficiente para
 sugerir suavidad. Los degradados y los fondos oscuros están prohibidos en todo el sistema.
 
+En v1.5.0 se evaluó añadir un tercer radio intermedio para componentes que "no encajan limpio"
+(botones, chips flotantes) y se **descartó**: cada componente toma el radio del registro donde
+vive —un botón de Operación es de 2px, uno de Análisis de 6px— y con eso alcanza. Un tercer
+valor sólo habría reabierto la discusión en cada componente nuevo.
+
 ## Components
 
 ### Botón de cobro
@@ -343,6 +446,55 @@ sugerir suavidad. Los degradados y los fondos oscuros están prohibidos en todo 
 - **Forma:** filo de Operación (2px).
 - **Color:** fondo Verde Rasero (#0F5132), texto Superficie Alta (#FFFFFF).
 - **Estados:** el foco se marca con un anillo de borde, nunca con sombra ni con brillo.
+
+### Botón (spec general, v1.5.0)
+
+Hasta v1.4.0 el sistema sólo tenía spec del botón de cobro; el resto se re-escribía por
+pantalla (`botonSecundario`, `botonCancelar`, `botonTexto`, `botonNuevo`, `boton`, `primaria`,
+`cancelar`, y los pares `ordenActivo`/`Inactivo`, `segActivo`/`Inactivo`, `vistaActiva`/
+`Inactiva`) con tamaños y radios ligeramente distintos. El componente `Boton` unifica las
+variantes; la clase equivalente se retira de cada pantalla al migrarla.
+
+- **Forma:** radio del registro; alto de `--alto-control` (o `--alto-control-lg` para la
+  acción primaria de alta frecuencia); padding horizontal `--espacio-4`; IBM Plex Sans
+  (La Regla de la Voz de Análisis) con `--peso-fuerte` la primaria, `--peso-medio` el resto.
+- **Variantes:**
+  - `cobro` — sólo Venta. Verde Rasero. La Regla de la Sola Voz.
+  - `primaria` — fondo Tinta, texto Superficie Alta. La acción principal de una pantalla que
+    **no** compromete dinero (registrar entrada, confirmar conteo, guardar maestro).
+  - `secundaria` — contorno en el Acento Secundario #7A6A56, fondo transparente, texto en el
+    acento. La acción secundaria **neutra** (La Regla del Segundo Tono). Nunca relleno.
+  - `neutra` — borde `--color-borde`, texto Tinta Suave. El "Cancelar" de un par, el "Volver".
+  - `fantasma` — sin borde ni fondo, texto Tinta Suave con subrayado en hover. Sólo acciones
+    de fila de baja jerarquía dentro de una tabla ("Editar", "Desactivar").
+- **Estados:** foco con `--foco-anillo`; `:disabled` baja opacidad a 0.5 y quita el cursor —
+  nunca se oculta.
+
+### Campo: input y select (spec general, v1.5.0)
+
+`Campo` envuelve `<label>` + control con un tratamiento único; retira las definiciones locales
+de `.entrada` / `.campo` / `.campoFila` / `.campoModal` al migrar cada pantalla.
+
+- **Etiqueta:** IBM Plex Sans `--texto-sm`, Tinta Suave, `--espacio-1` de separación del
+  control. Un asterisco de obligatorio usa el componente `Obligatorio` ya existente.
+- **Control:** alto `--alto-control`, padding `0 --espacio-3`, borde 1px `--color-borde`, radio
+  del registro, fondo Superficie Alta, IBM Plex Sans `--texto-base` con `tabular-nums` si el
+  campo es numérico. El `<select>` restyled mantiene su chevron SVG propio (componente
+  `Selector`).
+- **Foco:** `--foco-anillo`. **Error:** borde `--color-critico` y un mensaje debajo en
+  `--color-critico` `--texto-sm` — nunca sólo el borde (mismo principio que los tres
+  portadores). **Disabled:** opacidad 0.5.
+
+### Encabezado de pantalla (v1.5.0)
+
+Toda pantalla abre con el mismo bloque, vía `EncabezadoPantalla`: un `<h1>` en `--texto-xl`
+`--peso-fuerte` (serif en Análisis, IBM Plex Sans en Operación), padding
+`--espacio-6 --espacio-8 --espacio-4` en Análisis y `--espacio-3 --espacio-6` en Operación, y
+una zona de acciones alineada a la derecha en la misma línea. La pantalla de Venta —que hasta
+v1.4.0 no tenía título, sólo una línea de contexto en Tinta Suave— también lo lleva. El
+contexto de sucursal/caja va **debajo** del `<h1>` en `--texto-sm` Tinta Suave, no en su lugar.
+`SeccionPantalla` da el mismo padding lateral y el `--espacio-6` entre secciones al resto del
+cuerpo.
 
 ### Tabla de Operación
 
@@ -643,6 +795,10 @@ del operador en la barra responde "¿de quién es este turno?" sin abrir otra pa
 - **Do** elegir el registro por contexto de uso: Operación (2px, alta densidad, tabla) para caja e
   inventario; Análisis (6px, aire) para pantallas donde se decide.
 - **Do** componer toda cifra de dinero y peso con cifras tabulares reales.
+- **Do** sacar todo padding, margin y gap de los 7 valores de `--espacio-*`, y todo tamaño de
+  texto de la escala `--texto-*` (v1.5.0). Nunca un literal nuevo.
+- **Do** usar IBM Plex Sans en todo control, tabla y etiqueta; Source Serif 4 sólo en títulos
+  ≥ 20px y prosa de Análisis (La Regla de la Voz de Análisis).
 - **Do** transmitir profundidad con el salto de tono #F1F4F1 → #FFFFFF y el borde #D5DCD6.
 - **Do** acompañar todo dato incierto o envejecido con sus tres portadores.
 - **Do** reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla —
@@ -664,6 +820,10 @@ del operador en la barra responde "¿de quién es este turno?" sin abrir otra pa
   de cobro (La Regla del Segundo Tono).
 - **Don't** envolver grupos de datos en tarjetas dentro del registro de Operación.
 - **Don't** usar Inter como tipografía por defecto.
+- **Don't** poner Source Serif 4 en un botón, un `<label>`, un encabezado de columna o una
+  celda — a 13-14px la serif se lee como "sin estilar" (La Regla de la Voz de Análisis).
+- **Don't** repetir el Verde Rasero fuera de sus tres usos formalizados (cobro, wordmark,
+  acento de nav activo) — nunca en un fondo, nunca en dos elementos de la misma vista.
 - **Don't** comunicar antigüedad o incertidumbre solo con color.
 - **Don't** animar la aparición de un dato de contexto (como un resumen o valor) que no
   confirma una acción del usuario — la animación se reserva para confirmaciones y revelaciones
@@ -727,5 +887,16 @@ una aclaración sin cambio de significado.
   se **extiende** con una marca de agua del logo mono al 8 % detrás de las tres partes. Actualiza
   la viñeta "Colapsado" del componente "Identificar cliente (Operación)". No elimina ninguna
   regla. Sincronización con la constitución **pendiente** (ver informe de impacto).
+- **1.5.0** (2026-09-07) — MENOR: ronda de evolución visual, de "sobrio pero incompleto" a
+  "profesional e intencional". Añade escalas tokenizadas —**espaciado** (7 valores),
+  **tipografía**, **alturas de control**, **anillo de foco único**— en `tokens.css` y
+  `design.json`. Refina, sin reabrir: **La Regla de la Sola Voz** (formaliza el rol del verde:
+  cobro + wordmark + acento de nav activo, nada más), **La Regla del Filo** (jerarquía de
+  borde de dos niveles, `borde` y `borde-fuerte` #BCC6BD), **Elevation & Depth** (Superficie
+  Base #F1F4F1 → #E9EDE9 para un salto de tono perceptible). Regla nueva **La Regla de la Voz
+  de Análisis** (Source Serif 4 sólo en títulos ≥20px y prosa; IBM Plex Sans en todo control,
+  tabla y etiqueta). Specs de componente nuevas: **Botón** (general), **Campo**, **Encabezado
+  de pantalla**. Se evaluó y descartó un tercer radio. No elimina ni invierte ninguna regla.
+  Sincronización con la constitución **pendiente** (junto con la de v1.4.0).
 
-**Versión**: 1.4.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 1.5.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07

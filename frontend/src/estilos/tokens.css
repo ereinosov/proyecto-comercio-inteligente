@@ -1,33 +1,93 @@
-/* Tokens de diseño del sistema (constitución v2.2.0, sección "Sistema de Diseño"). Variables
-   CSS propias del proyecto — nunca valores incrustados por componente. Este archivo es el
-   insumo textual que consume el paso de invocación de Impeccable (T015). */
+/* Tokens de diseño del sistema (constitución v2.2.0, sección "Sistema de Diseño";
+   DESIGN.md v1.5.0). Variables CSS propias del proyecto — nunca valores incrustados por
+   componente. Este archivo es el insumo textual que consume el paso de invocación de
+   Impeccable (T015) y debe mantenerse en sync con `.impeccable/design.json`.
+
+   v1.5.0 — ronda de evolución visual: se AÑADEN escalas tokenizadas (espaciado, tipografía,
+   alturas de control, jerarquía de borde) y se refina el contraste base/blanca y el rol del
+   verde. No se reemplaza la paleta cromática ni se elimina ningún token previo. */
 
 :root {
-  /* Paleta — anclada en objetos del comercio físico. Sin fondos oscuros ni degradados. */
-  --color-superficie-base: #F1F4F1;
-  --color-superficie-alta: #FFFFFF;
+  /* ─── Paleta ─────────────────────────────────────────────────────────────────────────────
+     Anclada en objetos del comercio físico. Sin fondos oscuros ni degradados. */
+  --color-superficie-base: #E9EDE9;   /* v1.5.0: verde agrisado un punto más profundo que el
+                                         #F1F4F1 previo — el salto a Superficie Alta pasa de
+                                         ~4% a ~7% de luminosidad y la tabla/tarjeta blanca se
+                                         separa de verdad del fondo sin usar sombra. */
+  --color-superficie-alta: #FFFFFF;   /* planos que se levantan sobre la base. */
   --color-tinta: #1B2621;
+  --color-tinta-fuerte: #10201A;   /* hover/press de un botón primario relleno de Tinta */
   --color-tinta-suave: #5A6862;
   --color-marca: #0F5132;
+  --color-marca-fuerte: #0A3A24;      /* hover/press del botón de cobro (ya usado en design.json). */
+
   /* Acento secundario (La Regla del Segundo Tono, DESIGN.md v1.4.0): tierra apagado para la
      acción secundaria neutra. SIEMPRE como contorno (borde + texto), nunca relleno — un relleno
      macizo competiría con el botón de cobro. No reemplaza el Verde Rasero ni los semánticos. */
   --color-acento-secundario: #7A6A56;
+
+  /* Jerarquía de borde (v1.5.0). Dos niveles, ambos sin sombra (La Regla del Filo, No la
+     Sombra): `borde` es el hairline de 1px que separa filas y columnas; `borde-fuerte` es la
+     línea estructural que separa regiones/secciones cuando el hairline se pierde. */
   --color-borde: #D5DCD6;
+  --color-borde-fuerte: #BCC6BD;
 
   /* Semánticos — reservados exclusivamente a su significado, nunca decorativos. */
   --color-atencion: #9A5B08;   /* dato envejecido, stock bajo */
   --color-critico: #8E2A2A;    /* caducado, anomalía */
   --color-estimado: #1F5673;   /* valor calculado, no observado */
 
-  /* Radios de borde por registro visual. */
+  /* ─── Radios de borde por registro visual ────────────────────────────────────────────────
+     Dos radios, uno por registro (DESIGN.md, "Shapes"). Se evaluó un tercer valor intermedio
+     en v1.5.0 y se descartó: cada componente toma el radio del registro donde vive. */
   --radio-operacion: 2px;
   --radio-analisis: 6px;
 
-  /* Tipografía por registro. IBM Plex Sans con cifras tabulares en Operación; Source Serif 4
-     en Análisis. Inter está PROHIBIDA como tipografía por defecto. */
+  /* ─── Tipografía ─────────────────────────────────────────────────────────────────────────
+     IBM Plex Sans con cifras tabulares en Operación y en TODO control de formulario, tabla y
+     dato numérico de ambos registros. Source Serif 4 SÓLO en títulos y prosa de Análisis.
+     Inter está PROHIBIDA como tipografía por defecto. */
   --tipografia-operacion: "IBM Plex Sans", system-ui, sans-serif;
   --tipografia-analisis: "Source Serif 4", Georgia, serif;
+
+  /* Escala tipográfica (v1.5.0) — formaliza los tamaños que dejó la ronda de tipografía previa
+     en vez de repetir literales por archivo. */
+  --texto-xs: 12px;    /* unidades, chips menores, notas al pie de una cifra */
+  --texto-sm: 13px;    /* encabezados de columna, etiquetas de campo, texto de apoyo */
+  --texto-base: 15px;  /* cuerpo, celdas de tabla, controles */
+  --texto-md: 17px;    /* subtítulos, título de pantalla en Operación densa */
+  --texto-lg: 20px;    /* cifras de detalle, subtítulos de Análisis */
+  --texto-xl: 24px;    /* título de pantalla (H1) */
+  --texto-2xl: 32px;   /* cifra focal secundaria */
+  --texto-display: clamp(36px, 4vw, 52px); /* la cifra que domina una pantalla: total de cobro */
+
+  --peso-normal: 400;
+  --peso-medio: 500;
+  --peso-fuerte: 600;
+
+  --lh-ajustado: 1.2;   /* títulos y cifras */
+  --lh-normal: 1.5;     /* prosa y descripciones */
+
+  /* ─── Escala de espaciado (v1.5.0) ───────────────────────────────────────────────────────
+     Siete valores, ni uno más. Todo padding/margin/gap sale de aquí. */
+  --espacio-1: 4px;
+  --espacio-2: 8px;
+  --espacio-3: 12px;
+  --espacio-4: 16px;
+  --espacio-6: 24px;
+  --espacio-8: 32px;
+  --espacio-12: 48px;
+
+  /* ─── Alturas de control (v1.5.0) ────────────────────────────────────────────────────────
+     Un input, un select y un botón de la misma variante miden lo mismo en todas las pantallas. */
+  --alto-control-sm: 30px;
+  --alto-control: 36px;
+  --alto-control-lg: 44px;   /* acción primaria de alta frecuencia: botón de cobro */
+
+  /* Anillo de foco único del sistema (antes: 2px tinta en unos archivos, cambio de border-color
+     en otros, `outline: none` en Arqueo). */
+  --foco-anillo: 2px solid var(--color-tinta);
+  --foco-separacion: 2px;
 }
 
 /* Registro de Operación (punto de venta, inventario, arqueo): alta densidad, tabla como

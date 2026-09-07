@@ -22,7 +22,8 @@
       "superficie-base": {
         "role": "neutral",
         "displayName": "Superficie Base",
-        "canonical": "#F1F4F1",
+        "canonical": "#E9EDE9",
+        "note": "v1.5.0: verde agrisado un punto más profundo que el #F1F4F1 previo; el salto a Superficie Alta pasa de ~4% a ~7% de luminosidad para separar la tabla/tarjeta blanca del fondo sin usar sombra.",
         "tonalRamp": [
           "#20241f",
           "#333a32",
@@ -30,8 +31,8 @@
           "#6b776a",
           "#95a094",
           "#c0c9bf",
-          "#e2e8e1",
-          "#f1f4f1"
+          "#dbe1da",
+          "#e9ede9"
         ]
       },
       "superficie-alta": {
@@ -78,6 +79,12 @@
           "#a8b3ad",
           "#d6ddd9"
         ]
+      },
+      "borde-fuerte": {
+        "role": "neutral",
+        "displayName": "Borde Fuerte",
+        "canonical": "#BCC6BD",
+        "note": "v1.5.0: segundo nivel de la jerarquía de borde. `borde` (#D5DCD6) es el hairline de 1px entre filas/columnas; `borde-fuerte` separa regiones y secciones cuando el hairline se pierde. Ambos sin sombra (La Regla del Filo)."
       },
       "borde": {
         "role": "neutral",
@@ -152,7 +159,51 @@
     },
     "shadows": [],
     "motion": [],
-    "breakpoints": []
+    "breakpoints": [],
+    "scales": {
+      "note": "v1.5.0: escalas tokenizadas en frontend/src/estilos/tokens.css. Antes no existían y cada pantalla inventaba sus valores.",
+      "espaciado": ["4px", "8px", "12px", "16px", "24px", "48px"],
+      "espaciadoTokens": {
+        "--espacio-1": "4px",
+        "--espacio-2": "8px",
+        "--espacio-3": "12px",
+        "--espacio-4": "16px",
+        "--espacio-6": "24px",
+        "--espacio-8": "32px",
+        "--espacio-12": "48px"
+      },
+      "tipografia": {
+        "--texto-xs": "12px",
+        "--texto-sm": "13px",
+        "--texto-base": "15px",
+        "--texto-md": "17px",
+        "--texto-lg": "20px",
+        "--texto-xl": "24px",
+        "--texto-2xl": "32px",
+        "--texto-display": "clamp(36px, 4vw, 52px)"
+      },
+      "pesos": { "--peso-normal": 400, "--peso-medio": 500, "--peso-fuerte": 600 },
+      "alturasControl": {
+        "--alto-control-sm": "30px",
+        "--alto-control": "36px",
+        "--alto-control-lg": "44px"
+      },
+      "foco": "2px solid var(--color-tinta), offset 2px — anillo único del sistema"
+    },
+    "marcaRol": {
+      "note": "v1.5.0: formalización (no contradicción) de La Regla de la Sola Voz. El Verde Rasero tiene un rol acotado y explícito y ninguno más.",
+      "permitido": [
+        "acción primaria que compromete dinero (botón de cobro) — una vez por pantalla, en el área de contenido",
+        "wordmark de Rasero en el nav global",
+        "acento estructural de 2px que marca el ítem de navegación activo (identidad de la herramienta, capa de chrome, no del contenido de la pantalla)"
+      ],
+      "prohibido": [
+        "fondos grandes o de sección",
+        "más de un elemento del CONTENIDO de una pantalla a la vez (el chrome —wordmark, nav activo— es una capa aparte y no cuenta contra la Sola Voz del contenido)",
+        "cualquier uso decorativo o de énfasis",
+        "el área de contenido de una pantalla del Registro Sin Dinero (esa regla sigue intacta para el contenido; el acento de nav vive en el chrome compartido)"
+      ]
+    }
   },
   "components": [
     {

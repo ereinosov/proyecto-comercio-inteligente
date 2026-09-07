@@ -15,6 +15,23 @@ body,
 
 body {
   margin: 0;
+  /* v1.5.0: reset tipográfico global. Antes cada `.pantalla` re-declaraba familia y color; el
+     nav y los componentes flotantes quedaban a merced del default del navegador. El registro de
+     cada pantalla sigue fijando su propia familia (Operación / Análisis) por encima de esto. */
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-base);
+  line-height: var(--lh-normal);
+  color: var(--color-tinta);
+  background: var(--color-superficie-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+/* Anillo de foco único del sistema (token `--foco-anillo`). Baja especificidad con :where()
+   para que un componente pueda ajustar el offset sin pelear con esta regla. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: var(--foco-anillo);
+  outline-offset: var(--foco-separacion);
 }
 
 /* Los <input type="number"> del sistema (cantidad en el carrito de Venta, traspasos, conteo
