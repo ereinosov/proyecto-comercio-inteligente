@@ -668,9 +668,10 @@ reales de fuga (mecanismo 3) espera a que `002` implemente su User Story 3, y as
   recompra es de precio, no de inventario (FR-010), y si al redimir falta stock es `001` quien
   resuelve la venta (FR-011). Las únicas lecturas de esas dos tablas ocurren en las **pruebas de
   frontera**, que cuentan filas antes y después para confirmar que `005` nunca escribió.
-- **Constitución vigente citada**: v2.3.0. La enmienda que esta funcionalidad motivó es la
-  **v2.2.5** (2026-09-05); v2.2.6 (entrada de `007-pagos-seguridad`) y v2.3.0 (Principio VI,
-  "Autorización y Roles", sobre el esquema de `operador` de `001`) son posteriores y sin efecto
+- **Constitución vigente citada**: v2.4.0. La enmienda que esta funcionalidad motivó es la
+  **v2.2.5** (2026-09-05); v2.2.6 (entrada de `007-pagos-seguridad`), v2.3.0 (Principio VI,
+  "Autorización y Roles", sobre el esquema de `operador` de `001`) y v2.4.0 (sub-sección
+  "Identidad de sesión" del Principio VI, token de turno) son posteriores y sin efecto
   sobre este módulo. La enmienda **v2.2.5** reconcilió la lista
   de entidades de `005` en la tabla de Propiedad de Datos (`campania`, `envio_promocional`,
   `grupo_control` → `campania`, `cupon`, `oferta_recompra`, `experimento_reactivacion`,

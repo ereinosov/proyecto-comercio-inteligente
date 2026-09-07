@@ -1,6 +1,120 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.3.0 → 2.4.0
+Tipo de cambio: MENOR — amplía el Principio VI ("Autorización y Roles") con una
+sub-sección nueva, "Identidad de sesión". No elimina ni redefine ninguna regla de
+autorización: los tres roles, la jerarquía acumulativa, el mecanismo central
+`requiere_rol`, "ocultar, no deshabilitar" y la excepción de `cliente` quedan
+exactamente como estaban. Lo que cambia es la mitad de IDENTIDAD del principio: la
+frase descriptiva "no hay JWT, ni sesión de servidor, ni token; el `id_operador`
+sigue viajando explícito" se sustituye por un mecanismo de sesión de turno. Como
+toca el texto de un principio y la tabla de Propiedad de Datos (la frontera de
+"autorización"), vuelve al formato de informe completo de v2.0.0 / v2.2.6 / v2.3.0.
+
+Motivo: una auditoría de seguridad encontró que la autorización por rol (v2.3.0,
+`requiere_rol`) valida el ROL correctamente pero resuelve la IDENTIDAD del operador
+leyendo el `id_operador` que el propio cliente envía en el cuerpo de cada petición,
+sin comprobar que quien llama sea de verdad ese operador. Con la consola de red
+abierta, cualquiera cambia `id_operador` en el body y actúa como cualquier rol,
+`admin` incluido, sin conocer ningún PIN. Ese patrón —`id_operador` en el cuerpo,
+sin sesión— es ANTERIOR a v2.3.0: viene de `007-pagos-seguridad` (donde se
+estableció para `POST /pagos/terminales` y la cobertura de medios) y la enmienda
+v2.3.0 lo heredó sin cuestionarlo. v2.3.0 no introdujo la brecha; sólo la volvió
+más grave al añadir una jerarquía de roles real que suplantar. Esta enmienda la
+CORRIGE; no arregla un defecto propio de la última enmienda.
+
+La decisión (cerrada; el detalle vive en el Principio VI y en la User Story 11 de
+`001-core-ventas-inventario/spec.md`):
+  (A) Al abrir turno, tras validar el PIN, el backend emite UN JSON Web Token
+      firmado con clave simétrica (HS256). Un token por turno abierto. Claims
+      mínimos: `id_operador`, `id_turno`, `rol` y `exp`. El backend NUNCA confía en
+      el `rol` del claim para autorizar —sigue resolviéndolo desde la tabla
+      `operador` en cada `requiere_rol`—; el claim es sólo para la interfaz.
+  (B) El token viaja en el header `Authorization: Bearer <token>` en toda petición
+      que hoy exige `id_operador` para verificar rol. El frontend lo guarda en
+      memoria (estado de React, junto al turno), NUNCA en `localStorage` ni
+      `sessionStorage` (convención del proyecto: sin browser storage). Se pierde al
+      recargar, igual que hoy se pierde el turno abierto — no es una regresión.
+  (C) Doble invalidación: expira por tiempo (12 horas desde la emisión, `exp`
+      estándar) Y al cerrar turno. Como JWT es stateless, el cierre se comprueba
+      contra el estado ya existente del turno (`turno.instante_cierre IS NOT NULL`):
+      no se crea tabla de blocklist ni columna nueva. Un token cuyo `operador` pasó
+      a `activo = false` se rechaza de inmediato en la siguiente petición, igual que
+      ya hace `requiere_rol` con el operador inactivo.
+  (D) CAMBIO DE CONTRATO INTENCIONAL: el `id_operador` (y `id_operador_solicitante`)
+      que hoy viaja en el cuerpo de los endpoints de escritura sujetos a rol queda
+      IGNORADO por el backend para efectos de autorización. La identidad se deriva
+      EXCLUSIVAMENTE del token. No se valida cruce body-vs-token: una sola fuente de
+      verdad es más simple de implementar, testear y defender que dos. El campo se
+      retira del schema de esos cuerpos. Los endpoints que hoy NO verifican
+      identidad alguna (entradas de inventario, traspasos, conteos físicos,
+      sincronización de operaciones pendientes, la mayoría de precios/pronóstico/
+      promociones) quedan FUERA DE ALCANCE de esta enmienda: no tenían control de
+      identidad antes y cerrarlo sería expandir el alcance sin especificación. Se
+      anotan como candidatos a una User Story futura.
+
+Autorización ≠ autenticación, y esta enmienda tampoco las funde: `requiere_rol`
+sigue siendo el único mecanismo de rol. Lo que se añade es la SESIÓN —cómo el
+backend sabe qué operador llama— que hasta v2.3.0 se resolvía por un dato del
+cuerpo en el que confiaba sin verificar. El PIN + hash (FR-006, SHA-256 + sal)
+NO cambia: sigue siendo la credencial que se presenta al abrir turno. El token es
+la consecuencia de presentarla, no una credencial nueva.
+
+Principios modificados: Principio VI, "Autorización y Roles" — se reescribe el
+párrafo de identidad y se añade la sub-sección "Identidad de sesión". Ninguna regla
+de autorización se redefine.
+Secciones añadidas: sub-sección "Identidad de sesión" dentro del Principio VI.
+Secciones eliminadas: ninguna.
+
+Cambio de esquema: NINGUNO. `operador` y `turno` (001) no ganan ni pierden
+columnas; la invalidación por cierre reutiliza `turno.instante_cierre`, que existe
+desde v2.1.0. El conteo de entidades de 001 sigue en 20.
+
+Configuración nueva (Restricciones Técnicas, "Configuración y secretos", ya
+vigente): la clave de firma del JWT se inyecta por entorno (`JWT_SECRET_KEY`), con
+un valor por defecto SÓLO para desarrollo, igual que `DATABASE_URL`. Ningún secreto
+real en el repositorio.
+
+Nueva frontera en "Propiedad de Datos y Nomenclatura": la viñeta de "autorización"
+se amplía para separar la verificación de rol (`requiere_rol`) de la resolución de
+identidad de sesión (emisión y verificación del token de turno). Ambas viven en
+`backend/rasero/seguridad.py`; ninguna pertenece a una funcionalidad concreta. El
+token de turno NO es una entidad persistida: es un valor firmado y sin estado, sin
+fila en ninguna tabla.
+
+Puerta de sincronización de enmiendas (v2.2.0): esta enmienda cambia el texto de un
+principio y la tabla de Propiedad de Datos, así que las citas que reclaman una
+versión vigente de la constitución en los artefactos de funcionalidad (`spec.md`,
+`plan.md`, `data-model.md`) de 001–007 se sincronizan de v2.3.0 a **v2.4.0** en
+este mismo cambio. Las citas históricas —"la enmienda v2.3.0 que añadió el Principio
+VI", "de 3 a 6 entidades por v2.2.5"— NO se barren. `DESIGN.md` NO cambia: el token
+no tiene superficie visual propia; el único efecto de interfaz —volver a la pantalla
+de apertura de turno cuando la sesión expira o se cierra— aplica el flujo de turno
+ya existente sin añadir ni redefinir ninguna regla de diseño.
+
+Historial de versiones (resumen; ver bloques siguientes para el detalle):
+  - 2.2.9 (2026-09-07) — Regla de la Marca Persistente (DESIGN.md v1.3.1).
+  - 2.3.0 (2026-09-06) — Principio VI, "Autorización y Roles"; `operador` (001)
+    gana `id_sucursal` (FK) y cambia `es_encargado` por `rol`.
+  - 2.4.0 (2026-09-06) — esta enmienda: sub-sección "Identidad de sesión" del
+    Principio VI. Corrige una brecha identidad-vs-autorización heredada de
+    `007-pagos-seguridad`: el operador se identificaba por un `id_operador` del
+    cuerpo en el que el backend confiaba sin verificar. Se introduce un JWT de
+    sesión de turno (HS256, header `Authorization: Bearer`, `exp` a 12 h,
+    invalidado también al cerrar turno o desactivar al operador). El `id_operador`
+    del cuerpo queda deprecado para autorización — una sola fuente de verdad, el
+    token. Sin cambio de esquema (la invalidación por cierre reutiliza
+    `turno.instante_cierre`). `JWT_SECRET_KEY` por entorno. Se especifica como
+    User Story 11 de `001-core-ventas-inventario`. Citas de versión vigente de
+    001–007 sincronizadas a v2.4.0.
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.2.9 → 2.3.0
 Tipo de cambio: MENOR — añade un principio nuevo (Principio VI, "Autorización y
 Roles"). Es territorio nuevo: la constitución no tenía hasta hoy ningún principio
@@ -533,11 +647,14 @@ puede leer en pantalla no es una explicación.
 ### VI. Autorización y Roles
 
 Quién puede hacer qué se decide en un solo lugar y se hace visible en la interfaz. Este
-principio gobierna la **autorización** (qué acciones permite un rol), no la **autenticación**
-(cómo se identifica el operador). La identificación por PIN + hash (FR-006) NO cambia con este
-principio: no hay JWT, ni sesión de servidor, ni token; el `id_operador` sigue viajando
-explícito en cada operación, y lo único nuevo es que ese identificador ahora resuelve a un rol
-de tres valores y a una sucursal fija, verificados de forma central.
+principio gobierna la **autorización** (qué acciones permite un rol) y la **identidad de
+sesión** (cómo el backend sabe qué operador llama), pero no la **autenticación** (la credencial
+que el operador presenta). La credencial NO cambia: sigue siendo el PIN + hash (FR-006,
+SHA-256 + sal), presentado al abrir turno. Lo que la enmienda **v2.4.0** corrige es que, hasta
+entonces, la identidad del operador en cada petición se resolvía leyendo un `id_operador` que
+el propio cliente enviaba en el cuerpo, sin verificar — una brecha heredada de
+`007-pagos-seguridad`, no introducida por la jerarquía de roles de v2.3.0. Desde v2.4.0 esa
+identidad se deriva de un token de sesión de turno (ver "Identidad de sesión" más abajo).
 
 - **Un operador, una sucursal.** `operador` DEBE declarar `id_sucursal` (FK a `sucursal`, NOT
   NULL): relación uno-a-uno, un operador pertenece a exactamente una sucursal. Una tabla de
@@ -573,6 +690,38 @@ de tres valores y a una sucursal fija, verificados de forma central.
 
 - **Excepción explícita.** La edición de `cliente` NO tiene restricción de rol: cualquier
   `cajero` puede editarla. Esta excepción ya está documentada y se mantiene.
+
+**Identidad de sesión** (enmienda v2.4.0). La identidad del operador que ejecuta una petición
+DEBE derivarse de una sesión verificable, nunca de un dato que el cliente envía sin prueba.
+
+- **Token de sesión de turno.** Al abrir turno, y sólo tras validar el PIN, el backend DEBE
+  emitir un JSON Web Token firmado con clave simétrica (HS256). Un token por turno abierto. Sus
+  claims son el mínimo necesario —`id_operador`, `id_turno`, `rol`, `exp`— y el backend NUNCA
+  autoriza confiando en el `rol` del claim: `requiere_rol` sigue resolviendo el rol real desde
+  la tabla `operador` en cada verificación. El claim `rol` existe sólo para la interfaz.
+- **Transporte y almacenamiento.** El token viaja en el header `Authorization: Bearer <token>`
+  en toda petición que exija verificación de rol. El frontend lo mantiene en memoria, junto al
+  turno abierto; guardarlo en `localStorage`, `sessionStorage` o cualquier almacenamiento de
+  navegador está PROHIBIDO (convención del proyecto). Perderlo al recargar la página es el
+  comportamiento correcto: la sesión de turno no sobrevive a una recarga, igual que hoy no
+  sobrevive el turno abierto.
+- **Doble invalidación.** El token DEBE dejar de ser válido por CUALQUIERA de: (a) expiración
+  por tiempo —`exp` fijo a 12 horas desde la emisión—; (b) cierre del turno asociado; (c)
+  desactivación del operador (`operador.activo = false`). El cierre se comprueba contra el
+  estado ya existente del turno (`instante_cierre`), sin tabla de revocación ni columna nueva.
+  La desactivación se comprueba en cada petición, igual que ya hace `requiere_rol`.
+- **Una sola fuente de verdad.** El `id_operador` (o `id_operador_solicitante`) que viajaba en
+  el cuerpo de los endpoints de escritura sujetos a rol queda DEPRECADO para efectos de
+  autorización y se retira de esos cuerpos. Mantener dos fuentes —cuerpo y token— y validar su
+  cruce no cierra la brecha, sólo la enmascara. El token es la única fuente.
+- **Alcance.** Esta regla obliga a los endpoints que ya verificaban rol (`requiere_rol` /
+  `exige_rol`). Los que hoy no verifican identidad alguna quedan fuera de su alcance hasta que
+  una especificación los incorpore; cerrarlos de oficio sería expandir el alcance sin spec.
+- **Un solo mecanismo, igual que la autorización.** La emisión y la verificación del token
+  DEBEN vivir junto a `requiere_rol`, en `backend/rasero/seguridad.py`, y exponerse como una
+  dependency reutilizable de FastAPI. Replicar la verificación de sesión por router o por
+  servicio está PROHIBIDO. El fallo de sesión reutiliza el formato de error `{codigo, mensaje}`
+  del resto del sistema, con `401` y un `codigo` que no colisione con los ya existentes.
 
 **Razón**: un chequeo de permiso duplicado en tres servicios diverge en tres comportamientos
 distintos en un mes, y el cuarto servicio que se añade se olvida de chequear. Un mecanismo
@@ -717,9 +866,15 @@ Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de conf
   (Principio VI): la función `requiere_rol` de `backend/rasero/seguridad.py` y su dependency de
   FastAPI en el backend, y un hook único en el frontend. NO pertenece a ninguna funcionalidad
   concreta: la consumen todos los routers que hoy chequeaban `es_encargado` por su cuenta
-  (`administracion`, `cobertura_pago`, `terminales_pago`) y cualquiera futuro. La
-  **autenticación** —identificar al operador por PIN + hash (FR-006)— es cosa distinta, vive en
-  `seguridad.py` desde 001 y no cambia con la enmienda v2.3.0. La `id_sucursal` de `operador`
+  (`administracion`, `cobertura_pago`, `terminales_pago`) y cualquiera futuro. La **identidad
+  de sesión** —de qué operador es una petición— es la otra mitad del mismo mecanismo desde la
+  enmienda **v2.4.0**: la emisión del token de sesión de turno al abrir turno y su verificación
+  (firma, expiración, turno abierto, operador activo) viven también en `seguridad.py` y se
+  exponen como dependency. El token de turno NO es una entidad persistida: es un valor firmado y
+  sin estado, sin fila en ninguna tabla; la invalidación por cierre de turno se lee de
+  `turno.instante_cierre`, propiedad de 001. La **autenticación** —la credencial PIN + hash
+  (FR-006)— es cosa distinta, vive en `seguridad.py` desde 001 y no cambia con v2.3.0 ni con
+  v2.4.0. La `id_sucursal` de `operador`
   es propiedad de 001 (columna de una entidad de 001); su uso como restricción de apertura de
   turno para `cajero`/`encargado` lo implementa el servicio de turnos de 001, y `admin` queda
   exento (abre turno en cualquier sucursal).
@@ -890,4 +1045,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.3.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-06
+**Versión**: 2.4.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-06

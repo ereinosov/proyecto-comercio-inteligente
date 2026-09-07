@@ -25,8 +25,8 @@ artefactos analíticos derivados, coherentes con la misma lógica que asigna `ma
 FR-009 (b), y se añadió por la enmienda **v2.2.4** — mismo patrón que `rol_producto` de `003`
 (declaración de negocio sobre un producto, tabla propia con FK, sin tocar el esquema de `producto`
 de `001`). No hay discrepancia pendiente entre este documento y la tabla vigente (constitución
-v2.3.0; la entrada de 004 no cambió desde v2.2.4 — v2.3.0 sólo cambió el esquema de `operador`
-de `001`).
+v2.4.0; la entrada de 004 no cambió desde v2.2.4 — v2.3.0 sólo cambió el esquema de `operador`
+de `001` y v2.4.0 no cambió ningún esquema).
 
 **Frontera de propiedad explícita — sólo lectura, sin escritura ni posesión**: este módulo
 consulta `venta`, `renglon_venta` (demanda y precio histórico aplicado), `movimiento_inventario`,

@@ -119,11 +119,16 @@ comparando `terminal_pago.version_firmware` contra la configuración de `researc
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.3.0** (vigente). La enmienda que esta misma
+Verificación explícita contra la constitución **v2.4.0** (vigente). La enmienda que esta misma
 funcionalidad motivó fue la v2.2.6 (ver "Nota sobre la propiedad de datos" abajo); la v2.3.0
-(Principio VI, "Autorización y Roles") es posterior y sólo obliga a este módulo a verificar el
+(Principio VI, "Autorización y Roles") es posterior y obliga a este módulo a verificar el
 rol `encargado` por el mecanismo central `requiere_rol` en vez de leer `es_encargado` en cada
-servicio (ver backend de la User Story 10 de `001`). **Resultado de la puerta: PASA en los seis
+servicio (ver backend de la User Story 10 de `001`). La enmienda **v2.4.0** ("Identidad de
+sesión") es también posterior y de nuevo obliga a este módulo, que fue donde nació el patrón
+del `id_operador` en el cuerpo: `POST /pagos/terminales`, `PATCH /pagos/terminales/{id}`,
+`POST /pagos/terminales/{id}/firmware` y `PUT /pagos/cobertura` derivan ahora la identidad del
+token de turno (header `Authorization`), no del cuerpo, y el campo `id_operador` se retira de
+esos schemas (ver backend de la User Story 11 de `001`). **Resultado de la puerta: PASA en los seis
 principios y en la Puerta de propiedad de datos** (una vez añadida `token_pago` por v2.2.6).
 
 ### Principios

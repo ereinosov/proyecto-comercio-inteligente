@@ -18,7 +18,7 @@ generada, donde se guardan como cadena decimal.
 
 ## Conformidad con la tabla de propiedad de la constitución
 
-Este modelo define exactamente las **tres** entidades que la constitución (v2.3.0) asigna a
+Este modelo define exactamente las **tres** entidades que la constitución (v2.4.0) asigna a
 `006-caja-mermas-fraude` desde la ratificación: `arqueo`, `merma`, `anomalia_caja`. **Ninguna otra.**
 
 A diferencia de `003` (v2.2.3, `costo_producto` retirado y `sugerencia_precio` añadida), `004`

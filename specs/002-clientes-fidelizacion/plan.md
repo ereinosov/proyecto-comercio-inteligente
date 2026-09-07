@@ -66,9 +66,10 @@ cómputo o almacenamiento respecto a la ya prevista para `001`.
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.3.0**. La enmienda v2.3.0 (Principio VI,
-"Autorización y Roles") no afecta a este módulo: la edición de `cliente` queda explícitamente
-sin restricción de rol.
+Verificación explícita contra la constitución **v2.4.0** (vigente). El Principio VI
+("Autorización y Roles", enmienda v2.3.0; ampliado con "Identidad de sesión" en v2.4.0) no
+afecta a este módulo: la edición de `cliente` queda explícitamente sin restricción de rol y
+esta funcionalidad no expone ningún endpoint de escritura sujeto a verificación de rol.
 
 ### Principios
 

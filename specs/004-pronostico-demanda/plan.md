@@ -87,11 +87,12 @@ ventana (research.md #3).
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.3.0** (vigente). La enmienda que esta misma
+Verificación explícita contra la constitución **v2.4.0** (vigente). La enmienda que esta misma
 funcionalidad motivó fue la v2.2.4 (ver "Nota sobre la enmienda v2.2.4" abajo); v2.2.5 (sobre
-`005-promociones-inteligentes`), v2.2.6 (sobre `007-pagos-seguridad`) y v2.3.0 (Principio VI,
-"Autorización y Roles", sobre el esquema de `operador` de `001`) son posteriores y sin efecto
-sobre este módulo.
+`005-promociones-inteligentes`), v2.2.6 (sobre `007-pagos-seguridad`), v2.3.0 (Principio VI,
+"Autorización y Roles", sobre el esquema de `operador` de `001`) y v2.4.0 (sub-sección
+"Identidad de sesión" del Principio VI, token de turno) son posteriores y sin efecto sobre este
+módulo.
 
 ### Principios
 

@@ -437,7 +437,7 @@ terminal y tipo, y que una entrada existente no puede modificarse ni borrarse.
 
 ### Key Entities *(include if feature involves data)*
 
-Las cinco entidades que la constitución (v2.3.0) asigna a `007-pagos-seguridad` en su tabla de
+Las cinco entidades que la constitución (v2.4.0) asigna a `007-pagos-seguridad` en su tabla de
 Propiedad de Datos son `terminal_pago`, `medio_pago`, `cobertura_pago`, `bitacora_auditoria` y
 `token_pago`. Este spec las usa con ese nombre. `token_pago` se añadió por la enmienda **v2.2.6**
 (2026-09-05), a raíz de `research.md #1` de este módulo — ver "Dependencias entre módulos".
@@ -653,8 +653,11 @@ encabezado de `constitution.md` y la sincronización de las citas de "versión v
   terminales, y editar las listas de versiones de referencia y de vulnerabilidad son acciones
   reservadas a rol `encargado` o superior, verificadas por el mecanismo central `requiere_rol`
   (Principio VI, enmienda v2.3.0; antes se leía `operador.es_encargado` de `001` directamente en
-  cada servicio), y todas quedan en la bitácora.
-- **Constitución vigente citada**: v2.3.0. Este módulo **motivó la enmienda v2.2.6** (2026-09-05),
+  cada servicio), y todas quedan en la bitácora. **Enmienda v2.4.0 ("Identidad de sesión")**: la
+  identidad del operador en esas acciones se deriva ahora del token de sesión de turno (header
+  `Authorization: Bearer`), no del `id_operador` del cuerpo, que se retira del schema. La
+  verificación de rol sigue siendo `requiere_rol`; sólo cambia de dónde sale la identidad.
+- **Constitución vigente citada**: v2.4.0. Este módulo **motivó la enmienda v2.2.6** (2026-09-05),
   que añadió `token_pago` a su entrada en la tabla de Propiedad de Datos (de 4 a 5 entidades) tras
   `research.md #1`. Las otras cuatro entidades (`terminal_pago`, `medio_pago`, `cobertura_pago`,
   `bitacora_auditoria`) estaban desde la ratificación. La enmienda está aprobada y aplicada.

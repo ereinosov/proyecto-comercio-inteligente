@@ -667,10 +667,11 @@ implementar `sustitucion_producto`, sí, y ya está resuelta.
 - **Umbrales y ventanas concretos** (qué es "nivel típico" de un sustituto, cuánto histórico es
   "suficiente" para pronosticar, el valor exacto de N y de α) son decisiones de `plan.md` dentro de
   los métodos ya fijados en Clarifications; no reabren esas decisiones.
-- **Constitución vigente citada**: v2.3.0. La enmienda que esta funcionalidad motivó es la v2.2.4
+- **Constitución vigente citada**: v2.4.0. La enmienda que esta funcionalidad motivó es la v2.2.4
   (añade `sustitucion_producto` a la tabla de Propiedad de Datos de 004; ver plan.md y research.md
-  #2); v2.2.5 (`005`), v2.2.6 (`007`) y v2.3.0 (Principio VI, "Autorización y Roles", sobre el
-  esquema de `operador` de `001`) son posteriores y sin efecto sobre este módulo.
+  #2); v2.2.5 (`005`), v2.2.6 (`007`), v2.3.0 (Principio VI, "Autorización y Roles", sobre el
+  esquema de `operador` de `001`) y v2.4.0 (sub-sección "Identidad de sesión" del Principio VI,
+  token de turno) son posteriores y sin efecto sobre este módulo.
 - **Decisiones de alcance mayor resueltas en Clarifications (Session 2026-09-05)**: FR-009 (método
   de cuantificación de la censura: base por máximo de N períodos recientes + ajuste cruzado por
   sustituto), FR-019 (granularidad diaria, horizontes corto de 7–14 días y medio de 30 días) y
