@@ -7,6 +7,7 @@ colors:
   tinta: "#1B2621"
   tinta-suave: "#5A6862"
   marca: "#0F5132"
+  acento-secundario: "#7A6A56"
   borde: "#D5DCD6"
   atencion: "#9A5B08"
   critico: "#8E2A2A"
@@ -35,6 +36,11 @@ components:
     textColor: "{colors.tinta}"
     typography: "{typography.operacion}"
     rounded: "{rounded.operacion}"
+  boton-accion-secundaria:
+    backgroundColor: "transparent"
+    textColor: "{colors.acento-secundario}"
+    borderColor: "{colors.acento-secundario}"
+    rounded: "{rounded.operacion}"
   bloque-analisis:
     backgroundColor: "{colors.superficie-alta}"
     textColor: "{colors.tinta}"
@@ -50,6 +56,64 @@ components:
 <!--
 INFORME DE IMPACTO — enmienda del sistema de diseño
 ==================================================
+Cambio de versión: 1.3.1 → 1.4.0 (MENOR — una regla nueva, una regla
+reescrita y una extensión de regla; ninguna regla se elimina).
+
+Regla nueva: La Regla del Segundo Tono (Colors → Named Rules). Introduce
+un acento secundario tierra (#7A6A56) para la acción secundaria neutra —
+disparadores de un flujo secundario que hoy son texto plano subrayado
+("+ Identificar cliente", "+ Elegir producto", "+ Aplicar promoción",
+"Consulta no atendida", "Cerrar turno"). Tratamiento SOLO de contorno
+(borde + texto en el acento, fondo transparente), nunca relleno sólido:
+un relleno competiría con el botón de cobro. Convivencia estricta con lo
+ya existente: no reemplaza el Verde Rasero (La Regla de la Sola Voz
+intacta), no aparece en Análisis con función de dinero (La Regla del
+Registro Sin Dinero intacta), no reemplaza ni pisa los tres semánticos
+(La Regla del Significado intacta) — es un cuarto color de rol, no de
+estado.
+
+Regla reescrita: La Regla de la Marca Persistente. Antes: el ícono del
+comercio vivía en el nav global "al mismo nivel visual que el wordmark de
+Rasero", y el footer no llevaba ícono ("la marca visual ya vive en el
+nav"). Ahora: el nav global lleva SOLO el wordmark de Rasero; el ícono del
+comercio baja al footer/barra de contexto, delante del nombre de sucursal
+y la caja, en una sola línea. Motivo: los mockups comparativos aprobados
+mostraron que dos marcas al mismo nivel en el nav compiten por la lectura
+en el arranque de cada pantalla; separar "herramienta" (wordmark, nav) de
+"dónde estoy" (ícono + sucursal + caja, footer) baja el ruido sin perder
+ninguna de las dos presencias. La jerarquía de los tres usos del activo de
+marca no cambia (apertura = logo a color en grande; footer = ícono +
+contexto discretos; mono = reportes/dashboards y ahora estados vacíos).
+
+Extensión de regla: La Regla del Hueco que Enseña. Se añade una marca de
+agua del logo mono del comercio (`despensa-logo-mono-800w.png`) al 8 % de
+opacidad, centrada detrás de las tres partes ya obligatorias (ícono,
+título, frase), `pointer-events: none`, sin recortarse contra el
+contenedor. No cambia las tres partes obligatorias; es un refuerzo visual
+del mismo componente compartido (`EstadoVacio`), no una excepción por
+pantalla. Amplía el alcance del logo mono, antes "reservado a reportes y
+dashboards", para incluir los estados vacíos.
+
+Componente actualizado: "Identificar cliente (Operación)" → viñeta
+"Colapsado". Antes: "enlace de texto subrayado en Tinta Suave, sin fondo
+ni borde". Ahora: botón de contorno en el acento secundario (La Regla del
+Segundo Tono). Sigue sin competir con la tabla —es contorno, no relleno—
+y sigue siendo reversible y fuera del camino crítico del cobro.
+
+Reglas eliminadas: ninguna. Secciones nuevas: ninguna.
+
+Sincronización con la constitución: PENDIENTE. Las tres enmiendas
+anteriores de DESIGN.md (1.2.0, 1.3.0, 1.3.1) se registraron cada una en
+un historial de `constitution.md` (v2.2.7, v2.2.8, v2.2.9). Esta enmienda
+deja esa sincronización sin hacer a propósito: el alcance de este cambio
+se acotó a "frontend + DESIGN.md" y tocar `constitution.md` quedó fuera.
+Queda como acción de seguimiento registrar v1.4.0 en el historial de la
+constitución con la razón "acento secundario de rol; separa las dos marcas
+entre nav y footer; marca de agua del mono en estados vacíos".
+
+--><!--
+INFORME DE IMPACTO — enmienda del sistema de diseño (histórico)
+==============================================================
 Cambio de versión: 1.2.1 → 1.3.0 (MENOR — reescribe una regla existente sin
 eliminarla; ninguna otra regla cambia).
 
@@ -137,12 +201,19 @@ compromete dinero.
 ## Colors
 
 Una paleta de comercio físico: verdes agrisados de anaquel pintado, tinta casi negra con matiz
-verde, y tres semánticos que solo aparecen cuando significan algo.
+verde, tres semánticos que solo aparecen cuando significan algo, y un acento tierra apagado
+reservado a la acción secundaria neutra.
 
 ### Primary
 
 - **Verde Rasero** (#0F5132): el único color de marca. Aparece exclusivamente en la acción que
   compromete dinero —el botón de cobro— y como mucho una vez por pantalla. Su rareza es el punto.
+
+### Secondary
+
+- **Acento Secundario** (#7A6A56): un tierra apagado, sin brillo, para la **acción secundaria
+  neutra** —la que no cobra y no comunica un estado. Siempre como contorno (borde + texto),
+  nunca como relleno. Ver La Regla del Segundo Tono.
 
 ### Neutral
 
@@ -191,6 +262,25 @@ presentacional— y una categoría sin mapa cae al ícono "otros" en lugar de ro
 encuadre entre productos y compite con las cifras; un glifo de familia da el mismo golpe de
 reconocimiento ("esto es limpieza, esto es fresco") sin ninguno de esos costos, y no obliga a
 mantener un activo de imagen por SKU.
+
+**La Regla del Segundo Tono.** Hay un cuarto color con nombre —**Acento Secundario #7A6A56**, un
+tierra apagado— y su función es una sola: la **acción secundaria neutra**. Son los disparadores
+de un flujo opcional que hoy viven como texto plano subrayado sin forma de botón: "+ Identificar
+cliente", "+ Elegir producto", "+ Aplicar promoción", "Consulta no atendida", "Cerrar turno".
+Antes se perdían contra la tabla; ahora se leen como una acción disponible sin gritar. El
+tratamiento es **siempre de contorno**: `border: 1px solid #7A6A56`, texto en #7A6A56, fondo
+transparente o Superficie Alta, radio del registro que corresponda (2px en Operación, 6px en
+Análisis). **Nunca relleno sólido de este color** — un botón tierra macizo competiría de lejos
+con el único bloque de color de la pantalla, que es el de cobro. Este color **no** entra en
+ninguna de las prohibiciones que ya rigen: no reemplaza el Verde Rasero (La Regla de la Sola Voz
+sigue intacta: el verde es exclusivo de la acción que compromete dinero), no aparece en una
+pantalla de Análisis con función de dinero (La Regla del Registro Sin Dinero sigue intacta), y
+no reemplaza ni se usa donde ya corresponde uno de los tres semánticos (La Regla del Significado
+sigue intacta). Es un color de **rol**, no de estado ni de alerta. **Razón**: hasta ahora el
+sistema tenía dos únicos tratamientos para una acción —el bloque Verde de cobro y el texto plano
+sin forma— y todo lo que no cobraba caía en el segundo, indistinto del texto de lectura. Un
+tercer tratamiento, de contorno y en un tono que no pisa a ninguno de los reservados, da a la
+acción secundaria un lugar propio en la jerarquía sin encender otra "voz".
 
 ## Typography
 
@@ -276,8 +366,10 @@ sugerir suavidad. Los degradados y los fondos oscuros están prohibidos en todo 
 
 - **Carácter:** un paso opcional que nunca bloquea el cobro; vive en el encabezado de la
   pantalla de venta, nunca dentro de la tabla del ticket ni como modal.
-- **Colapsado:** enlace de texto subrayado en Tinta Suave, sin fondo ni borde — no compite con
-  la tabla.
+- **Colapsado:** botón de contorno en el Acento Secundario #7A6A56 (La Regla del Segundo Tono):
+  borde de 1px y texto en el acento, fondo transparente, filo de Operación (2px). Sigue sin
+  competir con la tabla —es contorno, no relleno— pero ahora se lee como una acción disponible,
+  no como texto de lectura suelto.
 - **Expandido:** panel flotante en Superficie Alta, borde de 1px en Borde, filo de Operación
   (2px), tipografía IBM Plex Sans; **la búsqueda** vive en este panel flotante. **El alta o la
   edición** de un cliente (nombre, fecha de nacimiento, cédula/RUC) abre `ModalAdministrable` —
@@ -448,24 +540,27 @@ confirman de un vistazo *en qué sucursal y caja está entrando*, que es el dato
 ventas del turno.
 
 **La Regla de la Marca Persistente.** Fuera de la apertura de turno —el momento ceremonial de
-La Regla de la Identidad del Comercio—, la marca del comercio no desaparece: vive **discreta y
-constante** en dos lugares del armazón de la app, sin competir nunca con el trabajo de la
-pantalla. (1) En el **nav global**: el ícono del comercio (autónomo, ya trae su propio fondo de
-app-icon —sin tinte, sin filtro, sin el fondo blanco especial de la apertura—) a 24px al extremo
-izquierdo, y **al mismo nivel visual** el wordmark de Rasero inmediatamente a su derecha,
-separados por el espaciado normal del nav. Ninguno de los dos se agranda ni se jerarquiza sobre
-el otro: Rasero es la herramienta, el comercio es el negocio, y en el uso diario conviven a la
-par. (2) En un **footer** nuevo: franja delgada al pie de toda pantalla post-apertura, Superficie
-Base, borde superior de 1px en Borde (La Regla del Filo — nunca sombra), con el **nombre de la
-sucursal activa** de la sesión en Tinta Suave a 12px. Sin ícono en el footer: la marca visual ya
-vive en el nav, no se duplica en el mismo viewport. El ícono del comercio se configura por
-`VITE_ICONO_COMERCIO` (mismo patrón que `VITE_LOGO_COMERCIO` de la apertura); el nombre de
-sucursal sale del contexto de sesión (`sucursal.nombre` real), nunca de un literal. **Razón**:
-la apertura de turno da la marca del comercio en grande una vez al día; el resto de la jornada el
-operador necesita una confirmación periférica —"sigo en Despensa Los Ríos, sucursal Quevedo
-Centro"— sin que eso reste espacio ni atención a la caja. La jerarquía resultante es explícita:
-apertura = logo a color en grande; nav + footer = ícono + nombre discretos y permanentes; mono
-(`despensa-logo-mono-800w.png`) = reservado a reportes y dashboards. Ningún uso se solapa.
+La Regla de la Identidad del Comercio—, la marca del comercio no desaparece, pero **las dos
+marcas no comparten lugar**: la herramienta y el negocio ocupan extremos distintos del armazón.
+(1) El **nav global** lleva **solo el wordmark de Rasero**, al extremo izquierdo, en el espaciado
+normal del nav. Es la barra de navegación de la herramienta; ahí manda Rasero y nada más compite
+por esa lectura en el arranque de cada pantalla. (2) El **footer / barra de contexto**: franja
+delgada al pie de toda pantalla post-apertura, Superficie Base, borde superior de 1px en Borde
+(La Regla del Filo — nunca sombra), con el **ícono del comercio** (autónomo, ya trae su propio
+fondo de app-icon —sin tinte, sin filtro, sin el fondo blanco especial de la apertura—) a
+**20–22px** delante del **contexto de sesión en una sola línea**: `{sucursal.nombre} · {caja}`,
+en Tinta Suave a 12px. Es "dónde estoy" —qué tienda, qué sucursal, qué caja—, no "qué software
+uso". El ícono se configura por `VITE_ICONO_COMERCIO` (mismo patrón que `VITE_LOGO_COMERCIO` de
+la apertura); la sucursal y la caja salen del contexto de sesión (`sucursal.nombre` y `turno.caja`
+reales), nunca de un literal. Si en algún momento se quiere el nombre del comercio como texto en
+esta línea, DEBE venir de una variable de entorno nueva del frontend, nunca de un literal en JSX
+ni de una tabla. **Razón**: los mockups comparativos aprobados mostraron que el ícono del comercio
+y el wordmark de Rasero al mismo nivel en el nav se leen como dos logos que compiten cada vez que
+cambia la pantalla; separarlos —herramienta arriba, "dónde estoy" abajo— mantiene ambas presencias
+sin que ninguna reste atención a la caja. La jerarquía de los tres usos del activo de marca no
+cambia: apertura = logo a color en grande una vez al día; footer = ícono + sucursal + caja
+discretos y permanentes; mono (`despensa-logo-mono-800w.png`) = reportes, dashboards y la marca
+de agua de los estados vacíos (La Regla del Hueco que Enseña). Ningún uso se solapa.
 
 **La Regla del Hueco que Enseña.** Todo estado vacío —ninguna selección hecha, ninguna fila que
 mostrar— se compone de tres partes y nunca de una sola línea de texto plano: (1) un ícono propio
@@ -474,9 +569,15 @@ genérico de "empty state"; (2) un título corto en el registro tipográfico de 
 una frase que explica **qué** aparecerá ahí cuando haya datos —nunca "no hay nada" ni "selecciona
 algo". Aplica al panel de detalle de Clientes sin selección, a toda lista nueva de Administración
 sin registros y a cualquier lista existente que hoy muestre un placeholder plano de una línea.
-**Razón**: un hueco es la primera pantalla que ve un evaluador que no conoce el sistema; decirle
-qué va a vivir ahí es más barato que un manual y convierte el vacío en una promesa en lugar de un
-error.
+Detrás de esas tres partes va una **marca de agua del logo mono del comercio**
+(`despensa-logo-mono-800w.png`) al **8 % de opacidad**, centrada en el área vacía,
+`pointer-events: none`, a un tamaño que no invada ni se recorte contra los bordes del contenedor
+—se adapta al alto disponible, no un valor fijo. Es puro refuerzo: no reemplaza ninguna de las
+tres partes obligatorias, no lleva texto propio y vive en el componente compartido `EstadoVacio`,
+nunca replicada por pantalla. **Razón**: un hueco es la primera pantalla que ve un evaluador que
+no conoce el sistema; decirle qué va a vivir ahí es más barato que un manual y convierte el vacío
+en una promesa en lugar de un error, y la marca de agua tenue ancla ese vacío en "esta es tu
+tienda" sin restarle protagonismo a la frase que enseña.
 
 **La Regla del Pulso, No el Brillo.** Los estados de carga usan un esqueleto compuesto de bloques
 rectangulares en #E4E9E4, con el **mismo radio** (2px o 6px según el registro de la pantalla que
@@ -546,6 +647,8 @@ del operador en la barra responde "¿de quién es este turno?" sin abrir otra pa
 - **Do** acompañar todo dato incierto o envejecido con sus tres portadores.
 - **Do** reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla —
   y cero veces en una pantalla que no tiene esa acción.
+- **Do** dar a toda acción secundaria neutra —la que no cobra y no es semántica— el contorno en
+  Acento Secundario #7A6A56 (La Regla del Segundo Tono), nunca dejarla como texto plano suelto.
 - **Do** revelar el detalle de un bloque de Análisis con una única transición por selección,
   nunca con hover ni fade-in repetido en cada bloque de la lista.
 - **Do** mantener cualquier identificación o dato de contexto (como identificar a un cliente en
@@ -556,6 +659,9 @@ del operador en la barra responde "¿de quién es este turno?" sin abrir otra pa
 - **Don't** usar `box-shadow` en ninguna parte del sistema.
 - **Don't** usar degradados ni fondos oscuros.
 - **Don't** usar los semánticos (#9A5B08, #8E2A2A, #1F5673) por énfasis o decoración.
+- **Don't** rellenar de Acento Secundario #7A6A56 ni usarlo con función de dinero o de estado:
+  es un contorno para la acción secundaria neutra, y un relleno macizo competiría con el botón
+  de cobro (La Regla del Segundo Tono).
 - **Don't** envolver grupos de datos en tarjetas dentro del registro de Operación.
 - **Don't** usar Inter como tipografía por defecto.
 - **Don't** comunicar antigüedad o incertidumbre solo con color.
@@ -613,5 +719,13 @@ una aclaración sin cambio de significado.
   Rasero, y un footer nuevo muestra el nombre de la sucursal activa en Tinta Suave. Cierra la
   brecha de que la marca del comercio sólo se veía en la apertura de turno. No modifica ni
   elimina ninguna regla previa. Sincronizada con la enmienda **v2.2.9** de la constitución.
+- **1.4.0** (2026-09-07) — MENOR: ronda de diseño transversal tras mockups comparativos
+  aprobados. Regla nueva **La Regla del Segundo Tono** (acento secundario tierra #7A6A56 para
+  la acción secundaria neutra, tratamiento sólo de contorno). **La Regla de la Marca Persistente**
+  se **reescribe**: el nav global queda con el wordmark de Rasero solo y el ícono del comercio
+  baja al footer, delante de `{sucursal} · {caja}` en una línea. **La Regla del Hueco que Enseña**
+  se **extiende** con una marca de agua del logo mono al 8 % detrás de las tres partes. Actualiza
+  la viñeta "Colapsado" del componente "Identificar cliente (Operación)". No elimina ninguna
+  regla. Sincronización con la constitución **pendiente** (ver informe de impacto).
 
-**Versión**: 1.3.1 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 1.4.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
