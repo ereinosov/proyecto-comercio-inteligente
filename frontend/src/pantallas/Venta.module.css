@@ -2,7 +2,10 @@
    .impeccable/surfaces/frontend-src-pantallas-venta-tsx.md: tabla de fila expansible,
    total anclado sin desplazarse. Registro de Operación: alta densidad, sin tarjetas,
    radio 2px, cero sombras. Verde Rasero aparece UNA SOLA VEZ, en el botón de cobro
-   (DESIGN.md, La Regla de la Sola Voz) — ningún otro elemento de este archivo lo usa. */
+   (DESIGN.md, La Regla de la Sola Voz) — ningún otro elemento de este archivo lo usa.
+
+   v1.5.0: encabezado y botones migrados a `EncabezadoPantalla` y `Boton`; medidas de la
+   escala de tokens.css; total en `--texto-display`. */
 
 .pantalla {
   display: flex;
@@ -14,27 +17,28 @@
   color: var(--color-tinta);
 }
 
-.encabezado {
-  flex-shrink: 0;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 10px 20px;
-  border-bottom: 1px solid var(--color-borde);
-  font-size: 14px;
-  color: var(--color-tinta-suave);
-}
-
-.accionesEncabezado {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
 .cuerpo {
   flex: 1;
   overflow-y: auto;
-  padding: 0 20px;
+  padding: var(--espacio-4) var(--espacio-6) var(--espacio-6);
+}
+
+.selectProducto {
+  min-height: var(--alto-control-sm);
+  box-sizing: border-box;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-base);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 0 var(--espacio-3);
+}
+
+.senalAnotada {
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
 }
 
 .tabla {
@@ -46,7 +50,7 @@
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  font-size: 15px;
+  font-size: var(--texto-base);
 }
 
 .tabla th:nth-child(2) {
@@ -67,10 +71,10 @@
 
 .tabla th {
   text-align: left;
-  font-weight: 500;
-  font-size: 13px;
+  font-weight: var(--peso-medio);
+  font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
-  padding: 8px 12px;
+  padding: var(--espacio-2) var(--espacio-3);
   border-bottom: 1px solid var(--color-borde);
   position: sticky;
   top: 0;
@@ -78,7 +82,7 @@
 }
 
 .tabla td {
-  padding: 8px 12px;
+  padding: var(--espacio-2) var(--espacio-3);
   border-bottom: 1px solid var(--color-borde);
   vertical-align: middle;
 }
@@ -92,8 +96,8 @@
 }
 
 /* "Cantidad" contiene un <input> (borde+padding propios) seguido de la unidad. Su encabezado se
-   sangra a la derecha 12 (celda) + 18 (caja de unidad) + 4 (gap) + 9 (borde+padding-r del input)
-   para caer justo sobre el número, no sobre la unidad ni el borde del campo. */
+   sangra a la derecha para caer justo sobre el número, no sobre la unidad ni el borde del
+   campo — offset calculado, no un valor de la escala. */
 .tabla th.thCantidad {
   padding-right: 43px;
 }
@@ -102,7 +106,7 @@
 .celdaProducto {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: var(--espacio-2);
 }
 
 .filaAgregar {
@@ -115,9 +119,9 @@
 }
 
 /* Carrito vacío: el estado vacío compartido (`EstadoVacio`, con su marca de agua del logo mono
-   al 8 %) dentro de la celda que abarca las cuatro columnas — así queda sobre la superficie
-   blanca de la tabla, contiguo al encabezado, en vez de un bloque suelto bajo un header pelado.
-   Toda la zona es el disparador de "agregar producto" (mismo gesto que la fila `+ Agregar`). */
+   al 8 %) dentro de la celda que abarca las columnas — así queda sobre la superficie blanca de
+   la tabla, contiguo al encabezado, no un bloque suelto bajo un header pelado. Toda la zona es
+   el disparador de "agregar producto" (mismo gesto que la fila `+ Agregar`). */
 .celdaCarritoVacio {
   padding: 0;
 }
@@ -140,7 +144,7 @@
 }
 
 .botonCarritoVacio:focus-visible {
-  outline: 2px solid var(--color-tinta);
+  outline: var(--foco-anillo);
   outline-offset: -2px;
 }
 
@@ -149,46 +153,39 @@
 }
 
 .filaExpandida td {
-  padding: 12px;
+  padding: var(--espacio-3);
 }
 
 .formularioFila {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-end;
-  gap: 12px;
+  gap: var(--espacio-3);
 }
 
 .campoFila {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: var(--espacio-1);
 }
 
 .campoFila label {
-  font-size: 12px;
+  font-size: var(--texto-xs);
   color: var(--color-tinta-suave);
 }
 
-.selectProducto,
+/* Campo de cantidad/peso a granel (lo consume también RenglonGranel.tsx). */
 .inputCantidad {
+  min-height: var(--alto-control);
+  box-sizing: border-box;
   font-family: var(--tipografia-operacion);
-  font-size: 15px;
+  font-size: var(--texto-base);
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  padding: 8px 10px;
-}
-
-.selectProducto:focus-visible,
-.inputCantidad:focus-visible {
-  outline: 2px solid var(--color-tinta);
-  outline-offset: 1px;
-}
-
-.inputCantidad {
+  padding: 0 var(--espacio-3);
   width: 100px;
   text-align: right;
 }
@@ -199,22 +196,22 @@
   display: flex;
   align-items: baseline;
   justify-content: flex-end;
-  gap: 4px;
+  gap: var(--espacio-1);
   color: var(--color-tinta-suave);
-  font-size: 13px;
+  font-size: var(--texto-sm);
 }
 
 .inputCantidadLinea {
   flex: 1;
   min-width: 0;
   font-family: var(--tipografia-operacion);
-  font-size: 15px;
+  font-size: var(--texto-base);
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  padding: 4px 8px;
+  padding: var(--espacio-1) var(--espacio-2);
   text-align: right;
 }
 
@@ -228,17 +225,12 @@
   color: var(--color-tinta-suave);
 }
 
-.inputCantidadLinea:focus-visible {
-  outline: 2px solid var(--color-tinta);
-  outline-offset: 1px;
-}
-
 /* US9 — quitar un renglón del carrito. Ícono de línea, sin fondo; nunca Verde Rasero. */
 .quitarRenglon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 4px;
+  padding: var(--espacio-1);
   color: var(--color-tinta-suave);
   background: none;
   border: none;
@@ -251,80 +243,11 @@
   background: var(--color-superficie-base);
 }
 
-.quitarRenglon:focus-visible {
-  outline: 2px solid var(--color-tinta);
-  outline-offset: 1px;
-}
-
-.botonSecundario {
-  font-family: var(--tipografia-operacion);
-  font-size: 14px;
-  color: var(--color-tinta);
-  background: var(--color-superficie-alta);
-  border: 1px solid var(--color-tinta);
-  border-radius: var(--radio-operacion);
-  padding: 8px 14px;
-  cursor: pointer;
-}
-
-.botonSecundario:hover {
-  background: var(--color-superficie-base);
-}
-
-/* Acción secundaria neutra de la barra de contexto (Consulta no atendida, Cerrar turno):
-   botón de contorno en el Acento Secundario (La Regla del Segundo Tono, DESIGN.md v1.4.0). */
-.botonTexto {
-  font-family: var(--tipografia-operacion);
-  font-size: 14px;
-  color: var(--color-acento-secundario);
-  background: transparent;
-  border: 1px solid var(--color-acento-secundario);
-  border-radius: var(--radio-operacion);
-  padding: 5px 10px;
-  cursor: pointer;
-}
-
-.botonTexto:hover {
-  background: var(--color-superficie-base);
-}
-
-.botonTexto:focus-visible {
-  outline: 2px solid var(--color-tinta);
-  outline-offset: 1px;
-}
-
-/* Acción secundaria dentro de un par principal+secundaria (Cancelar junto a Agregar; Anular
-   junto a Nueva venta): borde neutro, texto Tinta Suave, mismo tamaño que el botón de al lado. */
-.botonCancelar {
-  font-family: var(--tipografia-operacion);
-  font-size: 14px;
-  color: var(--color-tinta-suave);
-  background: transparent;
-  border: 1px solid var(--color-borde);
-  border-radius: var(--radio-operacion);
-  padding: 8px 14px;
-  cursor: pointer;
-}
-
-.botonCancelar:hover {
-  background: var(--color-superficie-base);
-}
-
-.botonCancelar:focus-visible {
-  outline: 2px solid var(--color-tinta);
-  outline-offset: 1px;
-}
-
-.senalAnotada {
-  font-size: 13px;
-  color: var(--color-tinta-suave);
-}
-
 .advertencia {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
+  gap: var(--espacio-2);
+  font-size: var(--texto-sm);
   color: var(--color-atencion);
 }
 
@@ -340,49 +263,42 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  gap: var(--espacio-4);
+  padding: var(--espacio-4) var(--espacio-6);
   background: var(--color-superficie-alta);
-  border-top: 1px solid var(--color-borde);
+  border-top: 1px solid var(--color-borde-fuerte);
 }
 
-/* Cifra focal de la pantalla: sube más agresivamente que el cuerpo (era 22px). */
+.bloqueTotal {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--espacio-3);
+}
+
+/* Cifra focal de la pantalla — escala `--texto-display`: la cifra que domina la vista. */
 .total {
-  font-size: 28px;
-  font-weight: 600;
+  font-size: var(--texto-display);
+  font-weight: var(--peso-fuerte);
+  line-height: var(--lh-ajustado);
+  letter-spacing: -0.01em;
 }
 
 .totalEtiqueta {
-  font-size: 13px;
-  font-weight: 400;
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-normal);
   color: var(--color-tinta-suave);
-  margin-right: 8px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
 }
 
-/* Único uso de Verde Rasero en todo el archivo (La Regla de la Sola Voz). */
+/* El fondo/color/tamaño del botón de cobro los da `Boton variante="cobro" tamano="lg"`. Aquí
+   sólo vive la ÚNICA animación de la pantalla: la confirmación de la acción del cajero (T042,
+   constitución) — el propio botón transiciona a su estado "cobrado", sin un segundo elemento
+   verde de éxito. */
 .botonCobrar {
-  font-family: var(--tipografia-operacion);
-  font-size: 17px;
-  font-weight: 600;
-  color: var(--color-superficie-alta);
-  background: var(--color-marca);
-  border: 1px solid var(--color-marca);
-  border-radius: var(--radio-operacion);
-  padding: 12px 28px;
-  cursor: pointer;
-  transition: transform 120ms ease, opacity 120ms ease;
+  transition: transform 120ms ease;
 }
 
-.botonCobrar:disabled {
-  background: var(--color-borde);
-  border-color: var(--color-borde);
-  color: var(--color-tinta-suave);
-  cursor: not-allowed;
-}
-
-/* T042 — única animación de la pantalla, y es confirmación de la acción del cajero, no
-   decorativa (constitución, Sistema de Diseño). El propio botón de cobro transiciona a su
-   estado "cobrado": no se añade un ícono o borde de éxito aparte, que repetiría el verde
-   en un segundo elemento. */
 .botonCobrar.confirmado {
   transform: scale(1.04);
 }
@@ -395,26 +311,35 @@
   font-family: var(--tipografia-operacion);
   align-items: center;
   justify-content: center;
-  gap: 20px;
+  gap: var(--espacio-6);
   color: var(--color-tinta);
 }
 
 .resumenConfirmado {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  padding: 24px 32px;
+  padding: var(--espacio-8);
   min-width: 320px;
   text-align: center;
 }
 
+.etiquetaConfirmado {
+  margin: 0;
+  font-size: var(--texto-md);
+  color: var(--color-tinta-suave);
+}
+
 .resumenConfirmado .total {
   display: block;
-  margin: 8px 0 16px;
+  margin: var(--espacio-2) 0 var(--espacio-4);
 }
 
 .accionesConfirmado {
   display: flex;
-  gap: 16px;
+  gap: var(--espacio-3);
   justify-content: center;
 }

@@ -239,7 +239,9 @@ export function App() {
           />
         </span>
         <button
-          className={pantalla === "venta" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          className={`${estilos.venta} ${
+            pantalla === "venta" ? estilos.pestanaActiva : estilos.pestanaInactiva
+          }`}
           onClick={() => setPantalla("venta")}
         >
           Venta

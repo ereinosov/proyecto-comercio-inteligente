@@ -1,6 +1,12 @@
 /* Contenedor de navegación de la aplicación. Elemento de estructura, no de un registro:
-   sin Verde Rasero, sin sombra (La Regla del Filo). La Regla del Grupo de Navegación
-   (DESIGN.md v1.2.0): "Venta" y "Administración" sueltas; el resto en grupos desplegables. */
+   sin sombra (La Regla del Filo). La Regla del Grupo de Navegación (DESIGN.md v1.2.0):
+   "Venta" y "Administración" sueltas; el resto en grupos desplegables. La Regla de la Marca
+   Persistente (v1.4.0): el nav lleva SOLO el wordmark de Rasero; el ícono del comercio vive
+   en el pie.
+
+   v1.5.0: medidas de la escala de tokens.css; el ítem de navegación activo se marca con el
+   acento estructural de 2px en Verde Rasero (La Regla de la Sola Voz — uso de identidad, capa
+   de chrome, no del contenido); borde inferior estructural; foco unificado. */
 
 .aplicacion {
   display: flex;
@@ -13,20 +19,18 @@
   position: relative;
   z-index: 10;
   display: flex;
-  align-items: center;
-  gap: 4px;
-  padding: 6px 20px 0;
+  align-items: stretch;
+  gap: var(--espacio-1);
+  padding: 0 var(--espacio-6);
   background: var(--color-superficie-alta);
-  border-bottom: 1px solid var(--color-borde);
+  border-bottom: 1px solid var(--color-borde-fuerte);
 }
 
-/* La Regla de la Marca Persistente (DESIGN.md v1.4.0): el nav global lleva SOLO el wordmark de
-   Rasero (la herramienta), al extremo izquierdo. El ícono del comercio bajó al footer. */
+/* El nav global lleva SOLO el wordmark de Rasero (la herramienta), al extremo izquierdo. */
 .marca {
   display: inline-flex;
   align-items: center;
-  margin: 0 18px 6px 0;
-  align-self: center;
+  margin-right: var(--espacio-6);
 }
 
 .marcaSistema {
@@ -35,20 +39,19 @@
   display: block;
 }
 
-/* Footer / barra de contexto persistente (La Regla de la Marca Persistente, v1.4.0): franja
-   delgada, Superficie Base, borde superior 1px en Borde (La Regla del Filo — nunca sombra).
-   Ícono del comercio (20px, ya trae su propio fondo app-icon — sin tinte ni filtro) +
-   "{sucursal} · {caja}" en Tinta Suave, en una sola línea a la izquierda. */
+/* Footer / barra de contexto persistente (La Regla de la Marca Persistente): franja delgada,
+   Superficie Base, borde superior estructural (La Regla del Filo — nunca sombra). Ícono del
+   comercio + "{sucursal} · {caja}" en Tinta Suave, en una sola línea a la izquierda. */
 .pie {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 20px;
+  gap: var(--espacio-2);
+  padding: var(--espacio-2) var(--espacio-6);
   background: var(--color-superficie-base);
-  border-top: 1px solid var(--color-borde);
+  border-top: 1px solid var(--color-borde-fuerte);
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
 }
 
@@ -60,73 +63,65 @@
   border-radius: var(--radio-operacion);
 }
 
+/* ── Ítems del nav ───────────────────────────────────────────────────────────────────────── */
 .pestanaActiva,
-.pestanaInactiva {
-  font-family: var(--tipografia-operacion);
-  font-size: 15px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 12px 6px;
-  cursor: pointer;
-}
-
-/* Separador vertical real (no sólo margin/gap): línea de 1px en Borde, 24px de alto, centrada
-   verticalmente. Va entre "Venta" y el bloque de grupos, y entre el último grupo y
-   "Administración" — mismo criterio de "separadores claros" que ya usa el panel desplegable
-   interno entre opciones (La Regla del Grupo de Navegación, DESIGN.md). */
-.separador {
-  flex-shrink: 0;
-  align-self: center;
-  width: 1px;
-  height: 24px;
-  margin: 0 8px;
-  background: var(--color-borde);
-}
-
-.pestanaActiva {
-  color: var(--color-tinta);
-  border-bottom-color: var(--color-tinta);
-  font-weight: 600;
-}
-
-.pestanaInactiva {
-  color: var(--color-tinta-suave);
-}
-
-/* Grupo desplegable */
-.grupo {
-  position: relative;
-}
-
+.pestanaInactiva,
 .grupoBoton,
 .grupoBotonActivo {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: var(--espacio-1);
   font-family: var(--tipografia-operacion);
-  font-size: 15px;
+  font-size: var(--texto-base);
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
-  padding: 12px 6px;
+  padding: var(--espacio-3) var(--espacio-2);
   cursor: pointer;
   color: var(--color-tinta-suave);
+  transition: color 120ms ease, border-color 120ms ease;
 }
 
-/* Si la pantalla activa está dentro del grupo, el TEXTO DEL GRUPO lleva el subrayado de 2px
-   en Tinta que marca la pestaña activa, para no perder contexto con el desplegable cerrado. */
+.pestanaInactiva:hover,
+.grupoBoton:hover {
+  color: var(--color-tinta);
+}
+
+/* Ítem activo: acento estructural de 2px en Verde Rasero (identidad, capa de chrome). El texto
+   se mantiene en Tinta para no perder legibilidad. */
+.pestanaActiva,
 .grupoBotonActivo {
   color: var(--color-tinta);
-  border-bottom-color: var(--color-tinta);
-  font-weight: 600;
+  border-bottom-color: var(--color-marca);
+  font-weight: var(--peso-fuerte);
+}
+
+/* "Venta" es la pantalla de uso más frecuente: peso medio permanente aunque no esté activa,
+   para que se lea como el punto de partida sin convertir el nav en una sidebar. */
+.venta {
+  font-weight: var(--peso-medio);
+}
+
+/* Separador vertical real (no sólo margin/gap): línea de 1px, centrada verticalmente. */
+.separador {
+  flex-shrink: 0;
+  align-self: center;
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--espacio-2);
+  background: var(--color-borde-fuerte);
+}
+
+/* ── Grupo desplegable ───────────────────────────────────────────────────────────────────── */
+.grupo {
+  position: relative;
+  display: flex;
 }
 
 .chevron {
   display: inline-flex;
   color: currentColor;
-  /* Animación de MECANISMO de interfaz (gira al abrir), no decorativa: no contradice la
-     restricción de animación del registro de Análisis (DESIGN.md v1.2.0). */
+  /* Animación de MECANISMO de interfaz (gira al abrir), no decorativa. */
   transition: transform 150ms ease;
 }
 
@@ -136,26 +131,26 @@
 
 .desplegable {
   position: absolute;
-  top: calc(100% + 2px);
+  top: 100%;
   left: 0;
   min-width: 180px;
   display: flex;
   flex-direction: column;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-borde-fuerte);
   border-radius: var(--radio-operacion);
 }
 
 .opcion,
 .opcionActiva {
   font-family: var(--tipografia-operacion);
-  font-size: 15px;
+  font-size: var(--texto-base);
   text-align: left;
   background: transparent;
   border: none;
   /* Separador real de 1px en Borde entre cada opción, no sólo padding. */
   border-bottom: 1px solid var(--color-borde);
-  padding: 10px 14px;
+  padding: var(--espacio-3) var(--espacio-4);
   cursor: pointer;
   color: var(--color-tinta-suave);
 }
@@ -168,20 +163,21 @@
 .opcion:hover,
 .opcionActiva:hover {
   background: var(--color-superficie-base);
+  color: var(--color-tinta);
 }
 
 .opcionActiva {
   color: var(--color-tinta);
-  font-weight: 600;
+  font-weight: var(--peso-fuerte);
 }
 
-/* Operador con turno abierto: alineado a la derecha, Tinta Suave. */
+/* Operador con turno abierto: alineado a la derecha, Tinta Suave (La Regla del Grupo de
+   Navegación: "¿de quién es este turno?" sin abrir otra pantalla). */
 .operador {
   margin-left: auto;
-  margin-bottom: 6px;
   align-self: center;
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
 }
 
@@ -189,8 +185,6 @@
   flex: 1;
   min-height: 0;
   /* El scrollbar aparece SOLO si la pantalla activa desborda el alto disponible
-     (viewport − nav − footer). Las pantallas que gestionan su propio scroll interno
-     (`.pantalla { height: 100% }` + área con `overflow-y: auto`) encajan exacto y
-     nunca disparan este scroll; las que sólo fluyen contenido largo sí lo usan. */
+     (viewport − nav − footer). */
   overflow-y: auto;
 }

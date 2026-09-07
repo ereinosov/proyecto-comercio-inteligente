@@ -5,6 +5,11 @@
  *
  * Verde Rasero (--color-marca) aparece EXCLUSIVAMENTE en el botón de cobro. Ningún otro
  * elemento de este archivo —ícono, borde, fondo— lo repite (La Regla de la Sola Voz).
+ *
+ * v1.5.0 (ronda de evolución visual): encabezado con `EncabezadoPantalla` (antes: sólo una
+ * línea de contexto en Tinta Suave, sin <h1>), botones vía el componente `Boton`, total en
+ * `--texto-display`, cantidad vía `Campo`, estado de ticket vacío que enseña. Sin cambios de
+ * lógica de cobro, idempotencia, anulación, visita de cliente ni redención de promoción.
  */
 
 import { useEffect, useMemo, useState } from "react";
@@ -14,6 +19,9 @@ import { listarSucursales } from "../servicios/sucursales";
 import { IconoCategoria } from "../componentes/IconoCategoria";
 import { SelectorProducto } from "../componentes/SelectorProducto";
 import { CrearProductoModal } from "../componentes/CrearProductoModal";
+import { Boton } from "../componentes/Boton";
+import { Campo } from "../componentes/Campo";
+import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
 import { type Turno } from "../servicios/turnos";
 import { useRol, type Rol } from "../hooks/useRol";
 import {
@@ -297,7 +305,9 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
     return (
       <div className={estilos.pantallaConfirmada}>
         <div className={estilos.resumenConfirmado}>
-          <p>{ventaConfirmada.anulada ? "Venta anulada" : "Venta registrada"}</p>
+          <p className={estilos.etiquetaConfirmado}>
+            {ventaConfirmada.anulada ? "Venta anulada" : "Venta registrada"}
+          </p>
           <span className={estilos.total}>{formatearMoneda(ventaConfirmada.total)}</span>
           {ventaConfirmada.advertencias.length > 0 && (
             <p className={estilos.advertencia}>
@@ -308,13 +318,13 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
             </p>
           )}
           <div className={estilos.accionesConfirmado}>
-            <button className={estilos.botonSecundario} onClick={nuevaVenta}>
+            <Boton variante="primaria" onClick={nuevaVenta}>
               Nueva venta
-            </button>
+            </Boton>
             {!ventaConfirmada.anulada && (
-              <button className={estilos.botonCancelar} onClick={anular} disabled={anulando}>
+              <Boton variante="neutra" onClick={anular} disabled={anulando}>
                 {anulando ? "Anulando…" : "Anular esta venta"}
-              </button>
+              </Boton>
             )}
           </div>
         </div>
@@ -324,61 +334,63 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
 
   return (
     <div className={estilos.pantalla}>
-      <div className={estilos.encabezado}>
-        <span>
-          {nombreSucursal ? `${nombreSucursal} · ${turno.caja}` : turno.caja}
-        </span>
-        <div className={estilos.accionesEncabezado}>
-          <IdentificarCliente
-            seleccionado={clienteIdentificado}
-            onSeleccionar={(cliente) => {
-              setClienteIdentificado(cliente);
-              if (!cliente) setPromocionAplicada(null);
-            }}
-          />
-          {clienteIdentificado && <ValorClienteResumen valor={clienteIdentificado.valor} />}
-          {clienteIdentificado && (
-            <AplicarPromocionVenta
-              idCliente={clienteIdentificado.id_cliente}
-              seleccion={promocionAplicada}
-              onSeleccionar={setPromocionAplicada}
-            />
-          )}
-          {consultaAnotada ? (
-            <span className={estilos.senalAnotada}>Consulta anotada: {consultaAnotada}</span>
-          ) : consultando ? (
-            <select
-              className={estilos.selectProducto}
-              aria-label="Producto consultado y no atendido"
-              defaultValue=""
-              autoFocus
-              disabled={enviandoConsulta}
-              onChange={(e) => {
-                const id = Number(e.target.value);
-                const p = productos.find((x) => x.id_producto === id);
-                if (p) marcarConsultaNoAtendida(p.id_producto, p.nombre);
+      <EncabezadoPantalla
+        titulo="Venta"
+        registro="operacion"
+        contexto={nombreSucursal ? `${nombreSucursal} · ${turno.caja}` : turno.caja}
+        acciones={
+          <>
+            <IdentificarCliente
+              seleccionado={clienteIdentificado}
+              onSeleccionar={(cliente) => {
+                setClienteIdentificado(cliente);
+                if (!cliente) setPromocionAplicada(null);
               }}
-              onBlur={() => setConsultando(false)}
-            >
-              <option value="" disabled>
-                ¿Qué producto pidió?
-              </option>
-              {productos.map((p) => (
-                <option key={p.id_producto} value={p.id_producto}>
-                  {p.nombre}
+            />
+            {clienteIdentificado && <ValorClienteResumen valor={clienteIdentificado.valor} />}
+            {clienteIdentificado && (
+              <AplicarPromocionVenta
+                idCliente={clienteIdentificado.id_cliente}
+                seleccion={promocionAplicada}
+                onSeleccionar={setPromocionAplicada}
+              />
+            )}
+            {consultaAnotada ? (
+              <span className={estilos.senalAnotada}>Consulta anotada: {consultaAnotada}</span>
+            ) : consultando ? (
+              <select
+                className={estilos.selectProducto}
+                aria-label="Producto consultado y no atendido"
+                defaultValue=""
+                autoFocus
+                disabled={enviandoConsulta}
+                onChange={(e) => {
+                  const id = Number(e.target.value);
+                  const p = productos.find((x) => x.id_producto === id);
+                  if (p) marcarConsultaNoAtendida(p.id_producto, p.nombre);
+                }}
+                onBlur={() => setConsultando(false)}
+              >
+                <option value="" disabled>
+                  ¿Qué producto pidió?
                 </option>
-              ))}
-            </select>
-          ) : (
-            <button className={estilos.botonTexto} onClick={() => setConsultando(true)}>
-              Consulta no atendida
-            </button>
-          )}
-          <button className={estilos.botonTexto} onClick={onCerrarTurno}>
-            Cerrar turno
-          </button>
-        </div>
-      </div>
+                {productos.map((p) => (
+                  <option key={p.id_producto} value={p.id_producto}>
+                    {p.nombre}
+                  </option>
+                ))}
+              </select>
+            ) : (
+              <Boton variante="secundaria" tamano="sm" onClick={() => setConsultando(true)}>
+                Consulta no atendida
+              </Boton>
+            )}
+            <Boton variante="secundaria" tamano="sm" onClick={onCerrarTurno}>
+              Cerrar turno
+            </Boton>
+          </>
+        }
+      />
 
       <div className={estilos.cuerpo}>
         <table className={estilos.tabla}>
@@ -448,38 +460,36 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
                         onSeleccionar={(p) => setIdProductoNuevo(p?.id_producto ?? "")}
                       />
                       {esEncargadoOMas() && (
-                        <button
-                          type="button"
-                          className={estilos.botonTexto}
+                        <Boton
+                          variante="secundaria"
+                          tamano="sm"
                           onClick={() => setCreandoProducto(true)}
                         >
                           + Crear producto nuevo
-                        </button>
+                        </Boton>
                       )}
                     </div>
 
                     {productoNuevo?.es_granel ? (
                       <RenglonGranel kg={kg} onCambiarKg={setKg} />
                     ) : (
-                      <div className={estilos.campoFila}>
-                        <label htmlFor="cantidad-unidades">Cantidad</label>
+                      <Campo etiqueta="Cantidad" htmlFor="cantidad-unidades" numerico>
                         <input
                           id="cantidad-unidades"
-                          className={estilos.inputCantidad}
                           type="number"
                           min={1}
                           value={unidades}
                           onChange={(e) => setUnidades(e.target.value)}
                         />
-                      </div>
+                      </Campo>
                     )}
 
-                    <button className={estilos.botonSecundario} type="button" onClick={confirmarFila}>
+                    <Boton variante="primaria" tamano="sm" onClick={confirmarFila}>
                       Agregar
-                    </button>
-                    <button className={estilos.botonCancelar} type="button" onClick={cancelarFila}>
+                    </Boton>
+                    <Boton variante="neutra" tamano="sm" onClick={cancelarFila}>
                       Cancelar
-                    </button>
+                    </Boton>
                   </div>
                 </td>
               </tr>
@@ -519,17 +529,19 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
       )}
 
       <div className={estilos.pie}>
-        <span>
+        <span className={estilos.bloqueTotal}>
           <span className={estilos.totalEtiqueta}>Total</span>
           <span className={estilos.total}>{formatearMoneda(total)}</span>
         </span>
-        <button
+        <Boton
+          variante="cobro"
+          tamano="lg"
           className={`${estilos.botonCobrar} ${confirmado ? estilos.confirmado : ""}`}
           onClick={cobrar}
           disabled={cobrando || confirmado || !hayRenglonValido}
         >
           {cobrando ? "Cobrando…" : confirmado ? "¡Cobrado!" : "Cobrar"}
-        </button>
+        </Boton>
       </div>
     </div>
   );
