@@ -12,17 +12,6 @@
   color: var(--color-tinta);
 }
 
-.encabezado {
-  flex-shrink: 0;
-  padding: 24px 32px 16px;
-}
-
-.titulo {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0;
-}
-
 .cuerpo {
   flex: 1;
   min-height: 0;
@@ -91,31 +80,7 @@
 /* Selector de vista: serie de demanda (producción) vs validación (datos sintéticos). Segmentado
    de texto, sin fondo de color — no compite con el contenido ni usa el Verde Rasero. */
 .selectorVista {
-  display: flex;
-  gap: 4px;
-  margin: 0 0 18px;
-  border-bottom: 1px solid var(--color-borde);
-}
-
-.vistaActiva,
-.vistaInactiva {
-  font-family: var(--tipografia-operacion);
-  font-size: 13px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 6px 4px;
-  cursor: pointer;
-}
-
-.vistaActiva {
-  color: var(--color-tinta);
-  border-bottom-color: var(--color-tinta);
-  font-weight: 600;
-}
-
-.vistaInactiva {
-  color: var(--color-tinta-suave);
+  margin: 0 0 var(--espacio-4);
 }
 
 /* Único momento de animación deliberado: al revelar el detalle de un producto (mismo patrón que

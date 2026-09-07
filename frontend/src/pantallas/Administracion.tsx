@@ -24,6 +24,9 @@ import { ModalAdministrable } from "../componentes/ModalAdministrable";
 import { Obligatorio } from "../componentes/Obligatorio";
 import { Buscador } from "../componentes/Buscador";
 import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
+import { Boton } from "../componentes/Boton";
+import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
+import { Segmentado } from "../componentes/Segmentado";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
   crearMaestro,
@@ -331,36 +334,31 @@ export function Administracion({ rol }: Props) {
     (c) => c.opcional || c.tipo === "bool" || String(valores[c.clave] ?? "").trim() !== "",
   );
 
+  // 6.ª pestaña admin-only (Principio VI): ni siquiera aparece para un encargado.
+  const opcionesSegmento: { valor: Segmento; texto: string }[] = [
+    ...VISTAS.map((v) => ({ valor: v.valor as Segmento, texto: v.etiqueta })),
+    ...(esAdmin() ? [{ valor: "operadores" as Segmento, texto: "Operadores" }] : []),
+  ];
+
   return (
     <div className={estilos.pantalla}>
-      <div className={estilos.encabezado}>
-        <h1 className={estilos.titulo}>Administración</h1>
-        <nav className={estilos.segmentado}>
-          {VISTAS.map((v) => (
-            <button
-              key={v.valor}
-              className={segmento === v.valor ? estilos.segActivo : estilos.segInactivo}
-              onClick={() => setSegmento(v.valor)}
-            >
-              {v.etiqueta}
-            </button>
-          ))}
-          {/* 6.ª pestaña admin-only (Principio VI): ni siquiera aparece para un encargado. */}
-          {esAdmin() && (
-            <button
-              className={segmento === "operadores" ? estilos.segActivo : estilos.segInactivo}
-              onClick={() => setSegmento("operadores")}
-            >
-              Operadores
-            </button>
-          )}
-        </nav>
+      <EncabezadoPantalla titulo="Administración" registro="analisis" />
+      <div className={estilos.selectorVista}>
+        <Segmentado
+          opciones={opcionesSegmento}
+          activa={segmento}
+          onCambiar={setSegmento}
+          registro="operacion"
+          etiqueta="Entidad a administrar"
+        />
       </div>
 
       {segmento === "operadores" ? (
-        <GestionOperadores />
+        <div className={estilos.cuerpo}>
+          <GestionOperadores />
+        </div>
       ) : (
-      <>
+      <div className={estilos.cuerpo}>
       {/* --- vistas de datos maestros --- */}
 
       {conBuscador && (
@@ -383,9 +381,9 @@ export function Administracion({ rol }: Props) {
           Mostrar desactivados
         </label>
         {esEncargado ? (
-          <button className={estilos.botonNuevo} onClick={() => abrirModal()}>
+          <Boton variante="primaria" onClick={() => abrirModal()}>
             + {vista.nuevo}
-          </button>
+          </Boton>
         ) : (
           <span className={estilos.soloLectura}>
             Sólo un encargado puede crear o modificar estos datos.
@@ -433,18 +431,18 @@ export function Administracion({ rol }: Props) {
                   <td className={estilos.acciones}>
                     {esEncargado && fila.activo && (
                       <>
-                        <button className={estilos.accion} onClick={() => abrirModal(fila)}>
+                        <Boton variante="fantasma" tamano="sm" onClick={() => abrirModal(fila)}>
                           Editar
-                        </button>
-                        <button className={estilos.accion} onClick={() => pedirDesactivar(fila)}>
+                        </Boton>
+                        <Boton variante="fantasma" tamano="sm" onClick={() => pedirDesactivar(fila)}>
                           Desactivar
-                        </button>
+                        </Boton>
                       </>
                     )}
                     {esEncargado && !fila.activo && (
-                      <button className={estilos.accion} onClick={() => reactivar(fila)}>
+                      <Boton variante="fantasma" tamano="sm" onClick={() => reactivar(fila)}>
                         Reactivar
-                      </button>
+                      </Boton>
                     )}
                   </td>
                 </tr>
@@ -559,7 +557,7 @@ export function Administracion({ rol }: Props) {
           )}
         </ModalAdministrable>
       )}
-      </>
+      </div>
       )}
     </div>
   );

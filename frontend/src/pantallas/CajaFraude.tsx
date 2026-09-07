@@ -12,14 +12,16 @@ import { useState } from "react";
 import { AnomaliasCaja } from "./AnomaliasCaja";
 import { IndicadoresOperador } from "./IndicadoresOperador";
 import { Mermas } from "./Mermas";
+import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
+import { Segmentado } from "../componentes/Segmentado";
 import estilos from "./CajaFraude.module.css";
 
 type Vista = "anomalias" | "mermas" | "indicadores";
 
-const VISTAS: { valor: Vista; etiqueta: string }[] = [
-  { valor: "anomalias", etiqueta: "Anomalías" },
-  { valor: "mermas", etiqueta: "Mermas y caducidad" },
-  { valor: "indicadores", etiqueta: "Indicadores por operador" },
+const VISTAS: { valor: Vista; texto: string }[] = [
+  { valor: "anomalias", texto: "Anomalías" },
+  { valor: "mermas", texto: "Mermas y caducidad" },
+  { valor: "indicadores", texto: "Indicadores por operador" },
 ];
 
 export function CajaFraude({
@@ -33,19 +35,15 @@ export function CajaFraude({
 
   return (
     <div className={estilos.pantalla}>
-      <div className={estilos.encabezado}>
-        <h1 className={estilos.titulo}>Caja y fraude</h1>
-        <nav className={estilos.segmentado}>
-          {VISTAS.map((v) => (
-            <button
-              key={v.valor}
-              className={vista === v.valor ? estilos.segActivo : estilos.segInactivo}
-              onClick={() => setVista(v.valor)}
-            >
-              {v.etiqueta}
-            </button>
-          ))}
-        </nav>
+      <EncabezadoPantalla titulo="Caja y fraude" registro="analisis" />
+      <div className={estilos.selectorVista}>
+        <Segmentado
+          opciones={VISTAS}
+          activa={vista}
+          onCambiar={setVista}
+          registro="analisis"
+          etiqueta="Vista de caja y fraude"
+        />
       </div>
 
       {vista === "anomalias" && (

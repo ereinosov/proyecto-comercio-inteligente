@@ -10,45 +10,18 @@
   background: var(--color-superficie-base);
   font-family: var(--tipografia-analisis);
   color: var(--color-tinta);
-  padding: 24px 32px 32px;
+  padding: 0 0 var(--espacio-8);
 }
 
-.encabezado {
+/* El segmentado de vistas, debajo del EncabezadoPantalla, con el mismo padding lateral. */
+.selectorVista {
   flex-shrink: 0;
+  padding: var(--espacio-3) var(--espacio-8) 0;
 }
 
-.titulo {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 12px;
-}
-
-.segmentado {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 4px;
-  border-bottom: 1px solid var(--color-borde);
-}
-
-.segActivo,
-.segInactivo {
-  font-family: var(--tipografia-operacion);
-  font-size: 13px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 8px 6px;
-  cursor: pointer;
-}
-
-.segActivo {
-  color: var(--color-tinta);
-  border-bottom-color: var(--color-tinta);
-  font-weight: 600;
-}
-
-.segInactivo {
-  color: var(--color-tinta-suave);
+/* Cuerpo de la vista activa: recupera el padding lateral que antes daba `.pantalla`. */
+.cuerpo {
+  padding: 0 var(--espacio-8);
 }
 
 .barra {

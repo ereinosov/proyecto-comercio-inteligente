@@ -18,41 +18,11 @@
   color: var(--color-tinta);
 }
 
-.encabezado {
+/* Segmentado de vista, debajo del EncabezadoPantalla: mismo padding lateral que el encabezado
+   de Análisis. */
+.selectorVista {
   flex-shrink: 0;
-  padding: 24px 32px 12px;
-}
-
-.titulo {
-  font-size: 24px;
-  font-weight: 600;
-  margin: 0 0 12px;
-}
-
-.segmentado {
-  display: flex;
-  gap: 18px;
-}
-
-.segActivo,
-.segInactivo {
-  font-family: var(--tipografia-analisis);
-  font-size: 16px;
-  background: transparent;
-  border: none;
-  border-bottom: 2px solid transparent;
-  padding: 4px 2px;
-  cursor: pointer;
-}
-
-.segActivo {
-  color: var(--color-tinta);
-  border-bottom-color: var(--color-tinta);
-  font-weight: 600;
-}
-
-.segInactivo {
-  color: var(--color-tinta-suave);
+  padding: 0 var(--espacio-8);
 }
 
 .contenido {

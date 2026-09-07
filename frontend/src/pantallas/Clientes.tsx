@@ -25,7 +25,15 @@ import { Obligatorio } from "../componentes/Obligatorio";
 import { Buscador } from "../componentes/Buscador";
 import { FugaPorSegmentoGrafico } from "../componentes/graficos/FugaPorSegmentoGrafico";
 import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
+import { Boton } from "../componentes/Boton";
+import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
+import { Segmentado } from "../componentes/Segmentado";
 import estilos from "./Clientes.module.css";
+
+const ORDENES: { valor: "valor" | "monto_total"; texto: string }[] = [
+  { valor: "valor", texto: "Por valor" },
+  { valor: "monto_total", texto: "Por monto" },
+];
 
 function textoValor(valor: number | null): string {
   return valor === null ? "Datos insuficientes" : String(Math.round(valor));
@@ -178,23 +186,19 @@ export function Clientes() {
 
   return (
     <div className={estilos.pantalla}>
-      <div className={estilos.encabezado}>
-        <h1 className={estilos.titulo}>Clientes</h1>
-        <div className={estilos.controlOrden}>
-          <button
-            className={orden === "valor" ? estilos.ordenActivo : estilos.ordenInactivo}
-            onClick={() => setOrden("valor")}
-          >
-            Por valor
-          </button>
-          <button
-            className={orden === "monto_total" ? estilos.ordenActivo : estilos.ordenInactivo}
-            onClick={() => setOrden("monto_total")}
-          >
-            Por monto
-          </button>
-        </div>
-      </div>
+      <EncabezadoPantalla
+        titulo="Clientes"
+        registro="analisis"
+        acciones={
+          <Segmentado
+            opciones={ORDENES}
+            activa={orden}
+            onCambiar={setOrden}
+            registro="analisis"
+            etiqueta="Orden del listado de clientes"
+          />
+        }
+      />
 
       <div className={estilos.zonaGrafico}>
         <FugaPorSegmentoGrafico />
@@ -266,9 +270,9 @@ export function Clientes() {
               <div className={estilos.filaTituloDetalle}>
                 <h2 className={estilos.nombreDetalle}>{detalle.nombre ?? "(sin nombre)"}</h2>
                 {!detalle.anonimizado && (
-                  <button
-                    type="button"
-                    className={estilos.editarCliente}
+                  <Boton
+                    variante="fantasma"
+                    tamano="sm"
                     onClick={() => {
                       setForm({
                         nombre: detalle.nombre ?? "",
@@ -281,7 +285,7 @@ export function Clientes() {
                     }}
                   >
                     Editar
-                  </button>
+                  </Boton>
                 )}
               </div>
 

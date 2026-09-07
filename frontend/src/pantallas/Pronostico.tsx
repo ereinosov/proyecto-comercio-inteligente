@@ -15,6 +15,8 @@ import { ValidacionDescensura } from "../componentes/ValidacionDescensura";
 import { VistaPronostico } from "../componentes/VistaPronostico";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarProductos, type Producto } from "../servicios/productos";
+import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
+import { Segmentado } from "../componentes/Segmentado";
 import estilos from "./Pronostico.module.css";
 
 type Vista = "pronostico" | "serie" | "validacion" | "sustitutos";
@@ -28,13 +30,13 @@ const qaDescensuraActiva = () =>
   typeof window !== "undefined" &&
   window.location.hash.replace(/^#\/?/, "") === RUTA_QA_DESCENSURA;
 
-const VISTAS: { clave: Vista; texto: string }[] = [
-  { clave: "pronostico", texto: "Pronóstico" },
-  { clave: "serie", texto: "Serie de demanda" },
+const VISTAS: { valor: Vista; texto: string }[] = [
+  { valor: "pronostico", texto: "Pronóstico" },
+  { valor: "serie", texto: "Serie de demanda" },
   ...(qaDescensuraActiva()
-    ? [{ clave: "validacion" as Vista, texto: "Validación de la descensura" }]
+    ? [{ valor: "validacion" as Vista, texto: "Validación de la descensura" }]
     : []),
-  { clave: "sustitutos", texto: "Sustitutos" },
+  { valor: "sustitutos", texto: "Sustitutos" },
 ];
 
 export function Pronostico({ idSucursal }: { idSucursal: number }) {
@@ -63,9 +65,7 @@ export function Pronostico({ idSucursal }: { idSucursal: number }) {
 
   return (
     <div className={estilos.pantalla}>
-      <div className={estilos.encabezado}>
-        <h1 className={estilos.titulo}>Pronóstico de Demanda</h1>
-      </div>
+      <EncabezadoPantalla titulo="Pronóstico de Demanda" registro="analisis" />
 
       <div className={estilos.cuerpo}>
         {error && <p className={estilos.error}>{error}</p>}
@@ -102,17 +102,13 @@ export function Pronostico({ idSucursal }: { idSucursal: number }) {
                 <div key={productoSeleccionado.id_producto} className={estilos.detalleRevelado}>
                   <h2 className={estilos.nombreDetalle}>{productoSeleccionado.nombre}</h2>
                   <div className={estilos.selectorVista}>
-                    {VISTAS.map((v) => (
-                      <button
-                        key={v.clave}
-                        className={
-                          vista === v.clave ? estilos.vistaActiva : estilos.vistaInactiva
-                        }
-                        onClick={() => setVista(v.clave)}
-                      >
-                        {v.texto}
-                      </button>
-                    ))}
+                    <Segmentado
+                      opciones={VISTAS}
+                      activa={vista}
+                      onCambiar={setVista}
+                      registro="operacion"
+                      etiqueta="Vista del producto"
+                    />
                   </div>
 
                   {vista === "pronostico" && (

@@ -14,6 +14,8 @@ import { ErrorApi } from "../servicios/clienteHttp";
 import { listarArqueos, registrarArqueo, type Arqueo } from "../servicios/caja";
 import type { Turno } from "../servicios/turnos";
 import { formatearCaja, formatearMoneda } from "../utilidades/formato";
+import { Boton } from "../componentes/Boton";
+import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
 import estilos from "./Arqueo.module.css";
 
 function Diferencia({ valor, motivo }: { valor: string; motivo: string | null }) {
@@ -92,12 +94,15 @@ export function Arqueo({ turno }: { turno: Turno }) {
 
   return (
     <div className={estilos.pantalla}>
-      <div className={estilos.encabezado}>
-        <h1 className={estilos.titulo}>Arqueo de caja</h1>
-        <span className={estilos.resumen}>
-          Faltante acumulado del período: <strong>{formatearMoneda(totalFaltante)}</strong>
-        </span>
-      </div>
+      <EncabezadoPantalla
+        titulo="Arqueo de caja"
+        registro="operacion"
+        contexto={
+          <>
+            Faltante acumulado del período: <strong>{formatearMoneda(totalFaltante)}</strong>
+          </>
+        }
+      />
 
       <form className={estilos.formulario} onSubmit={registrar}>
         <span className={estilos.campo}>
@@ -126,9 +131,9 @@ export function Arqueo({ turno }: { turno: Turno }) {
             onChange={(e) => setMotivo(e.target.value)}
           />
         </label>
-        <button className={estilos.boton} type="submit" disabled={enviando}>
+        <Boton variante="primaria" type="submit" disabled={enviando}>
           {confirmado ? "Arqueo registrado" : enviando ? "Registrando…" : "Registrar arqueo"}
-        </button>
+        </Boton>
         {errorForm && <p className={estilos.errorForm}>{errorForm}</p>}
       </form>
 

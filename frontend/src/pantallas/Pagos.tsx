@@ -8,13 +8,15 @@
 import { useState } from "react";
 import { BitacoraPagos } from "./BitacoraPagos";
 import { CoberturaPago } from "./CoberturaPago";
+import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
+import { Segmentado } from "../componentes/Segmentado";
 import estilos from "./CajaFraude.module.css";
 
 type Vista = "cobertura" | "bitacora";
 
-const VISTAS: { valor: Vista; etiqueta: string }[] = [
-  { valor: "cobertura", etiqueta: "Cobertura de medios" },
-  { valor: "bitacora", etiqueta: "Bitácora de pagos" },
+const VISTAS: { valor: Vista; texto: string }[] = [
+  { valor: "cobertura", texto: "Cobertura de medios" },
+  { valor: "bitacora", texto: "Bitácora de pagos" },
 ];
 
 export function Pagos({ idSucursal, idOperador }: { idSucursal: number; idOperador: number }) {
@@ -22,19 +24,15 @@ export function Pagos({ idSucursal, idOperador }: { idSucursal: number; idOperad
 
   return (
     <div className={estilos.pantalla}>
-      <div className={estilos.encabezado}>
-        <h1 className={estilos.titulo}>Pagos</h1>
-        <nav className={estilos.segmentado}>
-          {VISTAS.map((v) => (
-            <button
-              key={v.valor}
-              className={vista === v.valor ? estilos.segActivo : estilos.segInactivo}
-              onClick={() => setVista(v.valor)}
-            >
-              {v.etiqueta}
-            </button>
-          ))}
-        </nav>
+      <EncabezadoPantalla titulo="Pagos" registro="analisis" />
+      <div className={estilos.selectorVista}>
+        <Segmentado
+          opciones={VISTAS}
+          activa={vista}
+          onCambiar={setVista}
+          registro="analisis"
+          etiqueta="Vista de pagos"
+        />
       </div>
       <div className={estilos.contenido}>
         {vista === "cobertura" && (

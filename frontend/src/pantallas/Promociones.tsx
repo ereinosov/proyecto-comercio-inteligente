@@ -19,14 +19,16 @@ import { useState } from "react";
 import { GeneracionCupones } from "../componentes/GeneracionCupones";
 import { OfertasRecompra } from "../componentes/OfertasRecompra";
 import { ResultadoExperimento } from "../componentes/ResultadoExperimento";
+import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
+import { Segmentado } from "../componentes/Segmentado";
 import estilos from "./Promociones.module.css";
 
 type Vista = "cupones" | "recompra" | "reactivacion";
 
-const VISTAS: { clave: Vista; texto: string }[] = [
-  { clave: "cupones", texto: "Cupones por fecha fija" },
-  { clave: "recompra", texto: "Ofertas de recompra" },
-  { clave: "reactivacion", texto: "Experimento de reactivación" },
+const VISTAS: { valor: Vista; texto: string }[] = [
+  { valor: "cupones", texto: "Cupones por fecha fija" },
+  { valor: "recompra", texto: "Ofertas de recompra" },
+  { valor: "reactivacion", texto: "Experimento de reactivación" },
 ];
 
 export function Promociones({ idSucursal }: { idSucursal: number }) {
@@ -34,21 +36,17 @@ export function Promociones({ idSucursal }: { idSucursal: number }) {
 
   return (
     <div className={estilos.pantalla}>
-      <div className={estilos.encabezado}>
-        <h1 className={estilos.titulo}>Promociones Inteligentes</h1>
-      </div>
+      <EncabezadoPantalla titulo="Promociones Inteligentes" registro="analisis" />
 
       <div className={estilos.cuerpo}>
         <div className={estilos.selectorVista}>
-          {VISTAS.map((v) => (
-            <button
-              key={v.clave}
-              className={vista === v.clave ? estilos.vistaActiva : estilos.vistaInactiva}
-              onClick={() => setVista(v.clave)}
-            >
-              {v.texto}
-            </button>
-          ))}
+          <Segmentado
+            opciones={VISTAS}
+            activa={vista}
+            onCambiar={setVista}
+            registro="operacion"
+            etiqueta="Mecanismo de promoción"
+          />
         </div>
 
         <div key={vista} className={estilos.panel}>
