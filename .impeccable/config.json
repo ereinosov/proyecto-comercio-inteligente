@@ -20,6 +20,15 @@
         ],
         "createdAt": "2026-09-07T02:49:53.453Z",
         "reason": "user confirmed: task prompt especifica 'mismo patron que el tint de amber/rojo ya usado en Precios (margen bajo/perdida)'; patron establecido en Precios.module.css (.bordeBajo/.bordeNegativo, border-left 4px semantico) para tint de apoyo por fila en registros de Analisis"
+      },
+      {
+        "rule": "broken-image",
+        "value": "*",
+        "files": [
+          "frontend/src/componentes/ImagenProducto.test.tsx"
+        ],
+        "createdAt": "2026-09-07T06:11:11.876Z",
+        "reason": "test fixtures: ImagenProducto.test.tsx deliberately passes fake/broken example.com URLs to exercise the onError fallback path — the component's whole purpose"
       }
     ]
   }

@@ -14,6 +14,8 @@ export interface Producto {
   precio_efectivo: string;
   moneda: string;
   id_categoria: number | null;
+  /** US12: URL externa de imagen para el catálogo de Venta. `null` ⇒ ícono de categoría. */
+  url_imagen: string | null;
 }
 
 export interface Categoria {

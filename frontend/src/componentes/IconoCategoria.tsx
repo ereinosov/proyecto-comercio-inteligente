@@ -39,8 +39,10 @@ export function familiaDeCategoria(nombre: string | null | undefined): Familia {
   return "otros";
 }
 
-function Glifo({ familia }: { familia: Familia }) {
+function Glifo({ familia, tamano }: { familia: Familia; tamano: number }) {
   const comun = {
+    width: tamano,
+    height: tamano,
     fill: "none",
     stroke: "currentColor",
     strokeWidth: 1.4,
@@ -51,14 +53,14 @@ function Glifo({ familia }: { familia: Familia }) {
     case "abarrotes":
       // saco de grano
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" {...comun}>
+        <svg viewBox="0 0 18 18" {...comun}>
           <path d="M5 6 C5 3 13 3 13 6 L14 14 C14 16 4 16 4 14 Z" />
           <path d="M6 6 L12 6 M9 9 L9 12" />
         </svg>
       );
     case "enlatados":
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" {...comun}>
+        <svg viewBox="0 0 18 18" {...comun}>
           <ellipse cx="9" cy="4" rx="5" ry="2" />
           <path d="M4 4 V14 C4 15.1 14 15.1 14 14 V4" />
           <path d="M4 9 C4 10.1 14 10.1 14 9" />
@@ -67,14 +69,14 @@ function Glifo({ familia }: { familia: Familia }) {
     case "frescos":
       // hoja + copo (refrigerado)
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" {...comun}>
+        <svg viewBox="0 0 18 18" {...comun}>
           <path d="M4 14 C4 7 11 4 14 4 C14 11 11 14 4 14 Z" />
           <path d="M6 12 C8 10 10 8 13 5" />
         </svg>
       );
     case "bebidas":
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" {...comun}>
+        <svg viewBox="0 0 18 18" {...comun}>
           <path d="M7 2 H11 V5 L12 7 V15 C12 15.6 6 15.6 6 15 V7 L7 5 Z" />
           <path d="M6 10 H12" />
         </svg>
@@ -82,7 +84,7 @@ function Glifo({ familia }: { familia: Familia }) {
     case "limpieza":
       // botella con atomizador
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" {...comun}>
+        <svg viewBox="0 0 18 18" {...comun}>
           <path d="M7 6 H11 V15 C11 15.6 7 15.6 7 15 Z" />
           <path d="M8 6 V4 H11 L14 3" />
           <path d="M8 4 L5 3 M8 5 L5 5" />
@@ -91,7 +93,7 @@ function Glifo({ familia }: { familia: Familia }) {
     default:
       // etiqueta (otros)
       return (
-        <svg width="18" height="18" viewBox="0 0 18 18" {...comun}>
+        <svg viewBox="0 0 18 18" {...comun}>
           <path d="M3 8 L9 2 L16 2 L16 9 L10 15 Z" />
           <circle cx="12.5" cy="5.5" r="1.1" />
         </svg>
@@ -102,13 +104,20 @@ function Glifo({ familia }: { familia: Familia }) {
 interface Props {
   /** Nombre de la categoría del producto (resuelto desde `id_categoria`). */
   nombreCategoria: string | null | undefined;
+  /** Lado del glifo en px (por defecto 18, el de la celda de tabla). El catálogo lo pide mayor. */
+  tamano?: number;
 }
 
-export function IconoCategoria({ nombreCategoria }: Props) {
+export function IconoCategoria({ nombreCategoria, tamano = 18 }: Props) {
   const familia = familiaDeCategoria(nombreCategoria);
   return (
-    <span className={estilos.icono} title={nombreCategoria ?? "Sin categoría"} aria-hidden="true">
-      <Glifo familia={familia} />
+    <span
+      className={estilos.icono}
+      style={tamano !== 18 ? { width: tamano, height: tamano } : undefined}
+      title={nombreCategoria ?? "Sin categoría"}
+      aria-hidden="true"
+    >
+      <Glifo familia={familia} tamano={tamano} />
     </span>
   );
 }
