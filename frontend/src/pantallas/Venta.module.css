@@ -114,6 +114,36 @@
   background: var(--color-superficie-base);
 }
 
+/* Carrito vacío: el estado vacío compartido (`EstadoVacio`, con su marca de agua del logo mono
+   al 8 %) dentro de la celda que abarca las cuatro columnas — así queda sobre la superficie
+   blanca de la tabla, contiguo al encabezado, en vez de un bloque suelto bajo un header pelado.
+   Toda la zona es el disparador de "agregar producto" (mismo gesto que la fila `+ Agregar`). */
+.celdaCarritoVacio {
+  padding: 0;
+}
+
+.botonCarritoVacio {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 280px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.botonCarritoVacio:hover {
+  background: var(--color-superficie-base);
+}
+
+.botonCarritoVacio:focus-visible {
+  outline: 2px solid var(--color-tinta);
+  outline-offset: -2px;
+}
+
 .filaExpandida {
   background: var(--color-superficie-base);
 }

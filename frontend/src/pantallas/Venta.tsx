@@ -33,6 +33,7 @@ import {
   type PromocionSeleccionada,
 } from "../componentes/AplicarPromocionVenta";
 import { ValorClienteResumen } from "../componentes/ValorClienteResumen";
+import { EstadoVacio } from "../componentes/EstadoVacio";
 import { formatearMoneda } from "../utilidades/formato";
 import estilos from "./Venta.module.css";
 
@@ -480,6 +481,23 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
                       Cancelar
                     </button>
                   </div>
+                </td>
+              </tr>
+            ) : renglones.length === 0 ? (
+              <tr>
+                <td colSpan={5} className={estilos.celdaCarritoVacio}>
+                  <button
+                    type="button"
+                    className={estilos.botonCarritoVacio}
+                    onClick={iniciarAgregarFila}
+                  >
+                    <EstadoVacio
+                      registro="operacion"
+                      glifo="caja"
+                      titulo="Todavía no hay productos en el carrito"
+                      descripcion="Toca aquí para agregar el primero. Cada producto aparece como una fila con su cantidad, su precio y su importe."
+                    />
+                  </button>
                 </td>
               </tr>
             ) : (
