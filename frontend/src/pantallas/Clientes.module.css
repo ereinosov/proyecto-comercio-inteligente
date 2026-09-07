@@ -157,6 +157,17 @@
   border-color: var(--color-tinta);
 }
 
+/* Tint de fuga por fila: borde izquierdo semántico (4px), no fondo completo — mismo patrón que
+   el margen bajo/pérdida de Precios. El color aparece solo cuando la fuga significa riesgo:
+   `activa` -> Atención, `confirmada` -> Crítico (Regla del Significado). Sin Verde Rasero. */
+.bordeAtencion {
+  border-left: 4px solid var(--color-atencion);
+}
+
+.bordeCritico {
+  border-left: 4px solid var(--color-critico);
+}
+
 .nombreCliente {
   max-width: 60ch;
 }

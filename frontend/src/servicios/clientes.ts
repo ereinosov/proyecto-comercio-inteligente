@@ -6,11 +6,16 @@
 
 import { clienteHttp } from "./clienteHttp";
 
+export type EstadoFuga = "sin_senal" | "datos_insuficientes" | "activa" | "confirmada" | "resuelta";
+
 export interface ClienteResumen {
   id_cliente: number;
   nombre: string | null;
   valor: number | null;
   monto_total: string;
+  /** Aditivo: mismo valor que `Fuga.estado` del detalle, para el tint de fuga por fila en el
+   * listado sin pedir el detalle de cada cliente (evita N+1). */
+  estado_fuga: EstadoFuga;
 }
 
 export interface Cliente {
@@ -31,8 +36,6 @@ export interface DesgloseValor {
   percentil_monto: number;
   percentil_margen: number;
 }
-
-export type EstadoFuga = "sin_senal" | "datos_insuficientes" | "activa" | "confirmada" | "resuelta";
 
 export interface Fuga {
   estado: EstadoFuga;

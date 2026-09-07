@@ -263,8 +263,58 @@ def _montos_por_cliente(sesion: Session) -> dict[int, Decimal]:
     return dict(filas)
 
 
+def _clasificar_estado_fuga(intervalo_estado: str | None, senal_estado: str | None) -> str:
+    """Clasificación única de fuga que comparten el detalle (`_fuga_a_respuesta`), el listado
+    (`_resumen_cliente`) y el resumen por segmento: `datos_insuficientes` si el intervalo no
+    está calculado; si no, el estado de la última señal (activa/confirmada/resuelta); si nunca
+    hubo señal, `sin_senal`. Nunca se reimplementa en ninguno de esos tres sitios.
+    """
+    if intervalo_estado is None or intervalo_estado == "datos_insuficientes":
+        return "datos_insuficientes"
+    if senal_estado is not None:
+        return senal_estado
+    return "sin_senal"
+
+
+def _estado_fuga_por_cliente(
+    sesion: Session, ids_cliente: list[int] | None = None
+) -> dict[int, str]:
+    """Estado de fuga (misma clasificación que el detalle) indexado por `id_cliente`, resuelto
+    en UNA sola query con la "última señal por cliente" por subconsulta — mismo patrón que
+    `resumen_fuga_por_segmento`. Nunca una consulta por cliente en un loop: el listado es
+    paginado y este cálculo se hace con una única query adicional por página.
+    """
+    subq_max = (
+        select(
+            SenalFuga.id_cliente,
+            func.max(SenalFuga.id_senal_fuga).label("max_id"),
+        )
+        .group_by(SenalFuga.id_cliente)
+        .subquery()
+    )
+    ultima_senal = (
+        select(SenalFuga.id_cliente.label("id_cliente"), SenalFuga.estado.label("estado"))
+        .join(subq_max, SenalFuga.id_senal_fuga == subq_max.c.max_id)
+        .subquery()
+    )
+    consulta = (
+        select(Cliente.id_cliente, IntervaloCompra.estado, ultima_senal.c.estado)
+        .outerjoin(IntervaloCompra, IntervaloCompra.id_cliente == Cliente.id_cliente)
+        .outerjoin(ultima_senal, ultima_senal.c.id_cliente == Cliente.id_cliente)
+    )
+    if ids_cliente is not None:
+        consulta = consulta.where(Cliente.id_cliente.in_(ids_cliente))
+    return {
+        id_cliente: _clasificar_estado_fuga(intervalo_estado, senal_estado)
+        for id_cliente, intervalo_estado, senal_estado in sesion.execute(consulta).all()
+    }
+
+
 def _resumen_cliente(
-    cliente: Cliente, valores: dict[int, ValorCliente], montos: dict[int, Decimal]
+    cliente: Cliente,
+    valores: dict[int, ValorCliente],
+    montos: dict[int, Decimal],
+    estados_fuga: dict[int, str],
 ) -> dict:
     valor = valores.get(cliente.id_cliente)
     return {
@@ -272,6 +322,10 @@ def _resumen_cliente(
         "nombre": cliente.nombre,
         "valor": valor.compuesto if valor else None,
         "monto_total": montos.get(cliente.id_cliente, Decimal("0")),
+        # Campo aditivo (mismo patrón que `nombre_cliente` en cupones): un consumidor que lo
+        # ignora no se rompe. Permite el tint de fuga por fila en Clientes.tsx sin pedir el
+        # detalle de cada cliente (evita N+1).
+        "estado_fuga": estados_fuga.get(cliente.id_cliente, "datos_insuficientes"),
     }
 
 
@@ -290,8 +344,9 @@ def listar_valor_clientes(
     if busqueda and busqueda.strip():
         consulta = consulta.where(Cliente.nombre.ilike(f"%{busqueda.strip()}%"))
     clientes = sesion.execute(consulta).scalars().all()
+    estados_fuga = _estado_fuga_por_cliente(sesion, [c.id_cliente for c in clientes])
 
-    filas = [_resumen_cliente(c, valores, montos) for c in clientes]
+    filas = [_resumen_cliente(c, valores, montos, estados_fuga) for c in clientes]
     if orden == "monto_total":
         filas.sort(key=lambda f: f["monto_total"], reverse=True)
     else:
@@ -307,16 +362,14 @@ def buscar_clientes_con_valor(sesion: Session, *, q: str, limite: int = 20) -> l
     clientes = buscar_clientes(sesion, q=q, limite=limite)
     valores = obtener_valor_clientes(sesion)
     montos = _montos_por_cliente(sesion)
-    return [_resumen_cliente(c, valores, montos) for c in clientes]
+    estados_fuga = _estado_fuga_por_cliente(sesion, [c.id_cliente for c in clientes])
+    return [_resumen_cliente(c, valores, montos, estados_fuga) for c in clientes]
 
 
 def _fuga_a_respuesta(intervalo: IntervaloCompra | None, senal: SenalFuga | None) -> dict:
-    if intervalo is None or intervalo.estado == "datos_insuficientes":
-        estado = "datos_insuficientes"
-    elif senal is not None:
-        estado = senal.estado
-    else:
-        estado = "sin_senal"
+    estado = _clasificar_estado_fuga(
+        intervalo.estado if intervalo else None, senal.estado if senal else None
+    )
 
     return {
         "estado": estado,
@@ -479,12 +532,7 @@ def resumen_fuga_por_segmento(sesion: Session) -> dict[str, int]:
 
     conteo = {segmento: 0 for segmento in SEGMENTOS_FUGA}
     for _id_cliente, intervalo_estado, senal_estado in filas:
-        if intervalo_estado is None or intervalo_estado == "datos_insuficientes":
-            conteo["datos_insuficientes"] += 1
-        elif senal_estado is not None:
-            conteo[senal_estado] += 1
-        else:
-            conteo["sin_senal"] += 1
+        conteo[_clasificar_estado_fuga(intervalo_estado, senal_estado)] += 1
     return conteo
 
 

@@ -3,12 +3,16 @@ conformes a contracts/openapi.yaml de 002-clientes-fidelizacion. Se amplía en U
 y User Story 3 (T037) con los endpoints de lectura que esas historias añaden.
 """
 
+import datetime as dt
 import uuid
 
+from sqlalchemy import delete, event
 from fastapi.testclient import TestClient
 
 from rasero.api.aplicacion import app
-from rasero.persistencia.sesion import SesionLocal
+from rasero.persistencia.modelos import Cliente, IntervaloCompra, SenalFuga
+from rasero.persistencia.sesion import SesionLocal, engine
+from rasero.servicios import clientes as servicio_clientes
 from rasero.servicios.ventas import RenglonEntrada, registrar_venta
 from tests.apoyo import crear_escenario_basico
 
@@ -164,6 +168,151 @@ def test_get_clientes_filtra_por_busqueda_de_nombre_y_conserva_la_paginacion():
     nombres = [c["nombre"] for c in cuerpo["items"]]
     assert nombres == [f"Zoraida {marca}"]
     assert cuerpo["total"] == 1
+
+
+_AHORA_FUGA = dt.datetime(2026, 9, 7, tzinfo=dt.timezone.utc)
+
+
+def _crear_cliente_con_fuga(
+    sesion, nombre: str, intervalo_estado: str, senal_estado: str | None
+) -> int:
+    c = Cliente(nombre=nombre, fecha_alta=_AHORA_FUGA)
+    sesion.add(c)
+    sesion.flush()
+    sesion.add(
+        IntervaloCompra(
+            id_cliente=c.id_cliente,
+            intervalo_esperado_dias=None if intervalo_estado == "datos_insuficientes" else 10,
+            visitas_consideradas=1 if intervalo_estado == "datos_insuficientes" else 4,
+            estado=intervalo_estado,
+            instante_calculo=_AHORA_FUGA,
+        )
+    )
+    if senal_estado is not None:
+        sesion.add(
+            SenalFuga(
+                id_cliente=c.id_cliente,
+                estado=senal_estado,
+                instante_deteccion=_AHORA_FUGA,
+                instante_confirmacion=_AHORA_FUGA if senal_estado == "confirmada" else None,
+                instante_resolucion=_AHORA_FUGA if senal_estado == "resuelta" else None,
+                instante_purga_programada=(
+                    _AHORA_FUGA + dt.timedelta(days=90) if senal_estado == "confirmada" else None
+                ),
+            )
+        )
+    return c.id_cliente
+
+
+def _limpiar(ids: list[int]) -> None:
+    sesion = SesionLocal()
+    try:
+        sesion.execute(delete(SenalFuga).where(SenalFuga.id_cliente.in_(ids)))
+        sesion.execute(delete(IntervaloCompra).where(IntervaloCompra.id_cliente.in_(ids)))
+        sesion.execute(delete(Cliente).where(Cliente.id_cliente.in_(ids)))
+        sesion.commit()
+    finally:
+        sesion.close()
+
+
+def test_get_clientes_expone_estado_fuga_consistente_con_el_detalle():
+    """El listado (`GET /clientes`) devuelve `estado_fuga` en cada fila, con EXACTAMENTE el
+    mismo valor que `fuga.estado` del detalle (`GET /clientes/{id}`) para ese cliente.
+    """
+    marca = uuid.uuid4().hex[:8]
+    sesion = SesionLocal()
+    ids: list[int] = []
+    try:
+        casos = [
+            ("calculado", None),
+            ("datos_insuficientes", None),
+            ("calculado", "activa"),
+            ("calculado", "confirmada"),
+            ("calculado", "resuelta"),
+        ]
+        for i, (intervalo_estado, senal_estado) in enumerate(casos):
+            ids.append(
+                _crear_cliente_con_fuga(
+                    sesion, f"Fuga {marca} {i}", intervalo_estado, senal_estado
+                )
+            )
+        sesion.commit()
+    finally:
+        sesion.close()
+
+    try:
+        listado = cliente_http.get(f"/clientes?busqueda=Fuga {marca}&tamano_pagina=50")
+        assert listado.status_code == 200
+        filas = {f["id_cliente"]: f for f in listado.json()["items"]}
+        assert set(ids) <= set(filas), "el listado no trajo todos los clientes de prueba"
+
+        for id_cliente in ids:
+            fila = filas[id_cliente]
+            assert "estado_fuga" in fila, "falta 'estado_fuga' en la fila del listado"
+            detalle = cliente_http.get(f"/clientes/{id_cliente}").json()
+            assert fila["estado_fuga"] == detalle["fuga"]["estado"], (
+                f"cliente {id_cliente}: listado dice {fila['estado_fuga']!r} pero el detalle "
+                f"dice {detalle['fuga']['estado']!r}"
+            )
+    finally:
+        _limpiar(ids)
+
+
+def test_listar_valor_clientes_no_escala_queries_con_el_numero_de_clientes():
+    """El `estado_fuga` del listado se resuelve con una única query adicional por página, nunca
+    una por cliente: el conteo de SELECTs no debe crecer al duplicar la población.
+    """
+    marca = uuid.uuid4().hex[:8]
+    ids: list[int] = []
+
+    def contar_selects(busqueda: str) -> int:
+        conteo = 0
+
+        def _al_ejecutar(_conn, _cursor, statement, *_a, **_k):
+            nonlocal conteo
+            if statement.lstrip().upper().startswith("SELECT"):
+                conteo += 1
+
+        event.listen(engine, "before_cursor_execute", _al_ejecutar)
+        try:
+            sesion = SesionLocal()
+            try:
+                servicio_clientes.listar_valor_clientes(sesion, busqueda=busqueda)
+            finally:
+                sesion.close()
+        finally:
+            event.remove(engine, "before_cursor_execute", _al_ejecutar)
+        return conteo
+
+    try:
+        sesion = SesionLocal()
+        try:
+            for i in range(3):
+                ids.append(
+                    _crear_cliente_con_fuga(sesion, f"NmasUno {marca} {i}", "calculado", "activa")
+                )
+            sesion.commit()
+        finally:
+            sesion.close()
+        q_pocos = contar_selects(f"NmasUno {marca}")
+
+        sesion = SesionLocal()
+        try:
+            for i in range(3, 9):
+                ids.append(
+                    _crear_cliente_con_fuga(sesion, f"NmasUno {marca} {i}", "calculado", "activa")
+                )
+            sesion.commit()
+        finally:
+            sesion.close()
+        q_muchos = contar_selects(f"NmasUno {marca}")
+
+        assert q_muchos == q_pocos, (
+            f"el conteo de SELECTs escaló con la población ({q_pocos} -> {q_muchos}): "
+            "hay un N+1 en el cálculo de estado_fuga del listado"
+        )
+    finally:
+        _limpiar(ids)
 
 
 def test_get_cliente_por_id_devuelve_detalle_con_desglose():

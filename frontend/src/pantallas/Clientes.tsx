@@ -31,6 +31,18 @@ function textoValor(valor: number | null): string {
   return valor === null ? "Datos insuficientes" : String(Math.round(valor));
 }
 
+// Borde izquierdo semántico de fuga en la fila del listado — hace la lista escaneable de un
+// vistazo sin abrir cada cliente (tinte de apoyo, no fondo completo; mismo patrón que el margen
+// bajo/pérdida de Precios). El detalle sigue llevando los tres portadores completos (InsigniaFuga).
+// Solo dos estados llevan acento (Regla del Significado): `activa` -> Atención, `confirmada` ->
+// Crítico. `sin_senal`/`datos_insuficientes`/`resuelta` no significan riesgo: sin tint. Nunca
+// Verde Rasero aquí (Regla de la Sola Voz).
+function claseBordeFuga(estado: ClienteResumen["estado_fuga"]): string {
+  if (estado === "activa") return estilos.bordeAtencion;
+  if (estado === "confirmada") return estilos.bordeCritico;
+  return "";
+}
+
 // Estado de fuga: tres portadores simultáneos, nunca solo color (constitución, redundancia de
 // portadores). "hace N d" se calcula sobre el instante relevante de cada estado.
 function antiguedad(iso: string | null): string {
@@ -217,7 +229,11 @@ export function Clientes() {
                 {clientes.map((c) => (
                   <li key={c.id_cliente}>
                     <button
-                      className={`${estilos.bloque} ${idSeleccionado === c.id_cliente ? estilos.bloqueSeleccionado : ""}`}
+                      className={[
+                        estilos.bloque,
+                        claseBordeFuga(c.estado_fuga),
+                        idSeleccionado === c.id_cliente ? estilos.bloqueSeleccionado : "",
+                      ].join(" ")}
                       onClick={() => setIdSeleccionado(c.id_cliente)}
                     >
                       <span className={estilos.nombreCliente}>{c.nombre ?? "(sin nombre)"}</span>

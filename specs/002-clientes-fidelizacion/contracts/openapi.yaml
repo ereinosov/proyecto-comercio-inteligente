@@ -300,6 +300,13 @@ components:
           nullable: true
           description: Percentil compuesto (0-100). `null` si el cliente está en datos_insuficientes.
         monto_total: { type: string, description: "Decimal con 2 decimales" }
+        estado_fuga:
+          type: string
+          enum: [sin_senal, datos_insuficientes, activa, confirmada, resuelta]
+          description: >-
+            Campo aditivo: mismo valor que `fuga.estado` de `ClienteDetalle` para ese cliente.
+            Permite pintar el tint de fuga por fila en el listado sin pedir el detalle de cada
+            cliente (evita N+1). Un consumidor que lo ignora no se rompe.
 
     ClienteDetalle:
       type: object

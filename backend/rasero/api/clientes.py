@@ -79,6 +79,9 @@ def _resumen_a_respuesta(resumen: dict) -> dict:
         "nombre": resumen["nombre"],
         "valor": resumen["valor"],
         "monto_total": f"{resumen['monto_total']:.2f}",
+        # Aditivo: mismo valor que `fuga.estado` del detalle (GET /clientes/{id}), para el tint
+        # de fuga por fila en el listado sin un N+1 de detalles.
+        "estado_fuga": resumen["estado_fuga"],
     }
 
 
