@@ -51,39 +51,48 @@ type Pantalla =
   | "administracion";
 
 // La Regla del Grupo de Navegación (DESIGN.md v1.2.0): "Venta" suelta y siempre visible; el
-// resto en cuatro grupos desplegables; "Administración" al final, pantalla propia (no grupo).
-const GRUPOS: { etiqueta: string; opciones: { valor: Pantalla; texto: string }[] }[] = [
+// resto en grupos desplegables; "Administración" al final, pantalla propia (no grupo).
+//
+// Rol mínimo por opción (enmienda constitucional v2.5.0, Principio VI): el cajero opera caja
+// (Venta, Arqueo), inventario del día a día (Conteo, Entradas) y sus consultas no atendidas;
+// todo lo táctico/gerencial —traspasos, capital, precios, competencia, pronóstico, clientes,
+// promociones, fraude, terminales, cobertura— es `encargado` o más. "Ocultar, no deshabilitar":
+// una opción que el rol no alcanza no se renderiza (el backend la valida además,
+// independientemente). Arqueo sale del grupo "Caja y seguridad" y va junto a Venta: es tarea
+// diaria de cajero, y el grupo quedaría de una sola opción para un cajero.
+type OpcionNav = { valor: Pantalla; texto: string; rol: Rol };
+
+const GRUPOS: { etiqueta: string; opciones: OpcionNav[] }[] = [
   {
     etiqueta: "Inventario",
     opciones: [
-      { valor: "conteo", texto: "Conteo" },
-      { valor: "entradas", texto: "Entradas" },
-      { valor: "traspasos", texto: "Traspasos" },
-      { valor: "capital", texto: "Capital" },
+      { valor: "conteo", texto: "Conteo", rol: "cajero" },
+      { valor: "entradas", texto: "Entradas", rol: "cajero" },
+      { valor: "traspasos", texto: "Traspasos", rol: "encargado" },
+      { valor: "capital", texto: "Capital", rol: "encargado" },
     ],
   },
   {
     etiqueta: "Precios y demanda",
     opciones: [
-      { valor: "precios", texto: "Precios" },
-      { valor: "competencia", texto: "Competencia" },
-      { valor: "pronostico", texto: "Pronóstico" },
+      { valor: "precios", texto: "Precios", rol: "encargado" },
+      { valor: "competencia", texto: "Competencia", rol: "encargado" },
+      { valor: "pronostico", texto: "Pronóstico", rol: "encargado" },
     ],
   },
   {
     etiqueta: "Clientes y promos",
     opciones: [
-      { valor: "clientes", texto: "Clientes" },
-      { valor: "promociones", texto: "Promociones" },
+      { valor: "clientes", texto: "Clientes", rol: "encargado" },
+      { valor: "promociones", texto: "Promociones", rol: "encargado" },
     ],
   },
   {
     etiqueta: "Caja y seguridad",
     opciones: [
-      { valor: "arqueo", texto: "Arqueo" },
-      { valor: "cajafraude", texto: "Caja y fraude" },
-      { valor: "terminales", texto: "Terminales" },
-      { valor: "pagos", texto: "Pagos" },
+      { valor: "cajafraude", texto: "Caja y fraude", rol: "encargado" },
+      { valor: "terminales", texto: "Terminales", rol: "encargado" },
+      { valor: "pagos", texto: "Pagos", rol: "encargado" },
     ],
   },
 ];
@@ -110,7 +119,7 @@ function GrupoNav({
   onElegir,
 }: {
   etiqueta: string;
-  opciones: { valor: Pantalla; texto: string }[];
+  opciones: OpcionNav[];
   pantalla: Pantalla;
   onElegir: (p: Pantalla) => void;
 }) {
@@ -193,6 +202,19 @@ export function App() {
   // `puedeVer` / `esAdmin` / `esEncargadoOMas`; nunca leen `rol` a mano.
   const autoriz = useRol(rol);
 
+  // Defensa en profundidad (enmienda v2.5.0): si el rol activo no alcanza la pantalla actual
+  // (p. ej. cambió el rol del operador, o un estado quedó de una sesión previa), se vuelve a
+  // Venta. El backend valida además cada endpoint por su cuenta.
+  useEffect(() => {
+    if (rol === null) return;
+    const permitidas = new Set<Pantalla>(["venta", "arqueo"]);
+    for (const g of GRUPOS) {
+      for (const o of g.opciones) if (autoriz.puedeVer(o.rol)) permitidas.add(o.valor);
+    }
+    if (autoriz.esEncargadoOMas()) permitidas.add("administracion");
+    if (!permitidas.has(pantalla)) setPantalla("venta");
+  }, [rol, pantalla, autoriz]);
+
   useEffect(() => {
     if (!turno) return;
     listarOperadores()
@@ -248,18 +270,31 @@ export function App() {
         >
           Venta
         </button>
+        {/* Arqueo: tarea diaria de cajero, junto a Venta (antes vivía en "Caja y seguridad"). */}
+        <button
+          className={pantalla === "arqueo" ? estilos.pestanaActiva : estilos.pestanaInactiva}
+          onClick={() => setPantalla("arqueo")}
+        >
+          Arqueo
+        </button>
 
         <span className={estilos.separador} aria-hidden="true" />
 
-        {GRUPOS.map((g) => (
-          <GrupoNav
-            key={g.etiqueta}
-            etiqueta={g.etiqueta}
-            opciones={g.opciones}
-            pantalla={pantalla}
-            onElegir={setPantalla}
-          />
-        ))}
+        {/* "Ocultar, no deshabilitar" (Principio VI, enmienda v2.5.0): cada opción se filtra por
+            el rol mínimo; un grupo sin opciones visibles no se renderiza. */}
+        {GRUPOS.map((g) => {
+          const visibles = g.opciones.filter((o) => autoriz.puedeVer(o.rol));
+          if (visibles.length === 0) return null;
+          return (
+            <GrupoNav
+              key={g.etiqueta}
+              etiqueta={g.etiqueta}
+              opciones={visibles}
+              pantalla={pantalla}
+              onElegir={setPantalla}
+            />
+          );
+        })}
 
         {/* "Ocultar, no deshabilitar" (Principio VI): Administración sólo se ofrece a
             encargado o admin; un cajero no ve el ítem en absoluto. */}
