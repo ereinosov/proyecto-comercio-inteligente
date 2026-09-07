@@ -7,8 +7,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from rasero.persistencia.modelos import Turno
+from rasero.persistencia.modelos import Operador, Turno
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import emitir_token_turno
 from rasero.servicios import turnos as servicio_turnos
 
 router = APIRouter(tags=["turnos"])
@@ -28,9 +29,12 @@ class TurnoRespuesta(BaseModel):
     caja: str
     instante_apertura: datetime
     instante_cierre: datetime | None
+    # Token de sesión de turno (User Story 11, enmienda v2.4.0). Sólo se puebla en la respuesta
+    # de apertura (`POST /turnos`); es `None` en el cierre y en `GET /turnos/ultimo`.
+    token: str | None = None
 
 
-def _a_respuesta(turno) -> TurnoRespuesta:
+def _a_respuesta(turno, *, token: str | None = None) -> TurnoRespuesta:
     return TurnoRespuesta(
         id_turno=turno.id_turno,
         id_operador=turno.id_operador,
@@ -38,6 +42,7 @@ def _a_respuesta(turno) -> TurnoRespuesta:
         caja=turno.caja,
         instante_apertura=turno.instante_apertura,
         instante_cierre=turno.instante_cierre,
+        token=token,
     )
 
 
@@ -51,7 +56,13 @@ def abrir_turno(cuerpo: TurnoNuevo, sesion: Session = Depends(obtener_sesion)) -
         pin=cuerpo.pin,
     )
     sesion.commit()
-    return _a_respuesta(turno)
+    # El PIN ya quedó validado en `abrir_turno`; el token es la consecuencia de haberlo
+    # presentado (Principio VI, "Identidad de sesión"). El `rol` del claim es sólo para la UI.
+    operador = sesion.get(Operador, turno.id_operador)
+    token = emitir_token_turno(
+        id_operador=turno.id_operador, id_turno=turno.id_turno, rol=operador.rol
+    )
+    return _a_respuesta(turno, token=token)
 
 
 @router.get("/turnos/ultimo")

@@ -21,6 +21,7 @@ from rasero.dominio.firmware import comparar_version, evaluar_terminal
 from rasero.dominio.pagos import hoy_local
 from rasero.errores import ErrorPagos
 from rasero.seguridad import requiere_rol
+from rasero.persistencia.modelos import Operador  # noqa  (identidad de sesión, US11)
 from rasero.persistencia.modelos import Sucursal, TerminalPago
 from rasero.servicios import bitacora_pagos
 
@@ -61,12 +62,12 @@ def registrar_terminal(
     modelo: str,
     id_sucursal: int,
     version_firmware: str,
-    id_operador: int,
+    operador: Operador,
     fecha_ultima_actualizacion_firmware: date | None = None,
 ) -> TerminalPago:
     _valida_version(version_firmware)
     _sucursal_o_404(sesion, id_sucursal)
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     if sesion.execute(
         select(TerminalPago).where(TerminalPago.identificador == identificador)
     ).scalar_one_or_none() is not None:
@@ -83,7 +84,7 @@ def registrar_terminal(
         fecha_ultima_actualizacion_firmware=fecha_ultima_actualizacion_firmware,
         historial_ubicacion=[{"id_sucursal": id_sucursal, "desde": hoy.isoformat(), "hasta": None}],
         historial_firmware=[],
-        id_operador_registro=id_operador,
+        id_operador_registro=operador.id_operador,
         instante_registro=datetime.now(timezone.utc),
         activa=True,
     )
@@ -94,7 +95,7 @@ def registrar_terminal(
         tipo_evento="terminal_registrada",
         id_sucursal=id_sucursal,
         iniciador_tipo="operador",
-        id_operador=id_operador,
+        id_operador=operador.id_operador,
         id_terminal_pago=terminal.id_terminal_pago,
         referencia_recurso_tipo="terminal_pago",
         referencia_recurso_id=terminal.id_terminal_pago,
@@ -106,13 +107,13 @@ def mover_o_retirar_terminal(
     sesion: Session,
     *,
     id_terminal_pago: int,
-    id_operador: int,
+    operador: Operador,
     id_sucursal_destino: int | None = None,
     fecha_movimiento: date | None = None,
     retirar: bool = False,
 ) -> TerminalPago:
     terminal = _terminal_o_404(sesion, id_terminal_pago)
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     zona = _sucursal_o_404(sesion, terminal.id_sucursal).zona_horaria
     fecha = fecha_movimiento or hoy_local(zona)
 
@@ -143,7 +144,7 @@ def mover_o_retirar_terminal(
         tipo_evento="terminal_movida",
         id_sucursal=terminal.id_sucursal,
         iniciador_tipo="operador",
-        id_operador=id_operador,
+        id_operador=operador.id_operador,
         id_terminal_pago=terminal.id_terminal_pago,
         referencia_recurso_tipo="terminal_pago",
         referencia_recurso_id=terminal.id_terminal_pago,
@@ -158,18 +159,18 @@ def registrar_actualizacion_firmware(
     id_terminal_pago: int,
     version: str,
     fecha: date,
-    id_operador: int,
+    operador: Operador,
 ) -> TerminalPago:
     _valida_version(version)
     terminal = _terminal_o_404(sesion, id_terminal_pago)
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     if comparar_version(version, terminal.version_firmware) <= 0:
         raise ErrorPagos(
             "pagos_version_no_avanza",
             "La nueva versión de firmware debe ser posterior a la actual.",
         )
     historial = list(terminal.historial_firmware)
-    historial.append({"version": version, "fecha": fecha.isoformat(), "id_operador": id_operador})
+    historial.append({"version": version, "fecha": fecha.isoformat(), "id_operador": operador.id_operador})
     terminal.historial_firmware = historial
     flag_modified(terminal, "historial_firmware")
     terminal.version_firmware = version
@@ -180,7 +181,7 @@ def registrar_actualizacion_firmware(
         tipo_evento="firmware_actualizado",
         id_sucursal=terminal.id_sucursal,
         iniciador_tipo="operador",
-        id_operador=id_operador,
+        id_operador=operador.id_operador,
         id_terminal_pago=terminal.id_terminal_pago,
         referencia_recurso_tipo="terminal_pago",
         referencia_recurso_id=terminal.id_terminal_pago,

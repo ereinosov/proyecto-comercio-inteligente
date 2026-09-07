@@ -24,6 +24,7 @@ from sqlalchemy.exc import DBAPIError
 from rasero.api.aplicacion import app
 from rasero.config import pagos as cfg
 from rasero.dominio.token import es_luhn_valido
+from tests.apoyo import headers_sesion
 from tests.apoyo_pagos import (
     TARJETA_VISA,
     crear_operador,
@@ -105,6 +106,8 @@ def test_cada_hecho_de_pago_genera_una_entrada_sin_datos_sensibles(sesion, firmw
     # emitir token
     turno = crear_turno(sesion, id_operador=encargado.id_operador, id_sucursal=sucursal.id_sucursal)
     venta = crear_venta(sesion, id_turno=turno.id_turno)
+    # User Story 11: firmware y cobertura exigen el token de sesión de turno.
+    cab = headers_sesion(sesion, encargado, id_sucursal=sucursal.id_sucursal)
     sesion.commit()
     cliente.post(
         "/pagos/tokens",
@@ -133,7 +136,8 @@ def test_cada_hecho_de_pago_genera_una_entrada_sin_datos_sensibles(sesion, firmw
     # actualizar firmware
     cliente.post(
         f"/pagos/terminales/{terminal.id_terminal_pago}/firmware",
-        json={"version": "3.6.0", "fecha": "2026-09-05", "id_operador": encargado.id_operador},
+        json={"version": "3.6.0", "fecha": "2026-09-05"},
+        headers=cab,
     )
     # cambiar cobertura
     cliente.put(
@@ -143,8 +147,8 @@ def test_cada_hecho_de_pago_genera_una_entrada_sin_datos_sensibles(sesion, firmw
             "id_medio_pago": _id_medio("tarjeta_debito"),
             "acepta": True,
             "fecha_desde": "2026-01-01",
-            "id_operador": encargado.id_operador,
         },
+        headers=cab,
     )
     # intención no atendida
     cliente.post(

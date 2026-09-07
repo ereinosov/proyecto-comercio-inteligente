@@ -2,7 +2,9 @@
 
 `listar_operadores_activos` nunca expone `pin_hash`. El alta, la edición de rol/sucursal y la
 desactivación son **exclusivas del rol `admin`** (FR-059): ningún `encargado` puede ascender a
-otro operador. La verificación pasa por el mecanismo central `requiere_rol`.
+otro operador. La verificación pasa por el mecanismo central `requiere_rol`. La **identidad**
+del solicitante llega ya resuelta desde el token de sesión de turno (dependency `exige_rol` del
+router), no de un campo del cuerpo — enmienda v2.4.0, User Story 11.
 
 Los servicios no comitean: la transacción queda a cargo del endpoint (mismo patrón que
 `servicios/administracion.py`).
@@ -60,9 +62,9 @@ def crear_operador(
     rol: str,
     id_sucursal: int,
     pin: str,
-    id_operador_solicitante: int,
+    solicitante: Operador,
 ) -> Operador:
-    requiere_rol(sesion, id_operador_solicitante, "admin")
+    requiere_rol(solicitante, "admin")
     nombre = _texto(nombre, "nombre")
     _valida_rol(rol)
     _valida_sucursal(sesion, id_sucursal)
@@ -83,9 +85,9 @@ def actualizar_operador(
     rol: str,
     id_sucursal: int,
     pin: str | None,
-    id_operador_solicitante: int,
+    solicitante: Operador,
 ) -> Operador:
-    requiere_rol(sesion, id_operador_solicitante, "admin")
+    requiere_rol(solicitante, "admin")
     operador = sesion.get(Operador, id_operador)
     if operador is None:
         raise ErrorAdministracion(
@@ -102,9 +104,9 @@ def actualizar_operador(
 
 
 def fijar_activo_operador(
-    sesion: Session, *, id_operador: int, activo: bool, id_operador_solicitante: int
+    sesion: Session, *, id_operador: int, activo: bool, solicitante: Operador
 ) -> Operador:
-    requiere_rol(sesion, id_operador_solicitante, "admin")
+    requiere_rol(solicitante, "admin")
     operador = sesion.get(Operador, id_operador)
     if operador is None:
         raise ErrorAdministracion(

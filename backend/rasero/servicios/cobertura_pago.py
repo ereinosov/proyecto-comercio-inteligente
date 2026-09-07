@@ -20,6 +20,7 @@ from rasero.dominio.cobertura import cerrar_tramo_anterior, cobertura_en_fecha, 
 from rasero.dominio.pagos import hoy_local
 from rasero.errores import ErrorPagos
 from rasero.seguridad import requiere_rol
+from rasero.persistencia.modelos import Operador  # noqa: E402  (identidad de sesión, US11)
 from rasero.persistencia.modelos import (
     BitacoraAuditoria,
     CoberturaPago,
@@ -66,11 +67,11 @@ def declarar_cobertura(
     id_medio_pago: int,
     acepta: bool,
     fecha_desde: date,
-    id_operador: int,
+    operador: Operador,
 ) -> CoberturaPago | None:
     _sucursal_o_404(sesion, id_sucursal)
     medio = _medio_o_404(sesion, id_medio_pago)
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
 
     # Cierra el tramo vigente (fecha_hasta IS NULL) para este (medio, sucursal).
     tramo_vigente = sesion.execute(
@@ -97,7 +98,7 @@ def declarar_cobertura(
             id_sucursal=id_sucursal,
             fecha_desde=fecha_desde,
             fecha_hasta=None,
-            id_operador=id_operador,
+            id_operador=operador.id_operador,
             instante_registro=datetime.now(timezone.utc),
         )
         sesion.add(nuevo)
@@ -116,7 +117,7 @@ def declarar_cobertura(
         tipo_evento="cobertura_declarada",
         id_sucursal=id_sucursal,
         iniciador_tipo="operador",
-        id_operador=id_operador,
+        id_operador=operador.id_operador,
         id_medio_pago=id_medio_pago,
         referencia_recurso_tipo="cobertura_pago",
         referencia_recurso_id=(nuevo.id_cobertura_pago if nuevo is not None else None),

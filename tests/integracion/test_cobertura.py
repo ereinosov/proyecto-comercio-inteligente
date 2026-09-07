@@ -15,6 +15,7 @@ from sqlalchemy.exc import IntegrityError
 
 from rasero.api.aplicacion import app
 from rasero.persistencia.modelos import CoberturaPago, ConsultaNoAtendida, MedioPago, Venta
+from tests.apoyo import headers_sesion
 from tests.apoyo_pagos import crear_operador, crear_sucursal
 
 cliente = TestClient(app)
@@ -104,6 +105,8 @@ def test_cobertura_exige_sucursal_y_no_mezcla(sesion):
 def test_cobertura_historica_refleja_el_estado_de_entonces(sesion):
     sucursal = crear_sucursal(sesion)
     encargado = crear_operador(sesion, es_encargado=True)
+    # User Story 11: la identidad del operador de escritura sale del token de sesión de turno.
+    cab = headers_sesion(sesion, encargado)
     sesion.commit()
     credito = _id_medio("tarjeta_credito")
 
@@ -114,8 +117,8 @@ def test_cobertura_historica_refleja_el_estado_de_entonces(sesion):
             "id_medio_pago": credito,
             "acepta": True,
             "fecha_desde": "2026-03-01",
-            "id_operador": encargado.id_operador,
         },
+        headers=cab,
     )
     assert r.status_code == 200, r.text
 
@@ -133,21 +136,23 @@ def test_cobertura_tramos_encadenados_y_reserva_al_encargado(sesion):
     sucursal = crear_sucursal(sesion)
     encargado = crear_operador(sesion, es_encargado=True)
     no_encargado = crear_operador(sesion, es_encargado=False)
+    cab_enc = headers_sesion(sesion, encargado)
+    cab_caj = headers_sesion(sesion, no_encargado)
     sesion.commit()
     debito = _id_medio("tarjeta_debito")
     base = {
         "id_sucursal": sucursal.id_sucursal,
         "id_medio_pago": debito,
         "acepta": True,
-        "id_operador": encargado.id_operador,
     }
-    assert cliente.put("/pagos/cobertura", json={**base, "fecha_desde": "2026-01-01"}).status_code == 200
+    assert cliente.put("/pagos/cobertura", json={**base, "fecha_desde": "2026-01-01"}, headers=cab_enc).status_code == 200
     # un segundo tramo posterior cierra el anterior automáticamente (sin solape)
-    assert cliente.put("/pagos/cobertura", json={**base, "fecha_desde": "2026-06-01"}).status_code == 200
-    # operador no encargado -> 400
+    assert cliente.put("/pagos/cobertura", json={**base, "fecha_desde": "2026-06-01"}, headers=cab_enc).status_code == 200
+    # operador no encargado -> 403 (identidad del token, no del cuerpo — User Story 11)
     r = cliente.put(
         "/pagos/cobertura",
-        json={**base, "fecha_desde": "2026-09-01", "id_operador": no_encargado.id_operador},
+        json={**base, "fecha_desde": "2026-09-01"},
+        headers=cab_caj,
     )
     assert r.status_code == 403 and r.json()["codigo"] == "rol_insuficiente"  # enmienda v2.3.0
 

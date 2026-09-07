@@ -32,6 +32,7 @@ from rasero.seguridad import requiere_rol
 from rasero.persistencia.modelos import (
     BitacoraAuditoria,
     Categoria,
+    Operador,
     CoberturaPago,
     Lote,
     MedioPago,
@@ -65,9 +66,9 @@ def _texto(valor: str, campo: str) -> str:
 
 
 def crear_sucursal(
-    sesion: Session, *, nombre: str, zona_horaria: str, id_operador: int
+    sesion: Session, *, nombre: str, zona_horaria: str, operador: Operador
 ) -> Sucursal:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     nombre = _texto(nombre, "nombre")
     if (
         sesion.execute(
@@ -92,9 +93,9 @@ def actualizar_sucursal(
     id_sucursal: int,
     nombre: str,
     zona_horaria: str,
-    id_operador: int,
+    operador: Operador,
 ) -> Sucursal:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     sucursal = _o_404(sesion, Sucursal, id_sucursal, "La sucursal")
     nombre = _texto(nombre, "nombre")
     choca = sesion.execute(
@@ -123,9 +124,9 @@ def crear_categoria(
     *,
     nombre: str,
     dias_umbral_inmovilizado: int | None,
-    id_operador: int,
+    operador: Operador,
 ) -> Categoria:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     nombre = _texto(nombre, "nombre")
     if (
         sesion.execute(
@@ -150,9 +151,9 @@ def actualizar_categoria(
     id_categoria: int,
     nombre: str,
     dias_umbral_inmovilizado: int | None,
-    id_operador: int,
+    operador: Operador,
 ) -> Categoria:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     categoria = _o_404(sesion, Categoria, id_categoria, "La categoría")
     nombre = _texto(nombre, "nombre")
     choca = sesion.execute(
@@ -196,9 +197,9 @@ def crear_producto(
     es_granel: bool,
     precio_vigente: Decimal,
     lleva_caducidad: bool,
-    id_operador: int,
+    operador: Operador,
 ) -> Producto:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     nombre = _texto(nombre, "nombre")
     _valida_categoria(sesion, id_categoria)
     _valida_precio(precio_vigente)
@@ -223,9 +224,9 @@ def actualizar_producto(
     es_granel: bool,
     precio_vigente: Decimal,
     lleva_caducidad: bool,
-    id_operador: int,
+    operador: Operador,
 ) -> Producto:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     producto = _o_404(sesion, Producto, id_producto, "El producto")
     _valida_categoria(sesion, id_categoria)
     _valida_precio(precio_vigente)
@@ -265,9 +266,9 @@ def crear_zona_exhibicion(
     id_sucursal: int,
     nombre: str,
     grado_privilegio: int,
-    id_operador: int,
+    operador: Operador,
 ) -> ZonaExhibicion:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     if sesion.get(Sucursal, id_sucursal) is None:
         raise ErrorAdministracion("admin_sucursal_no_existe", "Esa sucursal no existe.")
     zona = ZonaExhibicion(
@@ -287,9 +288,9 @@ def actualizar_zona_exhibicion(
     id_sucursal: int,
     nombre: str,
     grado_privilegio: int,
-    id_operador: int,
+    operador: Operador,
 ) -> ZonaExhibicion:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     zona = _o_404(sesion, ZonaExhibicion, id_zona_exhibicion, "La zona de exhibición")
     if sesion.get(Sucursal, id_sucursal) is None:
         raise ErrorAdministracion("admin_sucursal_no_existe", "Esa sucursal no existe.")
@@ -320,9 +321,9 @@ def crear_medio_pago(
     nombre: str,
     requiere_terminal: bool,
     admite_tokenizacion: bool,
-    id_operador: int,
+    operador: Operador,
 ) -> MedioPago:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     nombre = _texto(nombre, "nombre")
     if (
         sesion.execute(
@@ -350,9 +351,9 @@ def actualizar_medio_pago(
     nombre: str,
     requiere_terminal: bool,
     admite_tokenizacion: bool,
-    id_operador: int,
+    operador: Operador,
 ) -> MedioPago:
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     medio = _o_404(sesion, MedioPago, id_medio_pago, "El medio de pago")
     nombre = _texto(nombre, "nombre")
     choca = sesion.execute(
@@ -538,14 +539,14 @@ def contar_dependencias(
 
 
 def fijar_activo(
-    sesion: Session, *, entidad: str, id_entidad: int, activo: bool, id_operador: int
+    sesion: Session, *, entidad: str, id_entidad: int, activo: bool, operador: Operador
 ):
     """Desactiva (o reactiva) un maestro. Nunca borra. Reservado al encargado."""
     if entidad not in _ENTIDADES:
         raise ErrorAdministracion(
             "admin_entidad_desconocida", "Ese tipo de maestro no existe."
         )
-    requiere_rol(sesion, id_operador, "encargado")
+    requiere_rol(operador, "encargado")
     modelo, _pk, etiqueta = _ENTIDADES[entidad]
     fila = _o_404(sesion, modelo, id_entidad, etiqueta)
     fila.activo = bool(activo)

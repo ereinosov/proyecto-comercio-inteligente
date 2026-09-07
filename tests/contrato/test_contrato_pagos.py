@@ -15,6 +15,7 @@ from fastapi.testclient import TestClient
 
 from rasero.api.aplicacion import app
 from rasero.config import pagos as cfg
+from tests.apoyo import headers_sesion
 from tests.apoyo_pagos import (
     TARJETA_VISA,
     crear_operador,
@@ -47,6 +48,8 @@ def test_contrato_cobertura(sesion):
     sucursal = crear_sucursal(sesion)
     encargado = crear_operador(sesion, es_encargado=True)
     no_encargado = crear_operador(sesion, es_encargado=False)
+    cab_enc = headers_sesion(sesion, encargado)
+    cab_caj = headers_sesion(sesion, no_encargado)
     sesion.commit()
     debito = _id_medio("tarjeta_debito")
 
@@ -63,8 +66,8 @@ def test_contrato_cobertura(sesion):
             "id_medio_pago": debito,
             "acepta": True,
             "fecha_desde": "2026-02-01",
-            "id_operador": encargado.id_operador,
         },
+        headers=cab_enc,
     )
     assert r.status_code == 200
     assert {"id_cobertura_pago", "id_medio_pago", "id_sucursal", "fecha_desde", "fecha_hasta"} <= set(
@@ -72,6 +75,11 @@ def test_contrato_cobertura(sesion):
     )
 
     assert _error(cliente.get("/pagos/cobertura")) == "pagos_sucursal_requerida"
+    # User Story 11: sin token -> 401 sesion_invalida antes de mirar el rol
+    assert _error(cliente.put("/pagos/cobertura", json={
+        "id_sucursal": sucursal.id_sucursal, "id_medio_pago": debito,
+        "acepta": True, "fecha_desde": "2026-03-01",
+    })) == "sesion_invalida"
     assert (
         _error(
             cliente.put(
@@ -81,11 +89,11 @@ def test_contrato_cobertura(sesion):
                     "id_medio_pago": debito,
                     "acepta": True,
                     "fecha_desde": "2026-03-01",
-                    "id_operador": no_encargado.id_operador,
                 },
+                headers=cab_caj,
             )
         )
-        == "rol_insuficiente"  # enmienda v2.3.0: requiere_rol central
+        == "rol_insuficiente"  # identidad del token, no del cuerpo (US11)
     )
     assert (
         _error(
@@ -96,8 +104,8 @@ def test_contrato_cobertura(sesion):
                     "id_medio_pago": 999999,
                     "acepta": True,
                     "fecha_desde": "2026-03-01",
-                    "id_operador": encargado.id_operador,
                 },
+                headers=cab_enc,
             )
         )
         == "pagos_medio_no_existe"
@@ -132,6 +140,8 @@ def test_contrato_terminales(sesion):
     sucursal = crear_sucursal(sesion)
     encargado = crear_operador(sesion, es_encargado=True)
     no_encargado = crear_operador(sesion, es_encargado=False)
+    cab_enc = headers_sesion(sesion, encargado)
+    cab_caj = headers_sesion(sesion, no_encargado)
     sesion.commit()
 
     r = cliente.post(
@@ -141,8 +151,8 @@ def test_contrato_terminales(sesion):
             "modelo": "P400",
             "id_sucursal": sucursal.id_sucursal,
             "version_firmware": "3.2.0",
-            "id_operador": encargado.id_operador,
         },
+        headers=cab_enc,
     )
     assert r.status_code == 201
     campos = {
@@ -169,8 +179,8 @@ def test_contrato_terminales(sesion):
                     "modelo": "P400",
                     "id_sucursal": sucursal.id_sucursal,
                     "version_firmware": "3-2-0",
-                    "id_operador": encargado.id_operador,
                 },
+                headers=cab_enc,
             )
         )
         == "pagos_version_firmware_invalida"
@@ -184,8 +194,8 @@ def test_contrato_terminales(sesion):
                     "modelo": "P400",
                     "id_sucursal": sucursal.id_sucursal,
                     "version_firmware": "3.2.0",
-                    "id_operador": encargado.id_operador,
                 },
+                headers=cab_enc,
             )
         )
         == "pagos_identificador_duplicado"
@@ -199,11 +209,11 @@ def test_contrato_terminales(sesion):
                     "modelo": "P400",
                     "id_sucursal": sucursal.id_sucursal,
                     "version_firmware": "3.2.0",
-                    "id_operador": no_encargado.id_operador,
                 },
+                headers=cab_caj,
             )
         )
-        == "rol_insuficiente"  # enmienda v2.3.0: requiere_rol central
+        == "rol_insuficiente"  # identidad del token, no del cuerpo (US11)
     )
 
     assert _error(cliente.get("/pagos/terminales")) == "pagos_sucursal_requerida"
@@ -213,12 +223,15 @@ def test_contrato_terminales(sesion):
         _error(
             cliente.post(
                 f"/pagos/terminales/{id_terminal}/firmware",
-                json={"version": "3.1.0", "fecha": "2026-07-01", "id_operador": encargado.id_operador},
+                json={"version": "3.1.0", "fecha": "2026-07-01"},
+                headers=cab_enc,
             )
         )
         == "pagos_version_no_avanza"
     )
-    assert cliente.patch("/pagos/terminales/999999", json={"id_operador": encargado.id_operador}).status_code == 404
+    assert cliente.patch(
+        "/pagos/terminales/999999", json={}, headers=cab_enc
+    ).status_code == 404
 
 
 # --- Tokenización (T037) -----------------------------------------------

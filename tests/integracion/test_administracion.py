@@ -3,8 +3,10 @@ producto, categoría, zona de exhibición y medio de pago desde la API; edición
 
 Contra PostgreSQL real, puerto 5442.
 
-- crear / editar / desactivar requiere `operador.es_encargado` (mismo mecanismo que 007).
-- editar un cliente NO requiere `es_encargado`.
+- crear / editar / desactivar requiere rol `encargado` o superior (mecanismo central
+  `requiere_rol`). User Story 11 (enmienda v2.4.0): la identidad del operador se deriva del token
+  de sesión de turno (`Authorization: Bearer`), no del `id_operador` del cuerpo.
+- editar un cliente NO requiere rol.
 - el borrado nunca es físico: "desactivar" pone `activo = false` y la fila sigue existiendo.
 - `contar_dependencias` informa con conteos reales y NUNCA bloquea la desactivación.
 - los listados aceptan `pagina`/`tamano_pagina` y responden `{items, total}` (RespuestaPaginada).
@@ -16,6 +18,7 @@ from fastapi.testclient import TestClient
 
 from rasero.api.aplicacion import app
 from rasero.persistencia.modelos import Categoria, Operador, Producto, Sucursal
+from tests.apoyo import headers_sesion
 from tests.apoyo_pagos import crear_operador, crear_sucursal, crear_turno
 
 cliente = TestClient(app)
@@ -27,15 +30,13 @@ def _nombre(prefijo: str) -> str:
 
 def test_alta_edicion_y_desactivacion_de_sucursal_por_encargado(sesion):
     encargado = crear_operador(sesion, es_encargado=True)
+    cab = headers_sesion(sesion, encargado)
     sesion.commit()
 
     alta = cliente.post(
         "/administracion/sucursales",
-        json={
-            "nombre": _nombre("Suc"),
-            "zona_horaria": "America/Guayaquil",
-            "id_operador": encargado.id_operador,
-        },
+        json={"nombre": _nombre("Suc"), "zona_horaria": "America/Guayaquil"},
+        headers=cab,
     )
     assert alta.status_code == 201, alta.text
     id_suc = alta.json()["id_sucursal"]
@@ -43,18 +44,16 @@ def test_alta_edicion_y_desactivacion_de_sucursal_por_encargado(sesion):
 
     edit = cliente.put(
         f"/administracion/sucursales/{id_suc}",
-        json={
-            "nombre": _nombre("Suc-editada"),
-            "zona_horaria": "America/Bogota",
-            "id_operador": encargado.id_operador,
-        },
+        json={"nombre": _nombre("Suc-editada"), "zona_horaria": "America/Bogota"},
+        headers=cab,
     )
     assert edit.status_code == 200
     assert edit.json()["zona_horaria"] == "America/Bogota"
 
     baja = cliente.post(
         f"/administracion/sucursales/{id_suc}/desactivacion",
-        json={"activo": False, "id_operador": encargado.id_operador},
+        json={"activo": False},
+        headers=cab,
     )
     assert baja.status_code == 200
     assert baja.json()["activo"] is False
@@ -72,20 +71,29 @@ def test_alta_edicion_y_desactivacion_de_sucursal_por_encargado(sesion):
 
 def test_no_encargado_no_puede_administrar_maestros(sesion):
     cajero = crear_operador(sesion, es_encargado=False)
+    cab = headers_sesion(sesion, cajero)
     sesion.commit()
 
     r = cliente.post(
         "/administracion/categorias",
-        json={"nombre": _nombre("Cat"), "id_operador": cajero.id_operador},
+        json={"nombre": _nombre("Cat")},
+        headers=cab,
     )
-    # Enmienda v2.3.0: la verificación pasa por el mecanismo central `requiere_rol`, que
-    # devuelve 403 `rol_insuficiente` en vez del antiguo 400 `admin_operador_no_encargado`.
+    # Enmienda v2.3.0: la verificación pasa por `requiere_rol` -> 403 `rol_insuficiente`.
     assert r.status_code == 403
     assert r.json()["codigo"] == "rol_insuficiente"
 
 
+def test_administracion_sin_token_es_rechazada(sesion):
+    # User Story 11: sin `Authorization`, la petición nunca llega a verificar rol.
+    r = cliente.post("/administracion/categorias", json={"nombre": _nombre("Cat")})
+    assert r.status_code == 401
+    assert r.json()["codigo"] == "sesion_invalida"
+
+
 def test_desactivar_categoria_con_productos_informa_pero_no_bloquea(sesion):
     encargado = crear_operador(sesion, es_encargado=True)
+    cab = headers_sesion(sesion, encargado)
     categoria = Categoria(nombre=_nombre("Cat"), dias_umbral_inmovilizado=30)
     sesion.add(categoria)
     sesion.flush()
@@ -107,7 +115,8 @@ def test_desactivar_categoria_con_productos_informa_pero_no_bloquea(sesion):
 
     baja = cliente.post(
         f"/administracion/categorias/{categoria.id_categoria}/desactivacion",
-        json={"activo": False, "id_operador": encargado.id_operador},
+        json={"activo": False},
+        headers=cab,
     )
     assert baja.status_code == 200  # informa, no bloquea
     assert baja.json()["activo"] is False
@@ -115,6 +124,7 @@ def test_desactivar_categoria_con_productos_informa_pero_no_bloquea(sesion):
 
 def test_crear_producto_nuevo_desde_administracion(sesion):
     encargado = crear_operador(sesion, es_encargado=True)
+    cab = headers_sesion(sesion, encargado)
     categoria = Categoria(nombre=_nombre("Cat"))
     sesion.add(categoria)
     sesion.commit()
@@ -127,8 +137,8 @@ def test_crear_producto_nuevo_desde_administracion(sesion):
             "es_granel": False,
             "precio_vigente": "2.5000",
             "lleva_caducidad": False,
-            "id_operador": encargado.id_operador,
         },
+        headers=cab,
     )
     assert r.status_code == 201, r.text
     cuerpo = r.json()
@@ -160,12 +170,13 @@ def test_editar_cliente_no_requiere_encargado(sesion):
 
 def test_listado_paginado_devuelve_items_y_total_en_el_body(sesion):
     encargado = crear_operador(sesion, es_encargado=True)
+    cab = headers_sesion(sesion, encargado)
     sesion.commit()
     for _ in range(3):
-        cliente.post(
-            "/administracion/medios",
-            json={"nombre": _nombre("Medio"), "id_operador": encargado.id_operador},
+        r = cliente.post(
+            "/administracion/medios", json={"nombre": _nombre("Medio")}, headers=cab
         )
+        assert r.status_code == 201, r.text
 
     r = cliente.get("/administracion/medios?pagina=1&tamano_pagina=2")
     assert r.status_code == 200
@@ -176,15 +187,14 @@ def test_listado_paginado_devuelve_items_y_total_en_el_body(sesion):
 
 def test_listado_admite_busqueda_por_nombre_combinada_con_paginacion(sesion):
     encargado = crear_operador(sesion, es_encargado=True)
+    cab = headers_sesion(sesion, encargado)
     sesion.commit()
     marca = uuid.uuid4().hex[:8]
     cliente.post(
-        "/administracion/categorias",
-        json={"nombre": f"Refrescos {marca}", "id_operador": encargado.id_operador},
+        "/administracion/categorias", json={"nombre": f"Refrescos {marca}"}, headers=cab
     )
     cliente.post(
-        "/administracion/categorias",
-        json={"nombre": f"Congelados {marca}", "id_operador": encargado.id_operador},
+        "/administracion/categorias", json={"nombre": f"Congelados {marca}"}, headers=cab
     )
 
     r = cliente.get(f"/administracion/categorias?busqueda=refrescos {marca}&tamano_pagina=50")

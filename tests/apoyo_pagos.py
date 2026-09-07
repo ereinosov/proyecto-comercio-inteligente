@@ -87,13 +87,14 @@ def crear_terminal(
     version_firmware: str = "3.2.0",
     identificador: str | None = None,
 ) -> TerminalPago:
+    encargado = sesion.get(Operador, id_operador_encargado)
     terminal = terminales_pago.registrar_terminal(
         sesion,
         identificador=identificador or f"TERM-{uuid.uuid4().hex[:8]}",
         modelo=modelo,
         id_sucursal=id_sucursal,
         version_firmware=version_firmware,
-        id_operador=id_operador_encargado,
+        operador=encargado,
     )
     sesion.flush()
     return terminal

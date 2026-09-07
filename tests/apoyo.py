@@ -35,6 +35,35 @@ def venta_de_prueba(sesion, *, id_turno: int, instante: datetime) -> int:
     return venta.id_venta
 
 
+def sesion_turno_abierto(sesion, operador, *, id_sucursal: int | None = None, caja: str = "caja-1"):
+    """Abre un turno para `operador` y devuelve `(turno, headers)` con el
+    `Authorization: Bearer <token>` de sesión de turno (User Story 11, enmienda v2.4.0).
+
+    Los endpoints sujetos a rol derivan la identidad del token, no del `id_operador` del cuerpo.
+    No comitea: el llamador comitea (para que la sesión propia del TestClient vea el turno).
+    """
+    from rasero.persistencia.modelos import Turno
+    from rasero.seguridad import emitir_token_turno
+
+    turno = Turno(
+        id_operador=operador.id_operador,
+        id_sucursal=id_sucursal if id_sucursal is not None else operador.id_sucursal,
+        caja=caja,
+        instante_apertura=datetime.now(timezone.utc),
+    )
+    sesion.add(turno)
+    sesion.flush()
+    token = emitir_token_turno(
+        id_operador=operador.id_operador, id_turno=turno.id_turno, rol=operador.rol
+    )
+    return turno, {"Authorization": f"Bearer {token}"}
+
+
+def headers_sesion(sesion, operador, **kwargs) -> dict:
+    """Atajo: sólo el header `Authorization` de una sesión de turno recién abierta."""
+    return sesion_turno_abierto(sesion, operador, **kwargs)[1]
+
+
 def anulacion_de_prueba(sesion, *, id_venta: int, id_operador: int, instante: datetime) -> int:
     """Crea una `anulacion_venta` mínima para colgar de ella un movimiento `entrada_anulacion`
     con un instante controlado (el servicio real `anular_venta` usa `datetime.now`, no

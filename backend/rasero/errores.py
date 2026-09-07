@@ -36,6 +36,35 @@ class TurnoInvalido(ErrorDominio):
         super().__init__(mensaje)
 
 
+# --------------------------------------------------------------------------
+# Identidad de sesión de turno (Principio VI, enmienda v2.4.0; User Story 11)
+# --------------------------------------------------------------------------
+
+_MENSAJE_SESION = "Tu turno expiró o fue cerrado. Abre turno de nuevo."
+
+
+class SesionInvalida(ErrorDominio):
+    """El token de sesión de turno falta, tiene firma inválida o malformada, refiere un turno ya
+    cerrado, o refiere un operador desactivado. Códigos nuevos, sin colisión con los existentes.
+    """
+
+    codigo = "sesion_invalida"
+    status_code = 401
+
+    def __init__(self, mensaje: str = _MENSAJE_SESION):
+        super().__init__(mensaje)
+
+
+class SesionExpirada(ErrorDominio):
+    """El token de sesión de turno superó su `exp` (12 h desde la emisión)."""
+
+    codigo = "sesion_expirada"
+    status_code = 401
+
+    def __init__(self, mensaje: str = _MENSAJE_SESION):
+        super().__init__(mensaje)
+
+
 class RenglonInvalido(ErrorDominio):
     codigo = "renglon_invalido"
     status_code = 422

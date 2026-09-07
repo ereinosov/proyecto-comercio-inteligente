@@ -19,7 +19,9 @@ from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from rasero.api.paginacion import paginar
+from rasero.persistencia.modelos import Operador
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import exige_rol
 from rasero.servicios import bitacora_pagos as servicio_bitacora
 from rasero.servicios import cobertura_pago as servicio_cobertura
 from rasero.servicios import terminales_pago as servicio_terminales
@@ -27,6 +29,10 @@ from rasero.servicios import tokenizacion as servicio_token
 from rasero.servicios.tokenizacion import token_pago_a_respuesta
 
 router = APIRouter(tags=["pagos"], prefix="/pagos")
+
+# Identidad del operador de escritura desde el token de sesión de turno (User Story 11). Las
+# acciones de este router reservadas a `encargado` la resuelven y validan el rol de una vez.
+_Encargado = Depends(exige_rol("encargado"))
 
 
 # ==========================================================================
@@ -39,7 +45,6 @@ class CoberturaDeclarada(BaseModel):
     id_medio_pago: int
     acepta: bool
     fecha_desde: date
-    id_operador: int
 
 
 class IntencionNoAtendida(BaseModel):
@@ -57,7 +62,9 @@ def listar_medios(sesion: Session = Depends(obtener_sesion)) -> list[dict]:
 
 @router.put("/cobertura")
 def declarar_cobertura(
-    cuerpo: CoberturaDeclarada, sesion: Session = Depends(obtener_sesion)
+    cuerpo: CoberturaDeclarada,
+    sesion: Session = Depends(obtener_sesion),
+    operador: Operador = _Encargado,
 ) -> dict:
     tramo = servicio_cobertura.declarar_cobertura(
         sesion,
@@ -65,7 +72,7 @@ def declarar_cobertura(
         id_medio_pago=cuerpo.id_medio_pago,
         acepta=cuerpo.acepta,
         fecha_desde=cuerpo.fecha_desde,
-        id_operador=cuerpo.id_operador,
+        operador=operador,
     )
     sesion.commit()
     if tramo is None:
@@ -75,7 +82,7 @@ def declarar_cobertura(
             "id_sucursal": cuerpo.id_sucursal,
             "fecha_desde": cuerpo.fecha_desde.isoformat(),
             "fecha_hasta": None,
-            "id_operador": cuerpo.id_operador,
+            "id_operador": operador.id_operador,
         }
     return {
         "id_cobertura_pago": tramo.id_cobertura_pago,
@@ -127,25 +134,24 @@ class TerminalNueva(BaseModel):
     id_sucursal: int
     version_firmware: str
     fecha_ultima_actualizacion_firmware: date | None = None
-    id_operador: int
 
 
 class TerminalMovida(BaseModel):
     id_sucursal_destino: int | None = None
     fecha_movimiento: date | None = None
     retirar: bool = False
-    id_operador: int
 
 
 class ActualizacionFirmware(BaseModel):
     version: str
     fecha: date
-    id_operador: int
 
 
 @router.post("/terminales", status_code=status.HTTP_201_CREATED)
 def registrar_terminal(
-    cuerpo: TerminalNueva, sesion: Session = Depends(obtener_sesion)
+    cuerpo: TerminalNueva,
+    sesion: Session = Depends(obtener_sesion),
+    operador: Operador = _Encargado,
 ) -> dict:
     terminal = servicio_terminales.registrar_terminal(
         sesion,
@@ -154,7 +160,7 @@ def registrar_terminal(
         id_sucursal=cuerpo.id_sucursal,
         version_firmware=cuerpo.version_firmware,
         fecha_ultima_actualizacion_firmware=cuerpo.fecha_ultima_actualizacion_firmware,
-        id_operador=cuerpo.id_operador,
+        operador=operador,
     )
     sesion.commit()
     return servicio_terminales._terminal_a_respuesta(terminal)
@@ -173,7 +179,10 @@ def listar_terminales(
 
 @router.patch("/terminales/{id_terminal_pago}")
 def mover_terminal(
-    id_terminal_pago: int, cuerpo: TerminalMovida, sesion: Session = Depends(obtener_sesion)
+    id_terminal_pago: int,
+    cuerpo: TerminalMovida,
+    sesion: Session = Depends(obtener_sesion),
+    operador: Operador = _Encargado,
 ) -> dict:
     terminal = servicio_terminales.mover_o_retirar_terminal(
         sesion,
@@ -181,7 +190,7 @@ def mover_terminal(
         id_sucursal_destino=cuerpo.id_sucursal_destino,
         fecha_movimiento=cuerpo.fecha_movimiento,
         retirar=cuerpo.retirar,
-        id_operador=cuerpo.id_operador,
+        operador=operador,
     )
     sesion.commit()
     return servicio_terminales._terminal_a_respuesta(terminal)
@@ -192,13 +201,14 @@ def actualizar_firmware(
     id_terminal_pago: int,
     cuerpo: ActualizacionFirmware,
     sesion: Session = Depends(obtener_sesion),
+    operador: Operador = _Encargado,
 ) -> dict:
     terminal = servicio_terminales.registrar_actualizacion_firmware(
         sesion,
         id_terminal_pago=id_terminal_pago,
         version=cuerpo.version,
         fecha=cuerpo.fecha,
-        id_operador=cuerpo.id_operador,
+        operador=operador,
     )
     sesion.commit()
     return servicio_terminales._terminal_a_respuesta(terminal)

@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 from rasero.api.aplicacion import app
 from rasero.config import pagos as cfg
 from rasero.persistencia.modelos import TerminalPago
+from tests.apoyo import headers_sesion
 from tests.apoyo_pagos import crear_operador, crear_sucursal, crear_terminal
 
 cliente = TestClient(app)
@@ -98,6 +99,7 @@ def test_senal_se_atribuye_a_la_sucursal_del_momento(sesion, firmware_config):
     s1 = crear_sucursal(sesion)
     s2 = crear_sucursal(sesion)
     encargado = crear_operador(sesion, es_encargado=True)
+    cab = headers_sesion(sesion, encargado)
     sesion.commit()
     terminal = crear_terminal(
         sesion,
@@ -111,7 +113,8 @@ def test_senal_se_atribuye_a_la_sucursal_del_momento(sesion, firmware_config):
     # mover a s2
     r = cliente.patch(
         f"/pagos/terminales/{terminal.id_terminal_pago}",
-        json={"id_sucursal_destino": s2.id_sucursal, "id_operador": encargado.id_operador},
+        json={"id_sucursal_destino": s2.id_sucursal},
+        headers=cab,
     )
     assert r.status_code == 200, r.text
 
@@ -131,6 +134,7 @@ def test_get_terminales_exige_sucursal(sesion):
 def test_actualizar_firmware_reevalua_y_rechaza_retroceso(sesion, firmware_config):
     sucursal = crear_sucursal(sesion)
     encargado = crear_operador(sesion, es_encargado=True)
+    cab = headers_sesion(sesion, encargado)
     sesion.commit()
     terminal = crear_terminal(
         sesion,
@@ -143,7 +147,8 @@ def test_actualizar_firmware_reevalua_y_rechaza_retroceso(sesion, firmware_confi
 
     r = cliente.post(
         f"/pagos/terminales/{terminal.id_terminal_pago}/firmware",
-        json={"version": "3.2.0", "fecha": "2026-07-01", "id_operador": encargado.id_operador},
+        json={"version": "3.2.0", "fecha": "2026-07-01"},
+        headers=cab,
     )
     assert r.status_code == 200, r.text
     assert r.json()["desactualizada"] is False
@@ -151,6 +156,7 @@ def test_actualizar_firmware_reevalua_y_rechaza_retroceso(sesion, firmware_confi
 
     r = cliente.post(
         f"/pagos/terminales/{terminal.id_terminal_pago}/firmware",
-        json={"version": "3.1.0", "fecha": "2026-08-01", "id_operador": encargado.id_operador},
+        json={"version": "3.1.0", "fecha": "2026-08-01"},
+        headers=cab,
     )
     assert r.status_code == 400 and r.json()["codigo"] == "pagos_version_no_avanza"

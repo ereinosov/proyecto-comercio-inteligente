@@ -11,8 +11,9 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from rasero.errores import RecursoNoEncontrado
-from rasero.persistencia.modelos import AnulacionVenta, RenglonVenta, Turno, Venta
+from rasero.persistencia.modelos import AnulacionVenta, Operador, RenglonVenta, Turno, Venta
 from rasero.persistencia.sesion import obtener_sesion
+from rasero.seguridad import operador_de_sesion
 from rasero.servicios import ventas as servicio_ventas
 
 router = APIRouter(tags=["ventas"])
@@ -33,7 +34,7 @@ class VentaNueva(BaseModel):
 
 
 class AnulacionNueva(BaseModel):
-    id_operador: int
+    # User Story 11: el operador que anula se toma del token de sesión de turno, no del cuerpo.
     motivo: str | None = None
 
 
@@ -124,9 +125,14 @@ def obtener_venta(id_venta: int, sesion: Session = Depends(obtener_sesion)) -> d
 
 
 @router.post("/ventas/{id_venta}/anulacion", status_code=status.HTTP_201_CREATED)
-def anular_venta(id_venta: int, cuerpo: AnulacionNueva, sesion: Session = Depends(obtener_sesion)) -> dict:
+def anular_venta(
+    id_venta: int,
+    cuerpo: AnulacionNueva,
+    sesion: Session = Depends(obtener_sesion),
+    operador: Operador = Depends(operador_de_sesion),
+) -> dict:
     anulacion = servicio_ventas.anular_venta(
-        sesion, id_venta=id_venta, id_operador_ejecuta=cuerpo.id_operador, motivo=cuerpo.motivo
+        sesion, id_venta=id_venta, id_operador_ejecuta=operador.id_operador, motivo=cuerpo.motivo
     )
     return {
         "id_anulacion_venta": anulacion.id_anulacion_venta,
