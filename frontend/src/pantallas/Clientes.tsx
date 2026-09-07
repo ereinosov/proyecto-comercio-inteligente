@@ -246,7 +246,7 @@ export function Clientes() {
                   </li>
                 ))}
               </ul>
-              <Paginador pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} />
+              <Paginador pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} numerado />
             </>
           )}
         </div>

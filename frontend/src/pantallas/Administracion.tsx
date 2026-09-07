@@ -453,7 +453,7 @@ export function Administracion({ rol }: Props) {
       )}
 
       {!cargando && filas.length > 0 && (
-        <Paginador pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} />
+        <Paginador pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} numerado />
       )}
 
       {modal && (
