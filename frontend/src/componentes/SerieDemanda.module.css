@@ -47,6 +47,12 @@
   text-align: left;
 }
 
+/* La última columna ("Notas") es texto alineado a la izquierda (`.tabla td:last-child`); su
+   encabezado debe alinear igual — mismo patrón que `Venta.module.css` (header = su columna). */
+.tabla th:last-child {
+  text-align: left;
+}
+
 .tabla td {
   padding: 6px 10px;
   border-bottom: 1px solid var(--color-borde);
