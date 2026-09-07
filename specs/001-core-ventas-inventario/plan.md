@@ -28,6 +28,26 @@ Requiere migración de datos de Alembic (documentada, reversible: `es_encargado=
 Constitution Check. Riesgo vigilado: toca `operador`/`turno` certificadas de US1 — línea base de
 pruebas antes y después de la migración (T096, T121).
 
+**User Story 11 (P11, sesión de turno con token verificable)** — ejerce la sub-sección
+"Identidad de sesión" del Principio VI, añadida a la constitución por la enmienda **v2.4.0**.
+Cierra una brecha encontrada en auditoría: `requiere_rol` (US10) valida el rol pero resolvía la
+identidad del operador leyendo el `id_operador` del cuerpo, sin verificarlo. Solución: `POST
+/turnos` emite un JWT de sesión de turno (HS256, `pyjwt`, claims `id_operador`/`id_turno`/`rol`/
+`exp` a 12 h) tras validar el PIN; una dependency de FastAPI en `backend/rasero/seguridad.py`
+(`operador_de_sesion`) verifica el token —firma, expiración, `turno.instante_cierre IS NULL`,
+`operador.activo`— y resuelve el `Operador`; `exige_rol` pasa a componerse sobre ella y
+`requiere_rol` cambia su firma a `requiere_rol(operador, rol_minimo)`. El `id_operador` /
+`id_operador_solicitante` del cuerpo se retira de los schemas de escritura sujetos a rol
+(`api/administracion.py`, `api/operadores.py`, `api/pagos.py` cobertura/terminales,
+`api/ventas.py` anulación). Frontend: el token se guarda junto al `Turno` en el estado de
+`App.tsx`; `clienteHttp.ts` adjunta `Authorization: Bearer` automáticamente; un `401` de sesión
+(`sesion_invalida` / `sesion_expirada`) vuelve a la pantalla de apertura con mensaje claro.
+**Sin migración ni cambio de esquema.** `JWT_SECRET_KEY` por entorno (default sólo de
+desarrollo). Ver `spec.md` User Story 11 (FR-065 a FR-073), `data-model.md` (`operador`,
+`turno`), `tasks.md` Phase 13 y la fila VI de la Constitution Check. Riesgo vigilado: cambia el
+mecanismo central de autorización — línea base de pruebas antes y después (401 passed antes),
+pruebas nuevas de suplantación por cuerpo, token expirado, turno cerrado y operador desactivado.
+
 **User Story 9 (P9, corregir el carrito antes de cobrar)** — añadida por auditoría de uso tras la
 certificación de US1. Es puramente de frontend: el carrito de `Venta.tsx` vive en `useState`
 (`renglones`) y no se persiste hasta "Cobrar" (verificado en el código). US9 solo añade lógica de
@@ -47,8 +67,10 @@ mercancía en tránsito que no desaparece del total.
 **Language/Version**: Python 3.12 (backend), TypeScript 5.x sobre React 18 (frontend)
 
 **Primary Dependencies**: FastAPI + Uvicorn, SQLAlchemy 2.x con Alembic para migraciones, Pydantic
-v2; Vite como herramienta de construcción del frontend. Sin librería de componentes de terceros
-(Bootstrap, Material UI, shadcn y equivalentes quedan excluidos por decisión de la constitución).
+v2, `pyjwt` (token de sesión de turno, User Story 11 — HS256, sin dependencias de criptografía
+asimétrica); Vite como herramienta de construcción del frontend. Sin librería de componentes de
+terceros (Bootstrap, Material UI, shadcn y equivalentes quedan excluidos por decisión de la
+constitución).
 
 **Storage**: PostgreSQL 16, en desarrollo de forma nativa —no en contenedor— escuchando en el
 puerto **5442**. SQLite está PROHIBIDO en toda fase. El empaquetado en Docker Compose con volumen
@@ -82,8 +104,11 @@ servidor de base de datos es suficiente.
 
 *GATE: Must pass before Phase 0 research. Re-check after Phase 1 design.*
 
-Verificación explícita contra la constitución **v2.3.0** (la enmienda v2.3.0 añadió el Principio
-VI, "Autorización y Roles", y cambió el esquema de `operador` — ver User Story 10 de `spec.md`).
+Verificación explícita contra la constitución **v2.4.0** (vigente). La enmienda v2.3.0 añadió el
+Principio VI, "Autorización y Roles", y cambió el esquema de `operador` (ver User Story 10 de
+`spec.md`); la enmienda **v2.4.0** amplió el Principio VI con la sub-sección "Identidad de
+sesión" —token JWT de turno emitido al abrir turno, `id_operador` del cuerpo deprecado para
+autorización— sin cambio de esquema (ver User Story 11 de `spec.md`).
 
 ### Principios
 
@@ -94,7 +119,7 @@ VI, "Autorización y Roles", y cambió el esquema de `operador` — ver User Sto
 | III. Pruebas Proporcionales al Riesgo | **Cumple** | Seis suites obligatorias sobre dinero, existencias y contratos (ver "Pruebas obligatorias"). Interfaz y maquetación sin pruebas, por decisión expresa. |
 | IV. Trazabilidad de Cada Transacción | **Cumple** | Todo movimiento referencia el hecho que lo originó y el lote del que se descontó. Traspaso con dos asientos enlazados por `id_traspaso` y mercancía en tránsito contabilizada. Ningún saldo se sobrescribe sin movimiento que lo origine. |
 | V. Inteligencia Explicable y Reversible | **Cumple (por omisión activa)** | Este módulo no contiene función predictiva alguna: registra hechos y no decide acciones. La parte aplicable del principio es la visible: la comparación de precios de competencia muestra la antigüedad con los tres portadores exigidos (color, forma y texto), y el capital inmovilizado se limita a mostrar. |
-| VI. Autorización y Roles (enmienda v2.3.0) | **Cumple** | User Story 10: `operador` gana `id_sucursal` (FK, uno-a-uno) y `rol` (ENUM `cajero`/`encargado`/`admin`) en reemplazo de `es_encargado`, con migración de datos documentada. La verificación de rol es un mecanismo central único —`requiere_rol` en `backend/rasero/seguridad.py` y su dependency de FastAPI— que reemplaza las tres funciones `_encargado_o_error` duplicadas. Apertura de turno restringida a `operador.id_sucursal` para `cajero`/`encargado`, libre para `admin`, con rechazo de backend `{codigo, mensaje}`. Frontend: hook único `useRol`; la navegación oculta —no deshabilita— lo que el rol no puede usar; gestión de operadores como 6.ª pestaña de Administración visible sólo para `admin`. Autenticación (PIN, FR-006) sin cambios. |
+| VI. Autorización y Roles (enmiendas v2.3.0 y v2.4.0) | **Cumple** | User Story 10: `operador` gana `id_sucursal` (FK, uno-a-uno) y `rol` (ENUM `cajero`/`encargado`/`admin`) en reemplazo de `es_encargado`, con migración de datos documentada. La verificación de rol es un mecanismo central único —`requiere_rol` en `backend/rasero/seguridad.py` y su dependency de FastAPI— que reemplaza las tres funciones `_encargado_o_error` duplicadas. Apertura de turno restringida a `operador.id_sucursal` para `cajero`/`encargado`, libre para `admin`, con rechazo de backend `{codigo, mensaje}`. Frontend: hook único `useRol`; la navegación oculta —no deshabilita— lo que el rol no puede usar; gestión de operadores como 6.ª pestaña de Administración visible sólo para `admin`. **User Story 11 (sub-sección "Identidad de sesión", enmienda v2.4.0)**: la identidad del operador en cada petición sujeta a rol se deriva de un token de sesión de turno (JWT HS256 emitido en `POST /turnos` tras validar el PIN), verificado por la dependency `operador_de_sesion` del mismo `seguridad.py` (firma, `exp` a 12 h, turno abierto, operador activo). El `id_operador` del cuerpo se retira de los schemas de escritura sujetos a rol — una sola fuente de verdad. Sin cambio de esquema (la invalidación por cierre reutiliza `turno.instante_cierre`). Códigos de error `sesion_invalida`/`sesion_expirada` (401), formato `{codigo, mensaje}`. `JWT_SECRET_KEY` por entorno. Autenticación (PIN, FR-006) sin cambios. |
 
 **Nota sobre el Principio I y el lenguaje único**: el Principio I prohíbe introducir una segunda
 tecnología que cumpla la misma función que una ya presente, salvo justificación registrada. Se elige

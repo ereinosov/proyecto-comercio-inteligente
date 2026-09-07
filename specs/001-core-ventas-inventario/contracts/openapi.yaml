@@ -13,6 +13,13 @@ info:
       responsabilidad del cliente.
     - Todos los instantes en RFC 3339 con desplazamiento. El servidor los normaliza a UTC.
     - Ninguna validación de existencias bloquea el registro de una venta.
+    - Identidad de sesión (User Story 11, Principio VI, enmienda v2.4.0): POST /turnos
+      devuelve un token JWT de sesión de turno. Toda operación sujeta a rol (/operadores de
+      escritura, /ventas/{id}/anulacion, y en 007 la administración de datos maestros,
+      terminales y cobertura) exige Authorization: Bearer <token>. El backend deriva la
+      identidad del operador SOLO del token; id_operador en el cuerpo se ignora. Token
+      ausente/invalido -> 401 sesion_invalida; expirado -> 401 sesion_expirada; turno cerrado u
+      operador desactivado -> 401 sesion_invalida.
 
 servers:
   - url: http://localhost:8000
@@ -59,7 +66,8 @@ paths:
                   writeOnly: true
       responses:
         '201':
-          description: Turno abierto
+          description: |
+            Turno abierto. La respuesta incluye `token` (JWT de sesion de turno, User Story 11).
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Turno' }
@@ -147,6 +155,9 @@ paths:
         El operador puede anular ventas de su turno en curso. Una venta de un turno cerrado
         solo la anula un encargado. La venta anulada permanece visible; nunca se borra.
         No implementa devolución de mercancía con reembolso: eso queda fuera del módulo.
+
+        **User Story 11**: requiere Authorization: Bearer <token>. El operador que anula se
+        toma del token, no del cuerpo (el campo id_operador se retiró).
       parameters:
         - $ref: '#/components/parameters/IdVenta'
       requestBody:
@@ -155,10 +166,10 @@ paths:
           application/json:
             schema:
               type: object
-              required: [id_operador]
               properties:
-                id_operador: { type: integer }
                 motivo: { type: string }
+      security:
+        - bearerAuth: []
       responses:
         '201':
           description: Anulación registrada; existencias repuestas en su lote de origen
@@ -197,8 +208,11 @@ paths:
       tags: [turnos]
       summary: Alta de operador (User Story 10, sólo rol admin)
       description: |
-        Exclusivo del rol `admin` (Principio VI, FR-059). `id_operador` del solicitante viaja
-        en el cuerpo, igual que en el resto del sistema. Un `encargado` recibe rechazo.
+        Exclusivo del rol `admin` (Principio VI, FR-059). La identidad del solicitante se
+        deriva del token de sesion de turno (Authorization: Bearer), no del cuerpo
+        (User Story 11). Un `encargado` recibe 403 rol_insuficiente; sin token valido, 401.
+      security:
+        - bearerAuth: []
       requestBody:
         required: true
         content:
@@ -222,6 +236,9 @@ paths:
       summary: Editar nombre, rol o sucursal de un operador (User Story 10, sólo rol admin)
       description: |
         Exclusivo del rol `admin` (FR-059). Ningún `encargado` puede ascender a otro operador.
+        Identidad del solicitante desde el token de sesion de turno (User Story 11).
+      security:
+        - bearerAuth: []
       parameters:
         - name: id_operador
           in: path
@@ -248,7 +265,11 @@ paths:
     post:
       tags: [turnos]
       summary: Activar o desactivar un operador (User Story 10, sólo rol admin)
-      description: Nunca borra (Principio IV); fija `activo`.
+      description: |
+        Nunca borra (Principio IV); fija `activo`. Identidad del solicitante desde el token de
+        sesion de turno (User Story 11).
+      security:
+        - bearerAuth: []
       parameters:
         - name: id_operador
           in: path
@@ -260,10 +281,9 @@ paths:
           application/json:
             schema:
               type: object
-              required: [activo, id_operador_solicitante]
+              required: [activo]
               properties:
                 activo: { type: boolean }
-                id_operador_solicitante: { type: integer }
       responses:
         '200':
           description: Estado actualizado
@@ -649,6 +669,17 @@ paths:
 
 components:
 
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token de sesion de turno (User Story 11, enmienda constitucional v2.4.0). Se
+        obtiene de POST /turnos (campo token) y se envia como Authorization: Bearer
+        <token> en toda operacion sujeta a rol. Fallos: 401 sesion_invalida
+        (ausente/invalido/turno cerrado/operador desactivado), 401 sesion_expirada.
+
   parameters:
     IdTurno:
       name: id_turno
@@ -718,6 +749,13 @@ components:
         caja: { type: string }
         instante_apertura: { type: string, format: date-time }
         instante_cierre: { type: string, format: date-time, nullable: true }
+        token:
+          type: string
+          description: |
+            User Story 11 (enmienda v2.4.0): JWT de sesion de turno (HS256), solo en la
+            respuesta de POST /turnos. Claims id_operador, id_turno, rol, exp (12 h). El
+            cliente lo adjunta como Authorization: Bearer <token> en las operaciones sujetas a
+            rol. No se persiste.
 
     RenglonVentaNuevo:
       type: object
@@ -831,6 +869,8 @@ components:
       description: |
         User Story 10 (Principio VI, enmienda v2.3.0): `es_encargado` (boolean) se retiró y se
         reemplazó por `rol` (ENUM cerrado). `id_sucursal` es la sucursal fija del operador.
+        User Story 11 (enmienda v2.4.0): la identidad de sesion del operador se resuelve por el
+        token de turno, no por id_operador en el cuerpo de las escrituras.
       properties:
         id_operador: { type: integer }
         nombre: { type: string }
@@ -841,7 +881,7 @@ components:
 
     OperadorNuevo:
       type: object
-      required: [nombre, rol, id_sucursal, id_operador_solicitante]
+      required: [nombre, rol, id_sucursal]
       properties:
         nombre: { type: string }
         rol:
@@ -853,9 +893,9 @@ components:
           pattern: '^[0-9]{4}$'
           writeOnly: true
           description: Requerido en el alta; opcional en la edición (si se omite, el PIN no cambia).
-        id_operador_solicitante:
-          type: integer
-          description: Operador que ejecuta la acción; debe tener rol `admin` (FR-059).
+      description: |
+        User Story 11: el solicitante ya no viaja en el cuerpo. Su identidad y su rol admin se
+        verifican desde el token de sesion de turno (Authorization: Bearer).
 
     Producto:
       type: object

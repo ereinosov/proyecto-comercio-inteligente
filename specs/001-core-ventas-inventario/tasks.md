@@ -327,6 +327,66 @@ puede usar; `admin` gestiona operadores.
 
 ---
 
+## Phase 13: User Story 11 - Sesión de turno con token verificable (Priority: P11)
+
+**Goal**: la identidad del operador en cada petición sujeta a rol se deriva de un token de sesión
+de turno (JWT HS256 emitido en `POST /turnos` tras validar el PIN), no del `id_operador` del
+cuerpo. Verificación centralizada en `backend/rasero/seguridad.py` (dependency `operador_de_sesion`);
+doble invalidación (expiración a 12 h + cierre de turno) + rechazo inmediato de operador
+desactivado. **Sin migración ni cambio de esquema.**
+
+**Independent Test**: ver User Story 11 de spec.md (escenarios 1–9).
+
+> Ejerce la sub-sección "Identidad de sesión" del Principio VI (enmienda constitucional
+> **v2.4.0**). Corrige una brecha de US10 heredada de `007-pagos-seguridad`. Cambia el mecanismo
+> central de autorización — de ahí la línea base de pruebas antes y después.
+
+### Línea base y dependencia
+
+- [ ] T123 [US11] Correr la suite completa (`backend/.venv/Scripts/pytest tests`) y registrar el resultado como línea base en el commit/PR (línea base conocida: 401 passed)
+- [ ] T124 [US11] `backend/pyproject.toml`: añadir `pyjwt>=2.9` a `dependencies`; `pip install -e .` en el venv. `backend/rasero/configuracion.py`: `JWT_SECRET_KEY` (default sólo de desarrollo, override por entorno, mismo patrón que `DATABASE_URL`) y `JWT_HORAS_EXPIRACION = 12` (FR-069, FR-072)
+
+### Backend — mecanismo central de sesión
+
+- [ ] T125 [US11] `backend/rasero/errores.py`: `SesionInvalida` (`codigo="sesion_invalida"`, 401) y `SesionExpirada` (`codigo="sesion_expirada"`, 401), ambas `ErrorDominio`, mensaje "Tu turno expiró o fue cerrado. Abre turno de nuevo." — verificar que no colisionan con códigos existentes (FR-068)
+- [ ] T126 [US11] `backend/rasero/seguridad.py`: `emitir_token_turno(*, id_operador, id_turno, rol) -> str` (JWT HS256, claims `id_operador`/`id_turno`/`rol`/`exp`/`iat`, `exp = now + JWT_HORAS_EXPIRACION`) (FR-065, FR-066)
+- [ ] T127 [US11] `backend/rasero/seguridad.py`: dependency `operador_de_sesion(authorization: str = Header(...), sesion) -> Operador` — parsea `Bearer`, `jwt.decode` (firma + `exp`); `ExpiredSignatureError → SesionExpirada`; cualquier otro `InvalidTokenError` o header ausente/mal formado → `SesionInvalida`; carga `Turno` del claim → si `None` o `instante_cierre is not None` → `SesionInvalida`; carga `Operador` del claim → si `None` o `not activo` → `SesionInvalida`; devuelve el `Operador` (FR-067, FR-068)
+- [ ] T128 [US11] `backend/rasero/seguridad.py`: `requiere_rol` cambia su firma a `requiere_rol(operador: Operador, rol_minimo: str) -> Operador` (chequeo de rango puro; `OperadorInvalido` si `not activo`, `RolInsuficiente` si rango insuficiente). `exige_rol(rol_minimo)` se recompone: `Depends(operador_de_sesion)` → `requiere_rol(operador, rol_minimo)` (FR-067; depende de T127)
+- [ ] T129 [US11] `backend/rasero/api/turnos.py`: `abrir_turno` llama `emitir_token_turno` tras el `commit` y añade `token` a `TurnoRespuesta`. `POST /turnos/{id}/cierre` sin cambios (ya deja `instante_cierre`; sigue sin exigir token) (FR-065, FR-069; depende de T126)
+
+### Backend — migrar los routers/servicios sujetos a rol a la nueva identidad
+
+- [ ] T130 [P] [US11] `backend/rasero/servicios/administracion.py`: las funciones `crear_*`/`actualizar_*`/`fijar_activo` reciben `operador: Operador` en vez de `id_operador: int`; `requiere_rol(operador, "encargado")`. `backend/rasero/api/administracion.py`: `operador: Operador = Depends(exige_rol("encargado"))`; retirar `id_operador` de los schemas de cuerpo (FR-067; depende de T128)
+- [ ] T131 [P] [US11] Ídem `backend/rasero/servicios/cobertura_pago.py` + `backend/rasero/servicios/terminales_pago.py` y `backend/rasero/api/pagos.py` (`PUT /pagos/cobertura`, `POST /pagos/terminales`, `PATCH /pagos/terminales/{id}`, `POST /pagos/terminales/{id}/firmware`): identidad del token; retirar `id_operador` del cuerpo; usar `operador.id_operador` donde se registra en bitácora (FR-067; depende de T128)
+- [ ] T132 [P] [US11] `backend/rasero/api/operadores.py` + `servicios/operadores.py`: `POST /operadores`, `PUT /operadores/{id}`, `POST /operadores/{id}/activo` → `Depends(exige_rol("admin"))`; retirar `id_operador_solicitante` del cuerpo (FR-067; depende de T128)
+- [ ] T133 [US11] `backend/rasero/api/ventas.py` + `servicios/ventas.py::anular_venta`: `POST /ventas/{id}/anulacion` deriva `id_operador_ejecuta` de `Depends(operador_de_sesion)` (no exige rol mínimo — un `cajero` puede anular su propia venta de turno abierto); retirar `id_operador` del cuerpo `AnulacionNueva`. La `anulacion_venta` sigue guardando ese id como auditoría (FR-067; depende de T127)
+- [ ] T134 [US11] `backend/rasero/api/aplicacion.py`: verificar que el `exception_handler(ErrorDominio)` ya cubre `SesionInvalida`/`SesionExpirada` (mismo formato `{codigo, mensaje}`, status del error). Ajuste sólo si hace falta
+
+### Backend — pruebas obligatorias (Principio III: contrato de autorización + transición de estado)
+
+- [ ] T135 [US11] `tests/integracion/test_sesion_turno.py`: **regresión del hallazgo** — `cajero` autenticado con su token + `id_operador` de `admin` en el cuerpo de `POST /operadores` → `403 rol_insuficiente` (el cuerpo no tuvo efecto) (SC-015, FR-067)
+- [ ] T136 [US11] `test_sesion_turno.py`: token sin firmar / ausente → `401 sesion_invalida`; token con `exp` pasado → `401 sesion_expirada`; token de turno con `instante_cierre` no nulo → `401 sesion_invalida`; token de operador desactivado tras emisión → `401 sesion_invalida` (FR-068, SC-016)
+- [ ] T137 [US11] `test_sesion_turno.py`: happy path — abrir turno devuelve `token`; usar el token en un endpoint `encargado` → `201`; identidad registrada = la del token (FR-065, FR-067)
+- [ ] T138 [US11] Actualizar las suites que enviaban `id_operador` en el cuerpo o llamaban `requiere_rol(sesion, id, rol)` (`tests/integracion/test_autorizacion.py`, `test_turno_sucursal.py`, `test_administracion.py`, `test_cobertura.py`, `test_terminales.py`, `test_contrato_pagos.py`, `tests/apoyo*.py`): helper de apoyo que abre turno y devuelve el header `Authorization`; `requiere_rol` con `Operador`. Documentar en el commit cuáles y por qué (contrato cambiado, no regresión)
+
+### Frontend — token en memoria y header automático
+
+- [ ] T139 [US11] `frontend/src/servicios/turnos.ts`: `Turno` gana `token: string`; `abrirTurno` lo devuelve
+- [ ] T140 [US11] `frontend/src/servicios/clienteHttp.ts`: registro en memoria del token de sesión (`fijarTokenSesion` / `limpiarTokenSesion`); `peticion` adjunta `Authorization: Bearer` cuando hay token; un `401` con `codigo` ∈ {`sesion_invalida`,`sesion_expirada`} dispara un callback de "sesión perdida" (FR-070, FR-071)
+- [ ] T141 [US11] `frontend/src/App.tsx`: guardar `turno.token` en el estado junto al `Turno`; `fijarTokenSesion` al abrir, `limpiarTokenSesion` al cerrar; registrar el callback de sesión perdida que hace `setTurno(null)` y muestra "Tu turno expiró o fue cerrado. Abre turno de nuevo." en la pantalla de apertura (FR-070, FR-071)
+- [ ] T142 [P] [US11] Retirar `id_operador` / `id_operador_solicitante` de los cuerpos en `frontend/src/servicios/{administracion,operadores,pagos,ventas}.ts` y en las pantallas que los arman (`Administracion.tsx`, `GestionOperadores.tsx`, `TerminalesPago.tsx`, `CoberturaPago.tsx`, `Venta.tsx` anulación). No romper campos que se usen para *mostrar* datos (FR-067)
+- [ ] T143 [US11] `frontend/src/componentes/AperturaTurno.tsx`: pasar `token` en el objeto `Turno` a `onTurnoAbierto` (si no fluye ya por el tipo)
+
+### Cierre
+
+- [ ] T144 [US11] `tsc -b`, `eslint .`, `vite build` en `frontend/` en verde
+- [ ] T145 [US11] Suite completa; comparar con la línea base de T123. Toda regresión real corregida; los tests actualizados por T138 documentados
+- [ ] T146 [US11] Grep final: `grep -rn "id_operador" backend/rasero/api/` — ningún campo de cuerpo de escritura para autorización; `operador_de_sesion` es la única fuente de identidad en endpoints sujetos a rol (SC-017)
+
+**Checkpoint**: User Story 11 funcional; la suplantación por cuerpo ya no funciona; US1–US10 intactas; sin cambio de esquema.
+
+---
+
 ## Phase Final: Polish & Cross-Cutting Concerns
 
 **Propósito**: validación de extremo a extremo y cumplimiento transversal.
@@ -417,7 +477,7 @@ Con más de una persona disponible:
 - La etiqueta [Story] traza cada tarea a su historia de usuario en spec.md.
 - Las 6 suites obligatorias del Principio III están marcadas y deben pasar antes de fusionar; no hay pruebas de interfaz, maquetación ni componentes visuales.
 - Backend en `backend/`, frontend en `frontend/`, pruebas en `tests/` — las tres en la raíz. Ninguna tarea genera código en `specs/` ni crea `src/` en la raíz del repositorio.
-- Fuera de alcance de este desglose: autenticación más allá del PIN de operador, devolución de mercancía con reembolso, contenedores Docker y despliegue. **Roles y permisos ya NO están fuera de alcance**: la enmienda constitucional v2.3.0 (Principio VI) los incorporó como User Story 10 / Phase 12 (autorización por rol `cajero`/`encargado`/`admin`, sucursal fija por operador, mecanismo central `requiere_rol`). La autenticación (PIN + hash) sigue sin cambios.
+- Fuera de alcance de este desglose: autenticación más allá del PIN de operador, devolución de mercancía con reembolso, contenedores Docker y despliegue. **Roles y permisos ya NO están fuera de alcance**: la enmienda constitucional v2.3.0 (Principio VI) los incorporó como User Story 10 / Phase 12 (autorización por rol `cajero`/`encargado`/`admin`, sucursal fija por operador, mecanismo central `requiere_rol`). **La identidad de sesión tampoco**: la enmienda v2.4.0 (sub-sección "Identidad de sesión" del Principio VI) la incorporó como User Story 11 / Phase 13 — token JWT de sesión de turno emitido al abrir turno, `id_operador` del cuerpo deprecado para autorización. La autenticación (PIN + hash, la credencial que se presenta) sigue sin cambios; el token es la consecuencia de presentarla.
 
 ### Adiciones y desviaciones registradas durante la implementación del Bloque B (US2–US8)
 

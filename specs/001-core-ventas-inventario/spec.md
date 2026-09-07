@@ -363,6 +363,68 @@ selector de sucursal, la pestaña de gestión de operadores, y puede crear/edita
 
 ---
 
+### User Story 11 - Sesión de turno con token verificable (Priority: P11)
+
+La User Story 10 centralizó la verificación de **rol** (`requiere_rol`), pero la **identidad**
+del operador seguía resolviéndose leyendo el `id_operador` que el propio cliente envía en el
+cuerpo de cada petición, sin comprobar que quien llama sea de verdad ese operador. Con la consola
+de red abierta, cualquiera cambia ese valor y actúa como cualquier rol —`admin` incluido— sin
+conocer ningún PIN. Ese patrón (`id_operador` en el cuerpo, sin sesión) es anterior a US10:
+viene de `007-pagos-seguridad`. US10 no lo introdujo, sólo lo volvió más grave al añadir una
+jerarquía real que suplantar.
+
+Esta historia cierra esa brecha. Al abrir turno, tras validar el PIN, el backend emite un **token
+de sesión de turno** (JWT firmado con clave simétrica, HS256) con los claims mínimos
+`id_operador`, `id_turno`, `rol` y `exp`. El frontend lo guarda en memoria junto al turno y lo
+adjunta como `Authorization: Bearer <token>` en toda petición sujeta a rol. El backend deriva la
+identidad **exclusivamente** de ese token; el `id_operador` del cuerpo queda ignorado para
+autorización y se retira de esos cuerpos. El token se invalida por expiración de tiempo (12 h),
+por cierre del turno, o si el operador se desactiva.
+
+Esto ejerce la sub-sección **"Identidad de sesión"** del **Principio VI** (enmienda
+constitucional **v2.4.0**). Es **identidad de sesión**, no una credencial nueva: el PIN + hash
+(FR-006) sigue siendo lo único que se presenta; el token es la consecuencia de presentarlo. **No
+cambia ningún esquema** (la invalidación por cierre reutiliza `turno.instante_cierre`).
+
+**Why this priority**: es una corrección de seguridad sobre el mecanismo central de
+autorización, transversal a todos los routers que hoy verifican rol. Se numera P11 porque
+depende de que exista el flujo de turno (US1) y la verificación de rol centralizada (US10). No
+altera ningún cálculo de dinero ni de existencias, ni el contrato de `POST /ventas`.
+
+**Independent Test**: autenticado como `cajero` (turno abierto, token en mano), enviar un
+`id_operador` de `admin` en el cuerpo de una acción que requiere `admin` (p. ej.
+`POST /operadores`): el backend responde `403 rol_insuficiente` —el cuerpo no tuvo ningún
+efecto—. Sin token: `401`. Con el token de un turno ya cerrado: `401`. Con el token de un
+operador desactivado tras la emisión: `401`.
+
+**Acceptance Scenarios**:
+
+1. **Given** un operador abre turno con PIN correcto, **When** el turno se crea, **Then** la
+   respuesta incluye un campo `token` (JWT) además de los datos del turno.
+2. **Given** un `cajero` con turno abierto y su token, **When** hace `POST /operadores`
+   (acción de `admin`) con un `id_operador` de `admin` en el cuerpo, **Then** el backend lo
+   rechaza con `{codigo: "rol_insuficiente"}` (403): la identidad salió del token, no del cuerpo.
+3. **Given** cualquier petición a un endpoint sujeto a rol **sin** header `Authorization`,
+   **When** llega al backend, **Then** se rechaza con `401` y `{codigo: "sesion_invalida",
+   mensaje: "Tu turno expiró o fue cerrado. Abre turno de nuevo."}`, sin traza técnica.
+4. **Given** un token cuyo `exp` ya pasó, **When** se usa en un endpoint sujeto a rol, **Then**
+   el backend responde `401` con `{codigo: "sesion_expirada"}`.
+5. **Given** un token válido por tiempo pero cuyo turno fue cerrado (`POST /turnos/{id}/cierre`),
+   **When** se usa, **Then** el backend responde `401 sesion_invalida` aunque no haya expirado.
+6. **Given** un token de un operador que un `admin` desactivó después de la emisión, **When** se
+   usa, **Then** el backend responde `401` de inmediato, sin esperar a que expire.
+7. **Given** un `encargado` con turno abierto y su token, **When** hace una acción de
+   `encargado` (crear una categoría), **Then** la acción se ejecuta con `201` y la identidad
+   registrada es la del token.
+8. **Given** el frontend con la sesión activa, **When** una petición devuelve `401` por sesión
+   expirada o cerrada, **Then** la interfaz muestra "Tu turno expiró o fue cerrado. Abre turno
+   de nuevo." y vuelve a la pantalla de apertura de turno, no un error genérico.
+9. **Given** el código tras esta historia, **When** se hace `grep -rn "id_operador" backend/rasero/api/`
+   sobre los cuerpos de escritura sujetos a rol, **Then** ninguno declara `id_operador` /
+   `id_operador_solicitante` como campo del cuerpo para autorización.
+
+---
+
 ### Edge Cases
 
 - **Peso cero o negativo en báscula**: un renglón de granel con cantidad menor o igual a cero se
@@ -414,6 +476,24 @@ selector de sucursal, la pestaña de gestión de operadores, y puede crear/edita
 - **Frontend que oculta una opción y backend que igual la recibe**: defensa en profundidad. Que
   el nav no ofrezca una acción no exime al backend de rechazarla con `{codigo, mensaje}` si
   llega por API directa.
+- **Token expirado a mitad de una operación larga** (User Story 11): la petición que lo detecta
+  se rechaza con `401`; el frontend lleva al operador a abrir turno de nuevo. No hay refresco
+  silencioso de token —la sesión de turno no se renueva sola— pero 12 h cubren cualquier turno
+  real de caja con margen.
+- **Turno cerrado por otro proceso mientras el token sigue "vivo" por tiempo** (User Story 11):
+  la siguiente petición con ese token se rechaza con `401 sesion_invalida`; la invalidación por
+  cierre gana sobre la validez por tiempo.
+- **Operador desactivado mientras su turno sigue abierto** (User Story 11): su token se rechaza
+  de inmediato en la siguiente petición (`401`), sin esperar a `exp` ni al cierre de turno.
+  Criterio conservador: quitarle el acceso a un operador desactivado no puede depender de que
+  alguien cierre su turno.
+- **`id_operador` en el cuerpo distinto del operador del token** (User Story 11): el backend
+  **ignora** el del cuerpo por completo; no compara, no rechaza por discrepancia. Una sola
+  fuente de verdad. El campo se retira de esos cuerpos.
+- **Petición a un endpoint que hoy no verifica identidad** (entradas de inventario, traspasos,
+  conteos, sincronización, la mayoría de precios/pronóstico/promociones): fuera del alcance de
+  User Story 11. Siguen aceptando peticiones sin token, igual que hoy. Se anotan como candidatos
+  a una historia futura de identidad de sesión ampliada.
 
 ## Requirements *(mandatory)*
 
@@ -630,9 +710,51 @@ enmienda constitucional v2.3.0)**
   PROHIBIDO.
 - **FR-063**: La edición de `cliente` NO tiene restricción de rol y esta historia NO la
   introduce: cualquier `cajero` puede editarla (decisión explícita ya documentada).
-- **FR-064**: Esta historia es de **autorización**, no de autenticación. NO introduce JWT, sesión
-  de servidor ni ningún mecanismo de autenticación nuevo; `id_operador` sigue viajando explícito
-  y el PIN + hash (FR-006) no cambia.
+- **FR-064**: La User Story 10 es de **autorización de rol**, no de autenticación. El PIN + hash
+  (FR-006) no cambia. *(La resolución de identidad de sesión que US10 dejaba en el `id_operador`
+  del cuerpo la corrige la User Story 11 — ver FR-065.)*
+
+**Identidad de sesión de turno (User Story 11 — Principio VI, sub-sección "Identidad de sesión",
+enmienda constitucional v2.4.0)**
+
+- **FR-065**: Al abrir turno (`POST /turnos`), y sólo tras validar el PIN (FR-005/FR-006), el
+  sistema DEBE emitir un token de sesión de turno y devolverlo en la respuesta. El token es un
+  JSON Web Token firmado con clave simétrica (HS256). Se emite un token por turno abierto.
+- **FR-066**: El token DEBE llevar exactamente estos claims: `id_operador`, `id_turno`, `rol` y
+  `exp` (expiración). El backend NUNCA DEBE usar el `rol` del claim para autorizar: `requiere_rol`
+  sigue resolviendo el rol real desde la tabla `operador` en cada verificación. El claim `rol`
+  existe sólo para la interfaz.
+- **FR-067**: Toda petición a un endpoint que hoy verifica rol (`requiere_rol` / `exige_rol`)
+  DEBE exigir el token en el header `Authorization: Bearer <token>`. La identidad del operador
+  DEBE derivarse EXCLUSIVAMENTE de ese token. El campo `id_operador` (o `id_operador_solicitante`)
+  del cuerpo de esas peticiones queda IGNORADO para autorización y DEBE retirarse del esquema del
+  cuerpo. NO se valida cruce cuerpo-vs-token: una sola fuente de verdad, el token.
+- **FR-068**: El backend DEBE rechazar con `401` toda petición sujeta a rol cuyo token: (a) falte
+  o tenga firma inválida o malformada — `{codigo: "sesion_invalida"}`; (b) haya expirado por
+  tiempo — `{codigo: "sesion_expirada"}`; (c) refiera un turno con `instante_cierre` no nulo —
+  `{codigo: "sesion_invalida"}`; (d) refiera un operador con `activo = false` —
+  `{codigo: "sesion_invalida"}`. Todos con mensaje orientado a la acción correctiva ("Tu turno
+  expiró o fue cerrado. Abre turno de nuevo."), sin traza técnica (Principio IV). Los códigos
+  `sesion_invalida` y `sesion_expirada` son nuevos y no colisionan con los de `errores.py`.
+- **FR-069**: El `exp` del token DEBE ser un tiempo fijo de 12 horas desde la emisión. NO hay
+  refresco ni renovación: al expirar, el operador abre turno de nuevo. El token NO se persiste en
+  ninguna tabla; la invalidación por cierre de turno se comprueba contra `turno.instante_cierre`,
+  que ya existe — sin tabla de revocación ni columna nueva.
+- **FR-070**: El frontend DEBE guardar el token en memoria, en el mismo estado donde ya vive el
+  turno abierto. Guardarlo en `localStorage`, `sessionStorage` o cualquier almacenamiento de
+  navegador está PROHIBIDO. Perderlo al recargar la página es correcto (igual que hoy se pierde
+  el turno). El cliente HTTP DEBE adjuntar el header `Authorization` automáticamente cuando hay
+  sesión activa; ninguna pantalla lo hace a mano.
+- **FR-071**: Ante un `401` de sesión (`sesion_invalida` / `sesion_expirada`) a mitad de sesión,
+  el frontend DEBE mostrar "Tu turno expiró o fue cerrado. Abre turno de nuevo." y volver a la
+  pantalla de apertura de turno — nunca el error genérico "Ocurrió un error".
+- **FR-072**: La clave de firma del token DEBE inyectarse por entorno (`JWT_SECRET_KEY`), con un
+  valor por defecto SÓLO para desarrollo, igual que `DATABASE_URL` en `configuracion.py`. Ningún
+  secreto real en el repositorio.
+- **FR-073**: Los endpoints que hoy NO verifican identidad alguna (entradas de inventario,
+  traspasos, conteos físicos, sincronización de operaciones pendientes, y la mayoría de
+  precios/pronóstico/promociones) quedan FUERA DEL ALCANCE de esta historia: no cambian y siguen
+  aceptando peticiones sin token. Se anotan como candidatos a una historia futura.
 
 ### Key Entities
 
@@ -663,10 +785,14 @@ misma especificación — ver "Dependencias Constitucionales":
 - **operador**: persona que ejecuta ventas y conteos, con su PIN. **Enmienda v2.3.0 (User Story
   10)**: gana `id_sucursal` (FK → `sucursal`, NOT NULL, uno-a-uno) y su booleano `es_encargado`
   se reemplaza por `rol` (ENUM cerrado `cajero` | `encargado` | `admin`). La autorización por rol
-  es un mecanismo central (`requiere_rol`), no un chequeo por servicio.
+  es un mecanismo central (`requiere_rol`), no un chequeo por servicio. **Enmienda v2.4.0 (User
+  Story 11)**: sin cambio de esquema — la identidad del operador en cada petición sujeta a rol se
+  deriva ahora de un token de sesión de turno, no del `id_operador` del cuerpo.
 - **turno**: periodo de trabajo de un operador en una caja y sucursal. **Enmienda v2.3.0**: para
   `cajero`/`encargado` la sucursal se resuelve a `operador.id_sucursal` (sin selector); `admin`
-  elige libremente.
+  elige libremente. **Enmienda v2.4.0 (User Story 11)**: la apertura devuelve además un `token`
+  de sesión (JWT firmado, no persistido); el `instante_cierre` que ya existe es lo que invalida
+  ese token al cerrarse el turno.
 - **traspaso**: operación que enlaza la salida en origen con la entrada en destino y es dueña de la
   mercancía en tránsito.
 - **conteo_fisico**: conteo programado y sus renglones contados, con la diferencia resultante.
@@ -720,10 +846,20 @@ detectadas al escribir `data-model.md` — ver "Dependencias Constitucionales":
 - **SC-014**: Un `cajero` no ve en ninguna pantalla —ni deshabilitada— una sola opción que
   requiera `encargado` o `admin`; un intento por API directa de cualquiera de esas acciones se
   rechaza con `{codigo, mensaje}`.
+- **SC-015**: Tras la User Story 11, enviar un `id_operador` de mayor rol en el cuerpo de una
+  acción sujeta a rol, autenticado con el token de un rol menor, se rechaza con `403` en el
+  100 % de los intentos: el cuerpo no tiene ningún efecto sobre la identidad resuelta. La prueba
+  de regresión que reproduce el hallazgo original de la auditoría pasa.
+- **SC-016**: El 100 % de las peticiones a endpoints sujetos a rol sin token válido (ausente,
+  firma inválida, expirado, turno cerrado, operador desactivado) se rechaza con `401` y un
+  `{codigo, mensaje}` orientado a la acción correctiva, sin traza técnica.
+- **SC-017**: `grep -rn "id_operador\b" backend/rasero/api/` no devuelve ningún campo de cuerpo
+  de escritura declarado para autorización, y la única fuente de identidad de operador en un
+  endpoint sujeto a rol es la dependency `operador_de_sesion`.
 
 ## Dependencias Constitucionales
 
-Esta especificación descansa sobre la constitución del proyecto (**v2.3.0**, versión vigente) y
+Esta especificación descansa sobre la constitución del proyecto (**v2.4.0**, versión vigente) y
 hereda de ella sin repetirlas: la precisión monetaria exacta, el tratamiento del tiempo por
 sucursal, la regla de reconciliación offline, la obligación de trazabilidad y la prohibición de
 decisiones automáticas de precio o reposición.
@@ -732,6 +868,11 @@ La enmienda **v2.3.0** (Principio VI, "Autorización y Roles") cambia el **esque
 entidad `operador` de este módulo: gana `id_sucursal` (FK → `sucursal`, NOT NULL, uno-a-uno) y
 su columna booleana `es_encargado` se retira y se reemplaza por `rol` (ENUM cerrado
 `cajero` | `encargado` | `admin`). El conteo de entidades de 001 no cambia (sigue en 20). La
+enmienda **v2.4.0** amplía el Principio VI con la sub-sección "Identidad de sesión" (token JWT
+de turno emitido en `POST /turnos`; el `id_operador` del cuerpo queda deprecado para
+autorización) — **sin** cambio de esquema: `operador` y `turno` no ganan ni pierden columnas y
+la invalidación por cierre de turno reutiliza `turno.instante_cierre`. Esa capacidad se
+especifica como **User Story 11** de este módulo. La
 capacidad de negocio que ejerce ese cambio —autorización centralizada, restricción de sucursal
 en apertura de turno, gestión de operadores admin-only— se especifica como **User Story 10** de
 este módulo (ver más abajo), ya que `operador` es entidad de 001.
@@ -786,6 +927,13 @@ Lo resuelto, para trazabilidad de la revisión:
   concreta; las cifras por categoría las define el negocio al cargar el catálogo.
 - **PIN de cuatro dígitos**: se asume que no hay bloqueo por intentos fallidos ni caducidad de PIN,
   coherente con que la autenticación completa está fuera de alcance.
+- **Token de sesión de turno** (User Story 11, decidido): JWT simétrico (HS256, librería `pyjwt`),
+  no asimétrico ni OAuth — es una aplicación de un solo servidor, no un sistema multi-tenant. Sin
+  refresco: el `exp` de 12 h cubre cualquier turno real y, al expirar, se abre turno de nuevo. La
+  invalidación por cierre de turno se resuelve contra `turno.instante_cierre` (blocklist mínima
+  sobre estado ya existente), no con una tabla nueva. Un operador desactivado a mitad de turno
+  pierde el acceso de inmediato (criterio conservador). Los endpoints que hoy no verifican
+  identidad quedan fuera de alcance.
 - **Precio de venta**: el precio aplicado a un renglón es el precio vigente de la sucursal si esa
   sucursal declaró un override, y si no, el precio base del producto. El sistema admite que el
   precio difiera por sucursal —los competidores de Quevedo Centro no son los de Buena Fe, y un

@@ -20,10 +20,13 @@ propiedad, y ambas ya fueron incorporadas por enmienda:
   haría imposible responder a la presión competitiva local.
 
 **No hay discrepancia pendiente**: las 20 entidades de este documento coinciden con la tabla
-vigente (constitución v2.3.0). La enmienda **v2.3.0** cambió el **esquema** de `operador` —gana
+vigente (constitución v2.4.0). La enmienda **v2.3.0** cambió el **esquema** de `operador` —gana
 `id_sucursal` (FK → `sucursal`, NOT NULL) y su booleano `es_encargado` se reemplaza por `rol`
-(ENUM `cajero` | `encargado` | `admin`)— sin alterar la lista ni el conteo (sigue en 20). Ver la
-sección `operador` más abajo y la User Story 10 de `spec.md`.
+(ENUM `cajero` | `encargado` | `admin`)— sin alterar la lista ni el conteo (sigue en 20). La
+enmienda **v2.4.0** ("Identidad de sesión" del Principio VI) NO cambia ningún esquema: `operador`
+y `turno` quedan igual y la invalidación del token de turno por cierre se lee de
+`turno.instante_cierre`, que ya existe. Ver la sección `operador` más abajo, la User Story 10 y
+la User Story 11 de `spec.md`.
 
 `traspaso` deliberadamente **no** tiene tabla de renglones: sus líneas son los propios movimientos
 de inventario que lo referencian, lo que evita una segunda entidad nueva.
@@ -122,17 +125,26 @@ Catalogada aquí; usada por `003-precios-margenes` para sugerir colocación.
 | `activo` | `BOOLEAN NOT NULL DEFAULT TRUE` | |
 
 *Autorización* (Principio VI, enmienda **v2.3.0**): la verificación de rol es un mecanismo
-central —`requiere_rol(sesion, id_operador, rol_minimo)` en `backend/rasero/seguridad.py` y su
-dependency de FastAPI—, nunca duplicada por servicio. `cajero` es el nivel base; `encargado`
-añade administración de maestros, terminales y cobertura de pago; `admin` añade, en exclusiva,
-la gestión de operadores (alta / edición de rol / desactivación / asignación de sucursal).
-Ningún `encargado` asciende a otro operador. La edición de `cliente` sigue sin restricción de
-rol.
+central —`requiere_rol(operador, rol_minimo)` en `backend/rasero/seguridad.py` y su dependency
+`exige_rol(rol_minimo)` de FastAPI—, nunca duplicada por servicio. `cajero` es el nivel base;
+`encargado` añade administración de maestros, terminales y cobertura de pago; `admin` añade, en
+exclusiva, la gestión de operadores (alta / edición de rol / desactivación / asignación de
+sucursal). Ningún `encargado` asciende a otro operador. La edición de `cliente` sigue sin
+restricción de rol.
 
-*Autenticación* (sin cambio, FR-006): sin recuperación de PIN por correo, sin expiración de
-sesión, `id_operador` viaja explícito; no hay JWT ni sesión de servidor. El control de acceso a
-pantallas SÍ existe ahora (enmienda v2.3.0): la navegación **oculta** —no deshabilita— lo que el
-rol activo no puede usar.
+*Identidad de sesión* (Principio VI, enmienda **v2.4.0** — User Story 11): al abrir turno, tras
+validar el PIN, el backend emite un JWT de sesión de turno (HS256, claims `id_operador`,
+`id_turno`, `rol`, `exp` a 12 h). Viaja en `Authorization: Bearer <token>`. La dependency
+`operador_de_sesion` lo verifica en cada petición sujeta a rol: firma, expiración, turno abierto
+(`turno.instante_cierre IS NULL`) y `operador.activo`. El `id_operador` del cuerpo queda
+DEPRECADO para autorización y se retira de los schemas de escritura sujetos a rol. **Sin cambio
+de esquema**: no hay tabla de token ni columna de revocación; el cierre de turno ya deja
+`instante_cierre`.
+
+*Autenticación* (sin cambio, FR-006): el PIN + hash SHA-256 sigue siendo la única credencial,
+presentada al abrir turno. Sin recuperación de PIN por correo, sin bloqueo por intentos. El
+control de acceso a pantallas (enmienda v2.3.0): la navegación **oculta** —no deshabilita— lo
+que el rol activo no puede usar.
 
 *Migración de datos* (Alembic, con comentario explícito de la regla de conversión):
 `es_encargado = FALSE → rol = 'cajero'`, `es_encargado = TRUE → rol = 'encargado'`. Ningún
@@ -149,9 +161,12 @@ documentado en la propia migración.
 | `id_sucursal` | `INTEGER` FK → `sucursal` | Para `cajero`/`encargado` se resuelve automáticamente a `operador.id_sucursal` (sin selector). Para `admin`, selector libre. El backend rechaza abrir turno en una sucursal distinta a la asignada para `cajero`/`encargado` (`{codigo: "turno_sucursal_no_asignada", mensaje: "Este operador está asignado a [sucursal], no puede abrir turno en otra sucursal."}`) |
 | `caja` | `TEXT NOT NULL` | Identificador de la caja física |
 | `instante_apertura` | `TIMESTAMPTZ NOT NULL` | |
-| `instante_cierre` | `TIMESTAMPTZ NULL` | Nulo ⇒ turno en curso |
+| `instante_cierre` | `TIMESTAMPTZ NULL` | Nulo ⇒ turno en curso. **Enmienda v2.4.0**: además de marcar el fin del turno, es lo que invalida el token de sesión de turno emitido en la apertura — un token cuyo `id_turno` tiene `instante_cierre` no nulo se rechaza aunque no haya expirado por tiempo. No se añade columna de revocación |
 
-*Estado*: `abierto` (cierre nulo) → `cerrado`. Un turno cerrado no vuelve a abrirse.
+*Estado*: `abierto` (cierre nulo) → `cerrado`. Un turno cerrado no vuelve a abrirse. La apertura
+(`POST /turnos`) devuelve, además del turno, el `token` de sesión (enmienda v2.4.0, User Story
+11): un JWT firmado (HS256) con claims `id_operador`, `id_turno`, `rol`, `exp` (12 h). No se
+persiste.
 
 ---
 
@@ -282,7 +297,10 @@ sea estrictamente positiva. Es lo que hace imposible un renglón de peso cero o 
 
 *Regla de autorización* (FR-049): si la venta pertenece al turno en curso del propio operador, puede
 anularla él. Si el turno está cerrado, requiere rol `encargado` o superior (`requiere_rol`,
-enmienda v2.3.0; antes era `operador.es_encargado = TRUE`).
+enmienda v2.3.0; antes era `operador.es_encargado = TRUE`). **Enmienda v2.4.0**: el operador que
+anula se toma del token de sesión de turno (`operador_de_sesion`), no del `id_operador` del
+cuerpo, que se retira de `POST /ventas/{id}/anulacion`. La `anulacion_venta` sigue guardando ese
+`id_operador` como atribución de auditoría — ahora la fuente es el token.
 La venta anulada **permanece visible**, nunca se borra. Cada renglón genera un movimiento
 `entrada_anulacion` que repone la existencia en el mismo lote del que salió.
 
