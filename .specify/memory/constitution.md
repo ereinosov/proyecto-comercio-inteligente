@@ -1,6 +1,61 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.4.0 → 2.5.0
+Tipo de cambio: MENOR — ampliación material de una guía existente. Añade al
+Principio VI ("Autorización y Roles") una sub-sección nueva, "Autorización de
+pantalla", con la tabla de rol mínimo por pantalla. NO redefine ni elimina
+ninguna regla: los tres roles, la jerarquía acumulativa, `requiere_rol` /
+`exige_rol`, "Ocultar, no deshabilitar", la identidad de sesión y la excepción
+de `cliente` quedan exactamente como estaban.
+
+Motivo: una auditoría encontró que "Ocultar, no deshabilitar" y "Autorización
+centralizada, nunca duplicada" sólo se aplicaban a "Administración" (y
+parcialmente a algunos endpoints de `007`). Las otras 13 pantallas del nav
+—Traspasos, Capital, Precios, Competencia, Pronóstico, Clientes, Promociones,
+Caja y fraude, Terminales, Pagos/Cobertura— eran visibles y llamables por
+cualquier `cajero`, contra este mismo principio. La constitución YA asignaba a
+`encargado` "las terminales de pago y la cobertura de medios de pago"; eso
+tampoco se cumplía en el nav. Esta enmienda no crea una regla, cierra el
+incumplimiento tácito (que la propia Gobernanza prohíbe mantener).
+
+Contenido añadido: sub-sección "Autorización de pantalla" en el Principio VI —
+tabla cajero/encargado/admin → pantallas; la nota de que la LECTURA de `cliente`
+puede quedar en `cajero` si Venta la comparte; la nota de que los endpoints de
+sólo-lectura que un flujo de cajero necesita (cupones/ofertas de recompra de
+`AplicarPromocionVenta`, sucursales, productos, existencias) NO se cierran; y que
+`Arqueo` sale del grupo de nav "Caja y seguridad" y va junto a `Venta`.
+
+Principios modificados: ninguno redefinido (Principio VI ampliado, aditivo).
+Secciones añadidas: sub-sección "Autorización de pantalla" dentro del Principio VI.
+Secciones eliminadas: ninguna.
+Cambio de esquema: ninguno. El conteo de entidades de 001 sigue en 20.
+
+Puerta de sincronización de enmiendas (v2.2.0): la enmienda añade texto a un
+principio, pero NO cambia el significado de ninguna regla ya escrita ni la tabla
+de Propiedad de Datos — es enforcement de un principio existente. Por eso NO se
+barren las citas "v2.4.0" de 002–007: nada de lo que esos módulos especifican
+cambia. El único artefacto materialmente afectado es `001-core-ventas-inventario`
+(el nav vive ahí, y la asignación pantalla→rol se implementa en sus routers y en
+`App.tsx`); 001 registra la enmienda en sus tareas, sin reabrir su conteo
+histórico. `DESIGN.md` NO cambia: la navegación por rol aplica La Regla del Grupo
+de Navegación y el patrón del atajo "+ Crear producto nuevo" ya existentes, sin
+añadir ni redefinir ninguna regla de diseño.
+
+Historial de versiones (resumen):
+  - 2.5.0 (2026-09-07) — esta enmienda: sub-sección "Autorización de pantalla"
+    del Principio VI. Tabla de rol mínimo por pantalla (cajero: Venta, Conteo,
+    Entradas, Arqueo; encargado: todo lo táctico/gerencial incl. Reportes de la
+    spec 008; admin: gestión de operadores y datos maestros). Cierra un
+    incumplimiento de "Ocultar, no deshabilitar" y "Autorización centralizada".
+    Sin cambio de esquema. Se implementa en 001 (routers + `App.tsx`).
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.3.0 → 2.4.0
 Tipo de cambio: MENOR — amplía el Principio VI ("Autorización y Roles") con una
 sub-sección nueva, "Identidad de sesión". No elimina ni redefine ninguna regla de
@@ -691,6 +746,34 @@ identidad se deriva de un token de sesión de turno (ver "Identidad de sesión" 
 - **Excepción explícita.** La edición de `cliente` NO tiene restricción de rol: cualquier
   `cajero` puede editarla. Esta excepción ya está documentada y se mantiene.
 
+**Autorización de pantalla** (enmienda v2.5.0). No introduce una regla nueva: cierra un
+incumplimiento de "Ocultar, no deshabilitar" y de "Autorización centralizada". Hasta v2.4.0
+sólo "Administración" (y, parcialmente, algunos endpoints de pagos) filtraban por rol; las
+demás pantallas del nav eran visibles y llamables por cualquier `cajero`, contra este mismo
+principio. El rol MÍNIMO por pantalla es:
+
+| Rol mínimo | Pantallas |
+|---|---|
+| `cajero` (nivel base) | Venta · Conteo físico · Entradas de inventario · Arqueo de caja (del propio turno) · Consultas no atendidas (dentro de Venta) |
+| `encargado` | Traspasos · Capital inmovilizado · Precios · Competencia · Pronóstico · Promociones · Caja y fraude (mermas, anomalías, indicadores por operador) · Terminales de pago · Pagos / Cobertura de medios · **Clientes** (pantalla de análisis: valor, fuga, segmentos) · **Reportes e inteligencia** (spec `008`, capa táctica/estratégica) |
+| `admin` (en exclusiva) | Administración: gestión de operadores, alta/edición de datos maestros |
+
+- **Alta y edición de `cliente`.** La "Excepción explícita" de arriba NO cambia: el alta y la
+  edición de un `cliente` siguen SIN restricción de rol (un `cajero` las hace desde
+  `IdentificarCliente` en Venta). Lo que es de rol `encargado` es la PANTALLA de análisis de
+  clientes (puntuación de valor, señal de fuga, gráfico de segmentos) y sus lecturas agregadas
+  (`/clientes/fuga/resumen`, listado ordenado por valor). La lectura puntual de un cliente y su
+  búsqueda por nombre —que `IdentificarCliente` de Venta usa— quedan en el nivel base.
+- **Sólo-lectura que el cajero necesita.** Los endpoints de lectura que consume un flujo de
+  `cajero` —cupones y ofertas de recompra que `AplicarPromocionVenta` evalúa en la venta,
+  sucursales y productos para poblar selectores, existencias— NO se cierran: pertenecen al
+  nivel base aunque su pantalla de gestión sea de `encargado`.
+- **Arqueo junto a Venta.** `Arqueo` sale del grupo de nav "Caja y seguridad" (que queda de
+  puras pantallas de `encargado`) y se ofrece junto a `Venta`, siempre visible para un
+  `cajero`: es una tarea diaria de caja, no de análisis.
+- **Doble capa.** El nav oculta la opción (frontend, un solo hook) Y el backend rechaza el
+  endpoint (un solo mecanismo, `exige_rol`). Ninguna capa exime a la otra.
+
 **Identidad de sesión** (enmienda v2.4.0). La identidad del operador que ejecuta una petición
 DEBE derivarse de una sesión verificable, nunca de un dato que el cliente envía sin prueba.
 
@@ -1045,4 +1128,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.4.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-06
+**Versión**: 2.5.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-07
