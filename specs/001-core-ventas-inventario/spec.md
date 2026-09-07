@@ -739,7 +739,10 @@ enmienda constitucional v2.4.0)**
 - **FR-069**: El `exp` del token DEBE ser un tiempo fijo de 12 horas desde la emisión. NO hay
   refresco ni renovación: al expirar, el operador abre turno de nuevo. El token NO se persiste en
   ninguna tabla; la invalidación por cierre de turno se comprueba contra `turno.instante_cierre`,
-  que ya existe — sin tabla de revocación ni columna nueva.
+  que ya existe — sin tabla de revocación ni columna nueva. `POST /turnos/{id}/cierre` NO exige
+  token: no verifica rol y, además, es la propia acción que invalida el token, así que exigírselo
+  sería circular (un operador con el token expirado no podría cerrar su turno). El cierre sólo
+  deja `instante_cierre`; las peticiones posteriores con ese token son las que se rechazan.
 - **FR-070**: El frontend DEBE guardar el token en memoria, en el mismo estado donde ya vive el
   turno abierto. Guardarlo en `localStorage`, `sessionStorage` o cualquier almacenamiento de
   navegador está PROHIBIDO. Perderlo al recargar la página es correcto (igual que hoy se pierde
