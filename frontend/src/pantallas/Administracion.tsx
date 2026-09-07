@@ -98,6 +98,14 @@ const VISTAS: {
       { clave: "precio_vigente", etiqueta: "Precio base de venta", tipo: "numero" },
       { clave: "es_granel", etiqueta: "Se vende a peso (granel)", tipo: "bool" },
       { clave: "lleva_caducidad", etiqueta: "Lleva fecha de caducidad", tipo: "bool" },
+      {
+        // US12: URL externa de la imagen para el catálogo de Venta. Opcional; vacía = sin foto
+        // (el catálogo cae al ícono de familia de categoría). El backend valida que sea http(s).
+        clave: "url_imagen",
+        etiqueta: "URL de imagen para el catálogo (opcional, http/https)",
+        tipo: "texto",
+        opcional: true,
+      },
     ],
   },
   {
