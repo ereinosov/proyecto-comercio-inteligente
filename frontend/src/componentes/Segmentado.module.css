@@ -1,0 +1,53 @@
+/* Segmentado (DESIGN.md v1.8.0). Pestañas internas: subrayado en la activa, sin fondo relleno.
+   Medidas de la escala de tokens.css. */
+
+.segmentado {
+  display: flex;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.activa,
+.inactiva {
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  line-height: 1;
+}
+
+.activa {
+  color: var(--color-tinta);
+  border-bottom-color: var(--color-tinta);
+  font-weight: var(--peso-fuerte);
+}
+
+.inactiva {
+  color: var(--color-tinta-suave);
+}
+
+.inactiva:hover {
+  color: var(--color-tinta);
+}
+
+/* ── Registro: tipografía y densidad ───────────────────────────────────────────────────────
+   Operación (registro de caja/inventario): denso, sans. Análisis: más aire, serif. */
+.operacion {
+  gap: var(--espacio-1);
+}
+.operacion .activa,
+.operacion .inactiva {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  padding: var(--espacio-2) var(--espacio-1);
+}
+
+.analisis {
+  gap: var(--espacio-4);
+}
+.analisis .activa,
+.analisis .inactiva {
+  font-family: var(--tipografia-analisis);
+  font-size: var(--texto-base);
+  padding: var(--espacio-1) 0;
+}
