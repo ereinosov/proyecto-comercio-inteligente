@@ -1,34 +1,35 @@
-/* Catálogo de productos en grid (US12). Registro de Operación: radio 2px, IBM Plex Sans, sin
-   sombra. Ningún elemento usa Verde Rasero (La Regla de la Sola Voz). Medidas de tokens.css. */
+/* Catálogo de productos en grid (US12). Apoyo, no protagonista: buscador + chips arriba, ~6
+   tarjetas compactas por página, paginador anclado abajo. Registro de Operación (radio 2px,
+   IBM Plex Sans), sin sombra. Ningún elemento usa Verde Rasero (La Regla de la Sola Voz). */
 
 .catalogo {
+  flex: 1;
+  min-height: 0;
   display: flex;
   flex-direction: column;
   gap: var(--espacio-3);
-  min-height: 0;
 }
 
-.titulo {
-  margin: 0;
-  font-family: var(--tipografia-operacion);
-  font-size: var(--texto-md);
-  font-weight: var(--peso-fuerte);
-  color: var(--color-tinta);
+/* Buscador + chips: fijos arriba, no scrollean con las tarjetas. */
+.filtros {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
 }
 
-/* Chips de categoría */
 .chips {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--espacio-2);
+  gap: var(--espacio-1);
 }
 
 .chip,
 .chipActivo {
   font-family: var(--tipografia-operacion);
-  font-size: var(--texto-sm);
+  font-size: var(--texto-xs);
   min-height: var(--alto-control-sm);
-  padding: 0 var(--espacio-3);
+  padding: 0 var(--espacio-2);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
   background: var(--color-superficie-alta);
@@ -47,88 +48,71 @@
   font-weight: var(--peso-fuerte);
 }
 
-/* Grilla de tarjetas: se adapta al ancho de la columna. */
+/* Grilla de tarjetas: sólo esta zona scrollea si hiciera falta. Con 6 por página no suele. */
 .grid {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
   list-style: none;
   margin: 0;
   padding: 0;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-  gap: var(--espacio-3);
+  grid-template-columns: repeat(auto-fill, minmax(106px, 1fr));
+  grid-auto-rows: min-content;
+  gap: var(--espacio-2);
 }
 
 .tarjeta {
   display: flex;
   flex-direction: column;
-  width: 100%;
-  text-align: left;
-  padding: 0;
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
   overflow: hidden;
-  cursor: pointer;
-  font: inherit;
-  color: inherit;
-  transition: border-color 120ms ease;
-}
-
-.tarjeta:hover {
-  border-color: var(--color-tinta);
 }
 
 .cuerpo {
   display: flex;
   flex-direction: column;
-  gap: var(--espacio-1);
-  padding: var(--espacio-2) var(--espacio-3) var(--espacio-3);
+  gap: 1px;
+  padding: var(--espacio-1) var(--espacio-2) var(--espacio-2);
 }
 
 .nombre {
   font-family: var(--tipografia-operacion);
-  font-size: var(--texto-sm);
+  font-size: var(--texto-xs);
   font-weight: var(--peso-medio);
   color: var(--color-tinta);
   line-height: var(--lh-ajustado);
-  /* Dos líneas máximo, el resto con elipsis — la altura de la tarjeta no baila. */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   overflow: hidden;
-}
-
-.codigo {
-  font-family: var(--tipografia-operacion);
-  font-variant-numeric: tabular-nums;
-  font-size: var(--texto-xs);
-  color: var(--color-tinta-suave);
+  text-overflow: ellipsis;
 }
 
 .filaPrecio {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: var(--espacio-2);
+  gap: var(--espacio-1);
   margin-top: var(--espacio-1);
 }
 
 .precio {
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: var(--texto-base);
+  font-size: var(--texto-sm);
   font-weight: var(--peso-fuerte);
   color: var(--color-tinta);
 }
 
 .porKg {
   font-weight: var(--peso-normal);
-  font-size: var(--texto-xs);
+  font-size: 11px;
   color: var(--color-tinta-suave);
 }
 
-/* Afordancia de "agregar": contorno neutro, NUNCA Verde Rasero (La Regla de la Sola Voz).
-   No es un botón aparte —la tarjeta entera dispara la acción— sino la señal visual de que se
-   puede agregar de un toque. */
+/* El único disparador de "agregar": contorno en el Acento Secundario, NUNCA Verde Rasero
+   (La Regla de la Sola Voz). Hacer click en el resto de la tarjeta no agrega nada. */
 .mas {
   display: inline-flex;
   align-items: center;
@@ -138,11 +122,27 @@
   flex-shrink: 0;
   border: 1px solid var(--color-acento-secundario);
   border-radius: var(--radio-operacion);
+  background: transparent;
   color: var(--color-acento-secundario);
   font-size: var(--texto-md);
   line-height: 1;
+  cursor: pointer;
 }
 
-.tarjeta:hover .mas {
+.mas:hover {
   background: var(--color-superficie-base);
+}
+
+.mas:focus-visible {
+  outline: var(--foco-anillo);
+  outline-offset: var(--foco-separacion);
+}
+
+/* Paginador anclado al pie de la columna del catálogo. */
+.pie {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-borde);
+  padding-top: var(--espacio-2);
+  display: flex;
+  justify-content: center;
 }

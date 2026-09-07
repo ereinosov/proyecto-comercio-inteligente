@@ -23,9 +23,9 @@ interface Props {
   nombreCategoria: string | null | undefined;
   /** Nombre del producto, para el `alt` de la imagen. */
   nombreProducto: string;
-  /** Lado del recuadro en px (recuadro cuadrado). Ignorado si `bloque`. */
+  /** Lado del recuadro cuadrado en px. Ignorado si `bloque`. */
   tamano?: number;
-  /** Ocupa el ancho de su contenedor con relación de aspecto 4/3 (tarjeta del catálogo). */
+  /** Ocupa el ancho de su contenedor con relación de aspecto 16/10 (tarjeta del catálogo). */
   bloque?: boolean;
 }
 
@@ -45,7 +45,7 @@ export function ImagenProducto({
   }, [urlImagen]);
 
   const mostrarIcono = !urlImagen || fallo;
-  const ladoGlifo = bloque ? 34 : Math.round(tamano * 0.55);
+  const ladoGlifo = bloque ? 30 : Math.round(tamano * 0.55);
 
   return (
     <span

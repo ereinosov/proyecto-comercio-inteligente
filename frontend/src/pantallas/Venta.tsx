@@ -15,7 +15,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarCategorias, listarProductos, type Categoria, type Producto } from "../servicios/productos";
-import { listarSucursales } from "../servicios/sucursales";
 import { ImagenProducto } from "../componentes/ImagenProducto";
 import { SelectorProducto } from "../componentes/SelectorProducto";
 import { CrearProductoModal } from "../componentes/CrearProductoModal";
@@ -105,17 +104,10 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   const [consultando, setConsultando] = useState(false);
   const [enviandoConsulta, setEnviandoConsulta] = useState(false);
   const [consultaAnotada, setConsultaAnotada] = useState<string | null>(null);
-  const [nombreSucursal, setNombreSucursal] = useState<string>("");
 
   useEffect(() => {
     listarProductos(turno.id_sucursal).then(setProductos);
     listarCategorias().then(setCategorias).catch(() => setCategorias([]));
-    listarSucursales()
-      .then((lista) => {
-        const suc = lista.find((s) => s.id_sucursal === turno.id_sucursal);
-        setNombreSucursal(suc?.nombre ?? `Sucursal ${turno.id_sucursal}`);
-      })
-      .catch(() => setNombreSucursal(`Sucursal ${turno.id_sucursal}`));
   }, [turno.id_sucursal]);
 
   const productoNuevo = productos.find((p) => p.id_producto === idProductoNuevo);
@@ -150,22 +142,43 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   // formulario de fila expansible (buscador `SelectorProducto`) y el catálogo en grid (US12).
   // Un mismo producto, cantidad y cálculo de importe, no importa por dónde se agregó.
   function agregarRenglon(producto: Producto, cantidad: { unidades: number } | { gramos: number }) {
-    setRenglones((prev) => [
-      ...prev,
-      "unidades" in cantidad
-        ? {
+    setRenglones((prev) => {
+      // Un producto por unidad que ya está en el ticket suma a la cantidad de esa fila, no
+      // crea una segunda. A granel siempre es fila aparte: cada pesada es distinta.
+      if ("unidades" in cantidad) {
+        const i = prev.findIndex(
+          (r) => r.producto.id_producto === producto.id_producto && r.cantidadUnidades !== undefined,
+        );
+        if (i !== -1) {
+          const nueva = (prev[i].cantidadUnidades ?? 0) + cantidad.unidades;
+          const copia = [...prev];
+          copia[i] = {
+            ...prev[i],
+            cantidadUnidades: nueva,
+            importeEstimado: importeEstimado(producto.precio_efectivo, nueva),
+          };
+          return copia;
+        }
+        return [
+          ...prev,
+          {
             idLocal: crypto.randomUUID(),
             producto,
             cantidadUnidades: cantidad.unidades,
             importeEstimado: importeEstimado(producto.precio_efectivo, cantidad.unidades),
-          }
-        : {
-            idLocal: crypto.randomUUID(),
-            producto,
-            cantidadGramos: cantidad.gramos,
-            importeEstimado: importeEstimado(producto.precio_efectivo, cantidad.gramos / 1000),
           },
-    ]);
+        ];
+      }
+      return [
+        ...prev,
+        {
+          idLocal: crypto.randomUUID(),
+          producto,
+          cantidadGramos: cantidad.gramos,
+          importeEstimado: importeEstimado(producto.precio_efectivo, cantidad.gramos / 1000),
+        },
+      ];
+    });
   }
 
   function confirmarFila() {
@@ -358,7 +371,6 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
       <EncabezadoPantalla
         titulo="Venta"
         registro="operacion"
-        contexto={nombreSucursal ? `${nombreSucursal} · ${turno.caja}` : turno.caja}
         acciones={
           <>
             <IdentificarCliente
@@ -415,6 +427,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
 
       <div className={estilos.cuerpoDoble}>
         <section className={estilos.columnaCatalogo} aria-label="Catálogo de productos">
+          <h2 className={estilos.tituloColumna}>Productos</h2>
           <CatalogoProductos
             productos={productos}
             categorias={categorias}
@@ -423,7 +436,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
         </section>
 
         <section className={estilos.columnaTicket} aria-label="Ticket de venta">
-          <h2 className={estilos.tituloTicket}>Ticket de venta</h2>
+          <h2 className={estilos.tituloColumna}>Ticket de venta</h2>
           <table className={estilos.tabla}>
           <thead>
             <tr>
@@ -487,23 +500,16 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
               <tr className={estilos.filaExpandida}>
                 <td colSpan={5}>
                   <div className={estilos.formularioFila}>
-                    <div className={estilos.campoFila}>
-                      <label>Producto</label>
-                      <SelectorProducto
-                        idSucursal={turno.id_sucursal}
-                        autoAbrir
-                        seleccionado={productoNuevo ?? null}
-                        onSeleccionar={(p) => setIdProductoNuevo(p?.id_producto ?? "")}
-                      />
-                      {esEncargadoOMas() && (
-                        <Boton
-                          variante="secundaria"
-                          tamano="sm"
-                          onClick={() => setCreandoProducto(true)}
-                        >
-                          + Crear producto nuevo
-                        </Boton>
-                      )}
+                    <div className={`${estilos.campoFila} ${estilos.campoProducto}`}>
+                      <span className={estilos.etiquetaCampo}>Producto</span>
+                      <span className={estilos.slotProducto}>
+                        <SelectorProducto
+                          idSucursal={turno.id_sucursal}
+                          autoAbrir
+                          seleccionado={productoNuevo ?? null}
+                          onSeleccionar={(p) => setIdProductoNuevo(p?.id_producto ?? "")}
+                        />
+                      </span>
                     </div>
 
                     {productoNuevo?.es_granel ? (
@@ -520,12 +526,17 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
                       </Campo>
                     )}
 
-                    <Boton variante="primaria" tamano="sm" onClick={confirmarFila}>
+                    <Boton variante="primaria" onClick={confirmarFila}>
                       Agregar
                     </Boton>
-                    <Boton variante="neutra" tamano="sm" onClick={cancelarFila}>
+                    <Boton variante="neutra" onClick={cancelarFila}>
                       Cancelar
                     </Boton>
+                    {esEncargadoOMas() && (
+                      <Boton variante="secundaria" onClick={() => setCreandoProducto(true)}>
+                        + Crear producto nuevo
+                      </Boton>
+                    )}
                   </div>
                 </td>
               </tr>

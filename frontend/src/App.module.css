@@ -1,8 +1,9 @@
 /* Contenedor de navegación de la aplicación. Elemento de estructura, no de un registro:
    sin sombra (La Regla del Filo). La Regla del Grupo de Navegación (DESIGN.md v1.2.0):
    "Venta" y "Administración" sueltas; el resto en grupos desplegables. La Regla de la Marca
-   Persistente (v1.4.0): el nav lleva SOLO el wordmark de Rasero; el ícono del comercio vive
-   en el pie.
+   Persistente (v1.7.0): wordmark de Rasero al extremo izquierdo (la herramienta); ícono del
+   comercio + sucursal + caja + operador + rol agrupados al extremo derecho (dónde estoy /
+   quién soy). Sin footer.
 
    v1.5.0: medidas de la escala de tokens.css; el ítem de navegación activo se marca con el
    acento estructural de 2px en Verde Rasero (La Regla de la Sola Voz — uso de identidad, capa
@@ -39,28 +40,59 @@
   display: block;
 }
 
-/* Footer / barra de contexto persistente (La Regla de la Marca Persistente): franja delgada,
-   Superficie Base, borde superior estructural (La Regla del Filo — nunca sombra). Ícono del
-   comercio + "{sucursal} · {caja}" en Tinta Suave, en una sola línea a la izquierda. */
-.pie {
-  flex-shrink: 0;
+/* Bloque de contexto de sesión (La Regla de la Marca Persistente, v1.7.0): al extremo derecho
+   del nav —"dónde estoy / quién soy"—, agrupado y con separación real entre "lugar" (ícono del
+   comercio + sucursal + caja) y "operador" (nombre + rol). */
+.contexto {
+  margin-left: auto;
+  align-self: center;
   display: flex;
   align-items: center;
-  gap: var(--espacio-2);
-  padding: var(--espacio-2) var(--espacio-6);
-  background: var(--color-superficie-base);
-  border-top: 1px solid var(--color-borde-fuerte);
+  gap: var(--espacio-3);
+  padding-left: var(--espacio-4);
   font-family: var(--tipografia-operacion);
-  font-size: var(--texto-sm);
-  color: var(--color-tinta-suave);
 }
 
-.iconoComercioPie {
-  height: 20px;
-  width: 20px;
+.contextoIcono {
+  width: 24px;
+  height: 24px;
   display: block;
   flex-shrink: 0;
   border-radius: var(--radio-operacion);
+}
+
+.contextoGrupo {
+  display: flex;
+  flex-direction: column;
+  line-height: var(--lh-ajustado);
+}
+
+.contextoPrincipal {
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  color: var(--color-tinta);
+  white-space: nowrap;
+}
+
+.contextoSecundario {
+  font-size: 11px;
+  color: var(--color-tinta-suave);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.contextoRol {
+  font-size: 11px;
+  color: var(--color-tinta-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.contextoDivisor {
+  width: 1px;
+  height: 24px;
+  background: var(--color-borde-fuerte);
+  flex-shrink: 0;
 }
 
 /* ── Ítems del nav ───────────────────────────────────────────────────────────────────────── */
@@ -171,20 +203,10 @@
   font-weight: var(--peso-fuerte);
 }
 
-/* Operador con turno abierto: alineado a la derecha, Tinta Suave (La Regla del Grupo de
-   Navegación: "¿de quién es este turno?" sin abrir otra pantalla). */
-.operador {
-  margin-left: auto;
-  align-self: center;
-  font-family: var(--tipografia-operacion);
-  font-size: var(--texto-sm);
-  color: var(--color-tinta-suave);
-}
-
 .contenido {
   flex: 1;
   min-height: 0;
   /* El scrollbar aparece SOLO si la pantalla activa desborda el alto disponible
-     (viewport − nav − footer). */
+     (viewport − nav). */
   overflow-y: auto;
 }

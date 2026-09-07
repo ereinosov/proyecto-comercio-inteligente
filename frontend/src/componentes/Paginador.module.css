@@ -37,3 +37,42 @@
 .flecha:not(:disabled):hover {
   background: var(--color-superficie-base);
 }
+
+/* Variante numerada: cuadritos con el número de página. */
+.numeros {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+}
+
+.numero,
+.numeroActivo {
+  min-width: 24px;
+  height: 24px;
+  padding: 0 var(--espacio-1);
+  font-family: var(--tipografia-operacion);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  cursor: pointer;
+}
+
+.numero:hover {
+  color: var(--color-tinta);
+  background: var(--color-superficie-base);
+}
+
+.numeroActivo {
+  color: var(--color-tinta);
+  border-color: var(--color-tinta);
+  font-weight: var(--peso-fuerte);
+  cursor: default;
+}
+
+.elipsis {
+  color: var(--color-tinta-suave);
+  padding: 0 2px;
+}

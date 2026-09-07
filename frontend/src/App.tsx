@@ -228,7 +228,9 @@ export function App() {
   return (
     <div className={estilos.aplicacion}>
       <nav className={estilos.navegacion}>
-        {/* La Regla de la Marca Persistente (v1.4.0): el nav lleva SOLO el wordmark de Rasero. */}
+        {/* La Regla de la Marca Persistente (v1.7.0): la herramienta (wordmark Rasero) al
+            extremo izquierdo; el "dónde estoy / quién soy" (ícono del comercio + sucursal +
+            caja + operador + rol) agrupado al extremo derecho. Extremos opuestos, no compiten. */}
         <span className={estilos.marca}>
           <img
             className={estilos.marcaSistema}
@@ -275,12 +277,31 @@ export function App() {
           </>
         )}
 
-        {nombreOperador && (
-          <span className={estilos.operador}>
-            {nombreOperador}
-            {rol ? ` · ${rol}` : ""}
+        {/* Bloque de contexto de sesión, al extremo derecho del nav. */}
+        <div className={estilos.contexto}>
+          <img
+            className={estilos.contextoIcono}
+            src={ICONO_COMERCIO}
+            alt=""
+            width={24}
+            height={24}
+          />
+          <span className={estilos.contextoGrupo}>
+            <span className={estilos.contextoPrincipal}>
+              {nombreSucursal || `Sucursal ${turno.id_sucursal}`}
+            </span>
+            <span className={estilos.contextoSecundario}>{turno.caja}</span>
           </span>
-        )}
+          {nombreOperador && (
+            <>
+              <span className={estilos.contextoDivisor} aria-hidden="true" />
+              <span className={estilos.contextoGrupo}>
+                <span className={estilos.contextoPrincipal}>{nombreOperador}</span>
+                {rol && <span className={estilos.contextoRol}>{rol}</span>}
+              </span>
+            </>
+          )}
+        </div>
       </nav>
       <div className={estilos.contenido}>
         {pantalla === "venta" && (
@@ -309,18 +330,6 @@ export function App() {
           <Administracion rol={rol} />
         )}
       </div>
-      {/* Barra de contexto (La Regla de la Marca Persistente, v1.4.0): ícono del comercio +
-          "{sucursal} · {caja}" en una línea — "dónde estoy", no "qué software uso". */}
-      <footer className={estilos.pie}>
-        <img
-          className={estilos.iconoComercioPie}
-          src={ICONO_COMERCIO}
-          alt=""
-          width={20}
-          height={20}
-        />
-        <span>{nombreSucursal ? `${nombreSucursal} · ${turno.caja}` : turno.caja}</span>
-      </footer>
     </div>
   );
 }

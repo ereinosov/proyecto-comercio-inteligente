@@ -28,10 +28,14 @@
   overflow: hidden;
 }
 
+/* El catálogo es apoyo: ancho contenido y fijo. El ticket es el protagonista y toma el resto. */
 .columnaCatalogo {
-  flex: 1.4;
+  flex: 0 1 384px;
   min-width: 0;
-  overflow-y: auto;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
 }
 
 .columnaTicket {
@@ -45,12 +49,14 @@
   border-left: 1px solid var(--color-borde-fuerte);
 }
 
-.tituloTicket {
+.tituloColumna {
   margin: 0;
   font-family: var(--tipografia-operacion);
-  font-size: var(--texto-md);
+  font-size: var(--texto-sm);
   font-weight: var(--peso-fuerte);
-  color: var(--color-tinta);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-tinta-suave);
 }
 
 /* Bajo el breakpoint de dos columnas: catálogo y ticket se apilan y el cuerpo scrollea entero
@@ -204,6 +210,8 @@
   padding: var(--espacio-3);
 }
 
+/* Fila de "agregar producto": el selector de Producto, el campo Cantidad y los botones
+   alineados por su base — misma línea de acción. */
 .formularioFila {
   display: flex;
   flex-wrap: wrap;
@@ -217,9 +225,24 @@
   gap: var(--espacio-1);
 }
 
-.campoFila label {
-  font-size: var(--texto-xs);
+.campoFila label,
+.etiquetaCampo {
+  font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
+}
+
+/* El selector de Producto ocupa un ancho estable para que Cantidad y los botones no salten
+   al pasar del buscador al chip del producto elegido. */
+.campoProducto {
+  min-width: 240px;
+}
+
+/* Ranura del selector de Producto: alto de control fijo para que su etiqueta quede alineada
+   con la de "Cantidad" (el chip del producto elegido es más bajo que un input). */
+.slotProducto {
+  display: flex;
+  align-items: center;
+  min-height: var(--alto-control);
 }
 
 /* Campo de cantidad/peso a granel (lo consume también RenglonGranel.tsx). */

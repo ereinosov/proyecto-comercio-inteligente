@@ -1,9 +1,13 @@
 /**
  * Paginador reutilizable (La Regla del Filtro y la Página, DESIGN.md v1.2.0).
  *
- * "Página X de Y" en Tinta Suave, con flechas anterior/siguiente como chevrones SVG de línea
- * simple (sin relleno), deshabilitadas VISUALMENTE (opacidad reducida, no ocultas) en los
+ * Por defecto: "Página X de Y" en Tinta Suave, con flechas anterior/siguiente como chevrones
+ * SVG de línea simple, deshabilitadas VISUALMENTE (opacidad reducida, no ocultas) en los
  * extremos. Tamaño de página por defecto: 20 (ver TAMANO_PAGINA).
+ *
+ * Con `numerado`: además de las flechas, botones cuadrados con el número de cada página
+ * (1, 2, 3…), con elipsis cuando hay muchas. La página actual va marcada. Para grillas cortas
+ * donde ver "en qué página estoy y cuántas hay" de un vistazo importa más que el texto.
  */
 
 import estilos from "./Paginador.module.css";
@@ -14,6 +18,7 @@ interface Props {
   pagina: number;
   totalPaginas: number;
   onCambiar: (pagina: number) => void;
+  numerado?: boolean;
 }
 
 function Chevron({ direccion }: { direccion: "izquierda" | "derecha" }) {
@@ -25,28 +30,68 @@ function Chevron({ direccion }: { direccion: "izquierda" | "derecha" }) {
   );
 }
 
-export function Paginador({ pagina, totalPaginas, onCambiar }: Props) {
+/** Números de página a mostrar, con `"..."` como hueco. Ventana de ±1 alrededor de la actual,
+ *  siempre con la primera y la última. */
+function numerosVisibles(pagina: number, total: number): (number | "...")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const set = new Set<number>([1, total, pagina, pagina - 1, pagina + 1]);
+  const orden = [...set].filter((n) => n >= 1 && n <= total).sort((a, b) => a - b);
+  const salida: (number | "...")[] = [];
+  for (let i = 0; i < orden.length; i++) {
+    if (i > 0 && orden[i] - orden[i - 1] > 1) salida.push("...");
+    salida.push(orden[i]);
+  }
+  return salida;
+}
+
+export function Paginador({ pagina, totalPaginas, onCambiar, numerado = false }: Props) {
   const total = Math.max(1, totalPaginas);
-  const enPrimera = pagina <= 1;
-  const enUltima = pagina >= total;
+  const actual = Math.min(pagina, total);
+  const enPrimera = actual <= 1;
+  const enUltima = actual >= total;
   return (
     <div className={estilos.paginador}>
       <button
         type="button"
         className={estilos.flecha}
-        onClick={() => onCambiar(pagina - 1)}
+        onClick={() => onCambiar(actual - 1)}
         disabled={enPrimera}
         aria-label="Página anterior"
       >
         <Chevron direccion="izquierda" />
       </button>
-      <span className={estilos.texto}>
-        Página {Math.min(pagina, total)} de {total}
-      </span>
+
+      {numerado ? (
+        <span className={estilos.numeros}>
+          {numerosVisibles(actual, total).map((n, i) =>
+            n === "..." ? (
+              <span key={`e${i}`} className={estilos.elipsis} aria-hidden="true">
+                …
+              </span>
+            ) : (
+              <button
+                key={n}
+                type="button"
+                className={n === actual ? estilos.numeroActivo : estilos.numero}
+                onClick={() => onCambiar(n)}
+                aria-label={`Página ${n}`}
+                aria-current={n === actual ? "page" : undefined}
+              >
+                {n}
+              </button>
+            ),
+          )}
+        </span>
+      ) : (
+        <span className={estilos.texto}>
+          Página {actual} de {total}
+        </span>
+      )}
+
       <button
         type="button"
         className={estilos.flecha}
-        onClick={() => onCambiar(pagina + 1)}
+        onClick={() => onCambiar(actual + 1)}
         disabled={enUltima}
         aria-label="Página siguiente"
       >

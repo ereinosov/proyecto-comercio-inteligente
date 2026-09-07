@@ -20,15 +20,15 @@
   color: var(--color-tinta-suave);
 }
 
-/* Variante bloque: ocupa el ancho de la tarjeta del catálogo, relación 4/3. */
+/* Variante bloque: ancho completo de la tarjeta del catálogo, franja baja (2/1): apoyo de
+   reconocimiento, no protagonista. */
 .bloque {
   width: 100%;
   height: auto;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 2 / 1;
   border-radius: 0;
-  border-left: none;
-  border-right: none;
-  border-top: none;
+  border: none;
+  border-bottom: 1px solid var(--color-borde);
 }
 
 .imagen {
