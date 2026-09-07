@@ -1,0 +1,75 @@
+/* Campo de formulario único (DESIGN.md v1.5.0). Sin sombra. Medidas de la escala de tokens.css.
+   El control (input/select) hereda borde, alto y foco del contenedor. */
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+
+.etiqueta {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
+}
+
+/* Controles nativos dentro del campo — IBM Plex Sans en los dos registros (La Regla de la Voz
+   de Análisis: nada de serif en un widget). El radio sale del registro de la pantalla, que se
+   fija en el `.campo` con `data-registro` o simplemente heredando `--radio-*` del contexto;
+   por defecto, Operación. */
+.campo :is(input, select, textarea) {
+  min-height: var(--alto-control);
+  box-sizing: border-box;
+  width: 100%;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-base);
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 0 var(--espacio-3);
+}
+
+.campo textarea {
+  padding: var(--espacio-2) var(--espacio-3);
+  min-height: calc(var(--alto-control) * 2);
+  line-height: var(--lh-normal);
+}
+
+.campo[data-num] {
+  max-width: 160px;
+}
+
+.campo[data-num] :is(input, select) {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.campo :is(input, select, textarea):focus-visible {
+  outline: var(--foco-anillo);
+  outline-offset: var(--foco-separacion);
+  border-color: var(--color-tinta);
+}
+
+.campo :is(input, select, textarea):disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Error: borde crítico + mensaje debajo (nunca sólo el borde — mismo principio que los tres
+   portadores). */
+.conError :is(input, select, textarea) {
+  border-color: var(--color-critico);
+}
+
+.error {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  color: var(--color-critico);
+}
+
+.ayuda {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
+}

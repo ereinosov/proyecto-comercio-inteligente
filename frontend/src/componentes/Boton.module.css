@@ -1,0 +1,112 @@
+/* Botón único del sistema (DESIGN.md v1.5.0). Sin sombra, sin gradiente. Radio y familia por
+   registro; medidas de la escala de `tokens.css`. */
+
+.boton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  font-family: var(--tipografia-operacion);
+  font-weight: var(--peso-medio);
+  line-height: 1;
+  white-space: nowrap;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Registro: radio ─────────────────────────────────────────────────────────────────────── */
+.operacion {
+  border-radius: var(--radio-operacion);
+}
+.analisis {
+  border-radius: var(--radio-analisis);
+}
+
+/* ── Tamaño ──────────────────────────────────────────────────────────────────────────────── */
+.sm {
+  min-height: var(--alto-control-sm);
+  padding: 0 var(--espacio-3);
+  font-size: var(--texto-sm);
+}
+.md {
+  min-height: var(--alto-control);
+  padding: 0 var(--espacio-4);
+  font-size: var(--texto-base);
+}
+.lg {
+  min-height: var(--alto-control-lg);
+  padding: 0 var(--espacio-6);
+  font-size: var(--texto-md);
+}
+
+/* ── Variantes ───────────────────────────────────────────────────────────────────────────── */
+
+/* Verde Rasero — exclusivo del cobro (La Regla de la Sola Voz). */
+.cobro {
+  background: var(--color-marca);
+  border-color: var(--color-marca);
+  color: var(--color-superficie-alta);
+  font-weight: var(--peso-fuerte);
+}
+.cobro:not(:disabled):hover {
+  background: var(--color-marca-fuerte);
+  border-color: var(--color-marca-fuerte);
+}
+.cobro:disabled {
+  opacity: 1;
+  background: var(--color-borde);
+  border-color: var(--color-borde);
+  color: var(--color-tinta-suave);
+}
+
+/* Acción principal de una pantalla sin dinero. */
+.primaria {
+  background: var(--color-tinta);
+  border-color: var(--color-tinta);
+  color: var(--color-superficie-alta);
+  font-weight: var(--peso-fuerte);
+}
+.primaria:not(:disabled):hover {
+  background: var(--color-tinta-fuerte);
+  border-color: var(--color-tinta-fuerte);
+}
+
+/* Acción secundaria neutra — contorno tierra, nunca relleno (La Regla del Segundo Tono). */
+.secundaria {
+  background: transparent;
+  border-color: var(--color-acento-secundario);
+  color: var(--color-acento-secundario);
+}
+.secundaria:not(:disabled):hover {
+  background: var(--color-superficie-base);
+}
+
+/* "Cancelar" de un par, "Volver". */
+.neutra {
+  background: transparent;
+  border-color: var(--color-borde);
+  color: var(--color-tinta-suave);
+}
+.neutra:not(:disabled):hover {
+  background: var(--color-superficie-base);
+  color: var(--color-tinta);
+}
+
+/* Acción de fila de baja jerarquía. */
+.fantasma {
+  background: transparent;
+  border-color: transparent;
+  color: var(--color-tinta-suave);
+  padding-left: var(--espacio-1);
+  padding-right: var(--espacio-1);
+}
+.fantasma:not(:disabled):hover {
+  color: var(--color-tinta);
+  text-decoration: underline;
+}
