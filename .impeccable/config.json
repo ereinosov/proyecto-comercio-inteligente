@@ -11,6 +11,15 @@
         ],
         "createdAt": "2026-09-06T15:18:50.924Z",
         "reason": "pre-existing shipped design (commit predates this session): 4px left border on .bordeBajo/.bordeNegativo is a redundant carrier of margin status using the reserved semantic colors (Atencion/Critico), paired with the dot+text in IndicadorMargen per DESIGN.md Regla del Significado / tres portadores. Not decorative; line flagged only due to line-number shift from adding a search box."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "frontend/src/pantallas/Clientes.module.css"
+        ],
+        "createdAt": "2026-09-07T02:49:53.453Z",
+        "reason": "user confirmed: task prompt especifica 'mismo patron que el tint de amber/rojo ya usado en Precios (margen bajo/perdida)'; patron establecido en Precios.module.css (.bordeBajo/.bordeNegativo, border-left 4px semantico) para tint de apoyo por fila en registros de Analisis"
       }
     ]
   }
