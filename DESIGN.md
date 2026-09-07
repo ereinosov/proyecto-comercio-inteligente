@@ -57,6 +57,41 @@ components:
 <!--
 INFORME DE IMPACTO — enmienda del sistema de diseño
 ==================================================
+Cambio de versión: 1.5.0 → 1.6.0 (MENOR — dos añadidos, ninguna regla eliminada ni invertida).
+
+Contexto: Fase 3b de la ronda de evolución visual — User Story 12 de 001 añade un catálogo de
+productos en grid a la pantalla de Venta, con imágenes de producto.
+
+Añadido 1 — Imágenes de producto (en "Components", bajo "La Regla del Ícono por Categoría").
+Un `Producto` puede llevar una `url_imagen` (columna nueva, opcional). Donde antes una lista de
+productos mostraba SÓLO el glifo de familia de categoría, ahora un componente compartido —
+`ImagenProducto`— muestra la foto si la hay y **cae al glifo de categoría** si no hay URL o si
+el `<img>` falla al cargar (`onError`). El glifo deja de ser el único tratamiento y pasa a ser
+el **fallback garantizado**: nunca un hueco ni una imagen rota. Las imágenes se alojan **fuera
+del repositorio** (URL externa en vivo, configurable por producto desde Administración) — una
+decisión consciente, con el riesgo de que una URL no cargue el día de una demo **aceptado
+explícitamente** y cubierto por el fallback. La Regla del Ícono por Categoría no se toca: el
+glifo sigue siendo SVG de línea, sin color propio, y sigue siendo lo que se ve cuando no hay
+foto; sólo se admite que, cuando hay foto real, la foto gana.
+
+Añadido 2 — Layout de dos columnas de Venta (en "Layout"). La pantalla de Venta pasa de una
+columna (tabla del ticket arriba, total anclado abajo) a **dos columnas**: catálogo en grid a
+la izquierda, ticket a la derecha, con el encabezado a lo ancho y el total + Cobrar anclados
+abajo a lo ancho. Por debajo de ~1100px de ancho las dos columnas se apilan en vertical. Sigue
+siendo Registro de Operación (2px, IBM Plex Sans, cifras tabulares, sin tarjetas dentro del
+ticket, sin sombra). El buscador `SelectorProducto` no desaparece: convive con el grid como
+segundo camino para agregar un producto.
+
+Reglas intactas: La Regla de la Sola Voz (el "+" de cada tarjeta del catálogo es contorno en el
+Acento Secundario, NUNCA Verde Rasero — el verde sigue sólo en Cobrar), La Regla del Filo (el
+grid y las tarjetas se separan con borde y tono, sin sombra), La Regla del Hueco que Enseña (el
+grid vacío y el ticket vacío usan `EstadoVacio`).
+
+Sincronización con la constitución: PENDIENTE, junto con la de v1.4.0 y v1.5.0.
+
+--><!--
+INFORME DE IMPACTO — enmienda del sistema de diseño (histórico)
+==============================================================
 Cambio de versión: 1.4.0 → 1.5.0 (MENOR — ronda de evolución visual: todo aditivo o
 refinamiento de una regla ya existente; ninguna regla se elimina ni se invierte).
 
@@ -328,6 +363,19 @@ encuadre entre productos y compite con las cifras; un glifo de familia da el mis
 reconocimiento ("esto es limpieza, esto es fresco") sin ninguno de esos costos, y no obliga a
 mantener un activo de imagen por SKU.
 
+**La Regla de la Imagen que se Cae con Gracia (v1.6.0).** En la **pantalla de Venta** —donde el
+cajero elige rápido y una foto ayuda a reconocer el producto en el estante, no una lista de
+decisión gerencial— un producto puede llevar una foto. Vive en `producto.url_imagen` (opcional)
+y se muestra a través de un único componente compartido, `ImagenProducto`, nunca con un `<img>`
+suelto. `ImagenProducto` **siempre** cae al glifo de familia de categoría —el de La Regla del
+Ícono por Categoría, sin cambiarlo— en dos casos: cuando no hay `url_imagen`, y cuando el `<img>`
+dispara `onError` (URL movida, sin conexión, 403…). Nunca un hueco, nunca el marco roto del
+navegador. Las imágenes se alojan **fuera del repositorio**: una URL externa por producto,
+configurable desde Administración. Es una decisión consciente —el sistema no mantiene un activo
+de imagen por SKU, y el día que una URL no cargue el catálogo no se rompe, sólo muestra el
+glifo—. La foto sólo se admite donde el reconocimiento rápido pesa más que la sobriedad de la
+lista (Venta); en las listas de Precios y Administración sigue rigiendo el glifo a secas.
+
 **La Regla del Segundo Tono.** Hay un cuarto color con nombre —**Acento Secundario #7A6A56**, un
 tierra apagado— y su función es una sola: la **acción secundaria neutra**. Son los disparadores
 de un flujo opcional que hoy viven como texto plano subrayado sin forma de botón: "+ Identificar
@@ -385,6 +433,18 @@ derecha; las etiquetas, a la izquierda.
 
 Registro de **Análisis**: una decisión por bloque, con aire alrededor. Las líneas de texto se
 mantienen por debajo de 80 caracteres.
+
+**Venta: dos columnas (v1.6.0).** La pantalla de Venta —la única de Operación con dos zonas de
+trabajo simultáneas— se organiza en **dos columnas**: el **catálogo de productos en grid** a la
+izquierda (tarjetas de producto con su foto, nombre, código y precio, filtrables por categoría)
+y el **ticket** a la derecha (la tabla de renglones de siempre, con su cantidad editable). El
+encabezado de pantalla va a lo ancho arriba; el **total y el botón Cobrar**, anclados a lo ancho
+abajo, nunca se desplazan. Cada columna gestiona su propio scroll. Por debajo de ~1100px las dos
+columnas se apilan en vertical —catálogo y luego ticket—, sin scroll horizontal a 1366px. El
+grid es el segundo camino para agregar un producto: **convive** con el buscador
+`SelectorProducto`, no lo reemplaza, y agregar por una vía u otra produce el mismo renglón. Sigue
+sin haber tarjetas *dentro* del ticket (La Regla del registro de Operación); las "tarjetas" son
+las del catálogo, que es una grilla de elección, no un grupo de datos.
 
 **Escala de espaciado (v1.5.0).** Siete valores, tokenizados en `tokens.css`, y ninguno más:
 `--espacio-1: 4px` · `--espacio-2: 8px` · `--espacio-3: 12px` · `--espacio-4: 16px` ·
@@ -898,5 +958,14 @@ una aclaración sin cambio de significado.
   tabla y etiqueta). Specs de componente nuevas: **Botón** (general), **Campo**, **Encabezado
   de pantalla**. Se evaluó y descartó un tercer radio. No elimina ni invierte ninguna regla.
   Sincronización con la constitución **pendiente** (junto con la de v1.4.0).
+- **1.6.0** (2026-09-07) — MENOR: Fase 3b de la ronda de evolución visual (User Story 12 de
+  001). Dos añadidos: **La Regla de la Imagen que se Cae con Gracia** —un producto puede llevar
+  una foto por URL externa (`producto.url_imagen`, opcional), mostrada por el componente
+  compartido `ImagenProducto`, que **siempre** cae al glifo de familia de categoría si no hay
+  URL o si el `<img>` falla; imágenes fuera del repositorio, riesgo de disponibilidad aceptado—;
+  y el **layout de dos columnas de Venta** (catálogo en grid · ticket, encabezado a lo ancho,
+  total + Cobrar anclados abajo, apilado bajo ~1100px). La Regla de la Sola Voz, del Filo y del
+  Hueco que Enseña intactas. Sincronización con la constitución **pendiente** (junto con v1.4.0
+  y v1.5.0).
 
-**Versión**: 1.5.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 1.6.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
