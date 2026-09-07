@@ -20,22 +20,13 @@
   border-bottom: 1px solid var(--color-borde);
 }
 
-/* La Regla de la Marca Persistente (DESIGN.md v1.3.1): ícono del comercio + wordmark de Rasero
-   conviven al mismo nivel visual, a la izquierda del nav, separados por el espaciado del nav. */
+/* La Regla de la Marca Persistente (DESIGN.md v1.4.0): el nav global lleva SOLO el wordmark de
+   Rasero (la herramienta), al extremo izquierdo. El ícono del comercio bajó al footer. */
 .marca {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   margin: 0 18px 6px 0;
   align-self: center;
-}
-
-/* Ícono del comercio: 24px, ya trae su propio fondo verde-app-icon — sin tinte ni filtro. */
-.iconoComercio {
-  height: 24px;
-  width: 24px;
-  display: block;
-  border-radius: var(--radio-operacion);
 }
 
 .marcaSistema {
@@ -44,14 +35,15 @@
   display: block;
 }
 
-/* Footer persistente: franja delgada, Superficie Base, borde superior 1px en Borde
-   (La Regla del Filo — nunca sombra). Ícono de ubicación (SVG de línea propio, ~12px) +
-   nombre de la sucursal activa, ambos en Tinta Suave, alineados a la izquierda. */
+/* Footer / barra de contexto persistente (La Regla de la Marca Persistente, v1.4.0): franja
+   delgada, Superficie Base, borde superior 1px en Borde (La Regla del Filo — nunca sombra).
+   Ícono del comercio (20px, ya trae su propio fondo app-icon — sin tinte ni filtro) +
+   "{sucursal} · {caja}" en Tinta Suave, en una sola línea a la izquierda. */
 .pie {
   flex-shrink: 0;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   padding: 6px 20px;
   background: var(--color-superficie-base);
   border-top: 1px solid var(--color-borde);
@@ -60,10 +52,12 @@
   color: var(--color-tinta-suave);
 }
 
-.iconoUbicacion {
-  display: inline-flex;
+.iconoComercioPie {
+  height: 20px;
+  width: 20px;
+  display: block;
   flex-shrink: 0;
-  color: var(--color-tinta-suave);
+  border-radius: var(--radio-operacion);
 }
 
 .pestanaActiva,

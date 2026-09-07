@@ -27,9 +27,10 @@ import marcaSistema from "./activos/marca/rasero-wordmark-512w.png";
 import iconoComercioPorDefecto from "./activos/marca/despensa-icon-verde-512.png";
 import estilos from "./App.module.css";
 
-// La Regla de la Marca Persistente (DESIGN.md v1.3.1): el ícono del comercio vive en el nav
-// global junto al wordmark de Rasero, al mismo nivel visual. Configurable por entorno igual que
-// el logo a color de la apertura de turno.
+// La Regla de la Marca Persistente (DESIGN.md v1.4.0): las dos marcas no comparten lugar. El nav
+// global lleva SOLO el wordmark de Rasero (la herramienta); el ícono del comercio baja al footer,
+// delante de "{sucursal} · {caja}" (dónde estoy). Configurable por entorno igual que el logo a
+// color de la apertura de turno.
 const ICONO_COMERCIO: string = import.meta.env.VITE_ICONO_COMERCIO ?? iconoComercioPorDefecto;
 
 type Pantalla =
@@ -98,23 +99,6 @@ function Chevron() {
         strokeLinecap="round"
         strokeLinejoin="round"
       />
-    </svg>
-  );
-}
-
-// Pin de ubicación: SVG de línea propio (La Regla del Ícono: SVG siempre, nunca emoji),
-// ~12px, outline sin relleno. Acompaña al nombre de sucursal en el footer.
-function IconoUbicacion() {
-  return (
-    <svg width="12" height="12" viewBox="0 0 16 16" aria-hidden="true">
-      <path
-        d="M8 1.75c-2.62 0-4.75 2.05-4.75 4.58 0 3.3 4.75 7.92 4.75 7.92s4.75-4.62 4.75-7.92C12.75 3.8 10.62 1.75 8 1.75Z"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.4"
-        strokeLinejoin="round"
-      />
-      <circle cx="8" cy="6.3" r="1.7" fill="none" stroke="currentColor" strokeWidth="1.4" />
     </svg>
   );
 }
@@ -244,14 +228,8 @@ export function App() {
   return (
     <div className={estilos.aplicacion}>
       <nav className={estilos.navegacion}>
+        {/* La Regla de la Marca Persistente (v1.4.0): el nav lleva SOLO el wordmark de Rasero. */}
         <span className={estilos.marca}>
-          <img
-            className={estilos.iconoComercio}
-            src={ICONO_COMERCIO}
-            alt=""
-            width={24}
-            height={24}
-          />
           <img
             className={estilos.marcaSistema}
             src={marcaSistema}
@@ -329,14 +307,18 @@ export function App() {
           <Administracion rol={rol} />
         )}
       </div>
-      {nombreSucursal && (
-        <footer className={estilos.pie}>
-          <span className={estilos.iconoUbicacion}>
-            <IconoUbicacion />
-          </span>
-          <span>{nombreSucursal}</span>
-        </footer>
-      )}
+      {/* Barra de contexto (La Regla de la Marca Persistente, v1.4.0): ícono del comercio +
+          "{sucursal} · {caja}" en una línea — "dónde estoy", no "qué software uso". */}
+      <footer className={estilos.pie}>
+        <img
+          className={estilos.iconoComercioPie}
+          src={ICONO_COMERCIO}
+          alt=""
+          width={20}
+          height={20}
+        />
+        <span>{nombreSucursal ? `${nombreSucursal} · ${turno.caja}` : turno.caja}</span>
+      </footer>
     </div>
   );
 }
