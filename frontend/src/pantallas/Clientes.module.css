@@ -21,7 +21,7 @@
 }
 
 .titulo {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   margin: 0;
 }
@@ -34,7 +34,7 @@
 .ordenActivo,
 .ordenInactivo {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-analisis);
   padding: 6px 14px;
@@ -80,7 +80,7 @@
 
 .vacio {
   color: var(--color-tinta-suave);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .listaUl {
@@ -101,7 +101,7 @@
 
 .editarCliente {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   background: transparent;
   border: none;
@@ -118,7 +118,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .campoModal span {
@@ -127,7 +127,7 @@
 
 .campoModal input {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -144,7 +144,7 @@
   align-items: baseline;
   text-align: left;
   font-family: var(--tipografia-analisis);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -175,7 +175,7 @@
 .valorResumen {
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   flex-shrink: 0;
   margin-left: 12px;
@@ -194,7 +194,7 @@
 .instruccion,
 .error {
   color: var(--color-tinta-suave);
-  font-size: 15px;
+  font-size: 16px;
   max-width: 70ch;
 }
 
@@ -222,7 +222,7 @@
 
 .identificador {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   margin: 10px 0 0;
 }
@@ -233,14 +233,14 @@
 }
 
 .nombreDetalle {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   margin: 0 0 12px;
 }
 
 .avisoInsuficiente {
   color: var(--color-tinta-suave);
-  font-size: 14px;
+  font-size: 15px;
   max-width: 60ch;
   margin-top: 20px;
 }
@@ -259,13 +259,13 @@
 
 .bloqueDesglose dt {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
 }
 
 .bloqueDesglose dd {
   margin: 4px 0 0;
-  font-size: 18px;
+  font-size: 19px;
 }
 
 .compuesto {
@@ -285,7 +285,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .fugaOk,

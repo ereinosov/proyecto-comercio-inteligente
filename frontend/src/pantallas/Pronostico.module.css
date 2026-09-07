@@ -18,7 +18,7 @@
 }
 
 .titulo {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   margin: 0;
 }
@@ -35,7 +35,7 @@
 .instruccion,
 .error {
   color: var(--color-tinta-suave);
-  font-size: 15px;
+  font-size: 16px;
   max-width: 70ch;
 }
 
@@ -59,7 +59,7 @@
   width: 100%;
   text-align: left;
   font-family: var(--tipografia-analisis);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -83,7 +83,7 @@
 }
 
 .nombreDetalle {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   margin: 0 0 16px;
 }
@@ -100,7 +100,7 @@
 .vistaActiva,
 .vistaInactiva {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;

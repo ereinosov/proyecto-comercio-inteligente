@@ -18,7 +18,7 @@
 }
 
 .titulo {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   margin: 0;
 }
@@ -43,7 +43,7 @@
 .vistaActiva,
 .vistaInactiva {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;

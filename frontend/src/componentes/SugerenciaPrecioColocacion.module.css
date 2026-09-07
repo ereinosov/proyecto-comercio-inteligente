@@ -14,7 +14,7 @@
 }
 
 .tituloTarjeta {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   margin: 0 0 10px;
 }
@@ -22,7 +22,7 @@
 .instruccion,
 .error {
   color: var(--color-tinta-suave);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .error {
@@ -33,7 +33,7 @@
 .zonaSugerida {
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   margin: 0 0 10px;
 }
@@ -43,7 +43,7 @@
   flex-direction: column;
   gap: 6px;
   margin: 0 0 14px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .insumos dt {
@@ -78,7 +78,7 @@
 
 .boton {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   border: 1px solid var(--color-tinta);
   border-radius: var(--radio-analisis);
   padding: 8px 16px;

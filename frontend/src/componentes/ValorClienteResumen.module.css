@@ -4,7 +4,7 @@
 .resumen {
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
 }
 
@@ -15,7 +15,7 @@
 
 .insuficiente {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   font-style: italic;
 }

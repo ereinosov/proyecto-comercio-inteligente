@@ -48,7 +48,7 @@
   background: var(--color-superficie-base);
   border-top: 1px solid var(--color-borde);
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
 }
 
@@ -63,7 +63,7 @@
 .pestanaActiva,
 .pestanaInactiva {
   font-family: var(--tipografia-operacion);
-  font-size: 14px;
+  font-size: 15px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -105,7 +105,7 @@
   align-items: center;
   gap: 5px;
   font-family: var(--tipografia-operacion);
-  font-size: 14px;
+  font-size: 15px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -149,7 +149,7 @@
 .opcion,
 .opcionActiva {
   font-family: var(--tipografia-operacion);
-  font-size: 14px;
+  font-size: 15px;
   text-align: left;
   background: transparent;
   border: none;
@@ -181,7 +181,7 @@
   margin-bottom: 6px;
   align-self: center;
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
 }
 

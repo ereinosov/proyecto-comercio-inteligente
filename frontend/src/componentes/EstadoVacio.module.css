@@ -51,14 +51,14 @@
 
 .titulo {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
 }
 
 .descripcion {
   margin: 0;
   max-width: 42ch;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   line-height: 1.5;
 }

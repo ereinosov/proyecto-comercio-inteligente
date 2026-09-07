@@ -11,7 +11,7 @@
 
 .instruccion {
   color: var(--color-tinta-suave);
-  font-size: 15px;
+  font-size: 16px;
   max-width: 70ch;
   margin: 0;
 }
@@ -26,7 +26,7 @@
    "Abrir turno"). Sin Verde Rasero ni fondo Tinta sólido (Regla del Registro Sin Dinero). */
 .boton {
   font-family: var(--tipografia-analisis);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
@@ -41,7 +41,7 @@
 
 .botonSecundario {
   font-family: var(--tipografia-analisis);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -58,7 +58,7 @@
 
 .error {
   color: var(--color-critico);
-  font-size: 14px;
+  font-size: 15px;
   margin: 0;
 }
 
@@ -83,7 +83,7 @@
 }
 
 .subtitulo {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
   margin: 0 0 14px;
 }
@@ -103,13 +103,13 @@
 
 .parametros dt {
   font-family: var(--tipografia-operacion);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-tinta-suave);
 }
 
 .parametros dd {
   margin: 0;
-  font-size: 15px;
+  font-size: 16px;
   color: var(--color-tinta);
   font-variant-numeric: tabular-nums;
 }
@@ -130,13 +130,13 @@
 
 .tasaEtiqueta {
   font-family: var(--tipografia-operacion);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-tinta-suave);
 }
 
 /* DATO observado: tinta normal, nunca --color-estimado. */
 .tasaValor {
-  font-size: 22px;
+  font-size: 24px;
   color: var(--color-tinta);
   font-variant-numeric: tabular-nums;
 }
@@ -151,12 +151,12 @@
 }
 
 .forma {
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1;
 }
 
 .inferenciaTexto {
-  font-size: 14px;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -165,7 +165,7 @@
    `estimado` — son lecturas de una inferencia, no un hecho medido, y el Verde Rasero está
    reservado a la caja (Regla de la Sola Voz). `muestra_insuficiente` pide atención (ámbar). */
 .veredicto {
-  font-size: 15px;
+  font-size: 16px;
   color: var(--color-estimado);
   margin: 0;
   text-transform: capitalize;

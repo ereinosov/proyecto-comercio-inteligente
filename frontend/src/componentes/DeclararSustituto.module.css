@@ -7,7 +7,7 @@
 }
 
 .explicacion {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta-suave);
   max-width: 70ch;
   margin: 0 0 14px;
@@ -31,11 +31,11 @@
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-analisis);
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .vacio {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta-suave);
 }
 
@@ -48,7 +48,7 @@
 
 .selector {
   font-family: var(--tipografia-analisis);
-  font-size: 14px;
+  font-size: 15px;
   padding: 7px 10px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-analisis);
@@ -58,7 +58,7 @@
 
 .boton {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   padding: 8px 14px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-analisis);
@@ -69,7 +69,7 @@
 
 .botonQuitar {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   border: none;
   background: transparent;
   color: var(--color-tinta-suave);
@@ -78,6 +78,6 @@
 
 .error {
   color: var(--color-critico);
-  font-size: 13px;
+  font-size: 14px;
   margin-top: 8px;
 }

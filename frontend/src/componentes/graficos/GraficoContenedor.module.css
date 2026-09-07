@@ -17,7 +17,7 @@
 
 .titulo {
   margin: 0 0 4px;
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--color-tinta);
 }
@@ -32,7 +32,7 @@
 
 .subtitulo {
   margin: 0 0 12px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
 }
 

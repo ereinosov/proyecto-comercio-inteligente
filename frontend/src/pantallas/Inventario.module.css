@@ -15,13 +15,13 @@
 }
 
 .titulo {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   margin: 0;
 }
 
 .nota {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   margin: 0;
 }
@@ -40,14 +40,14 @@
 }
 
 .campo label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-tinta-suave);
 }
 
 .entrada,
 .seleccion {
   font-family: var(--tipografia-operacion);
-  font-size: 14px;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
@@ -77,13 +77,13 @@
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .tabla th {
   text-align: left;
   font-weight: 500;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   padding: 8px 12px;
   border-bottom: 1px solid var(--color-borde);
@@ -101,7 +101,7 @@
 
 .boton {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 600;
   color: var(--color-superficie-alta);
   /* La Regla de la Sola Voz: el botón primario de operación es Tinta, NUNCA Verde Rasero
@@ -122,7 +122,7 @@
 
 .botonSecundario {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
@@ -132,12 +132,12 @@
 }
 
 .error {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-critico);
 }
 
 .ok {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
 }
 

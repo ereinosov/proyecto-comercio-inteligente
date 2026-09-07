@@ -18,7 +18,7 @@
 }
 
 .titulo {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   margin: 0;
 }
@@ -42,7 +42,7 @@
 .instruccion,
 .error {
   color: var(--color-tinta-suave);
-  font-size: 15px;
+  font-size: 16px;
   max-width: 70ch;
 }
 
@@ -81,7 +81,7 @@
   align-items: baseline;
   text-align: left;
   font-family: var(--tipografia-analisis);
-  font-size: 15px;
+  font-size: 16px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -116,7 +116,7 @@
 }
 
 .nombreDetalle {
-  font-size: 20px;
+  font-size: 22px;
   font-weight: 600;
   margin: 0 0 16px;
 }
@@ -151,7 +151,7 @@
 .margenValor {
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   flex-shrink: 0;
   margin-left: 12px;
@@ -160,7 +160,7 @@
 .margenNoCalculable {
   font-family: var(--tipografia-analisis);
   font-style: italic;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   flex-shrink: 0;
   margin-left: 12px;
@@ -175,7 +175,7 @@
   gap: 6px;
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   flex-shrink: 0;
   margin-left: 12px;
 }
@@ -205,7 +205,7 @@
   gap: 6px;
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-atencion);
   flex-shrink: 0;
   margin-left: 12px;

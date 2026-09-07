@@ -9,7 +9,7 @@
 
 .instruccion {
   color: var(--color-tinta-suave);
-  font-size: 15px;
+  font-size: 16px;
   max-width: 70ch;
   margin: 0;
 }
@@ -19,7 +19,7 @@
 .boton {
   align-self: flex-start;
   font-family: var(--tipografia-analisis);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
@@ -38,14 +38,14 @@
 }
 
 .resumen {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   margin: 0;
 }
 
 .error {
   color: var(--color-critico);
-  font-size: 14px;
+  font-size: 15px;
   margin: 0;
 }
 
@@ -73,26 +73,26 @@
 }
 
 .cliente {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   color: var(--color-tinta);
 }
 
 .detalle {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   margin: 0 0 4px;
 }
 
 .justificacion {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   margin: 0;
 }
 
 .desenlace_pendiente {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta);
 }
 
@@ -100,7 +100,7 @@
    (Regla de la Sola Voz + Regla del Registro Sin Dinero). El texto explícito es el portador. */
 .desenlace_comprado {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta);
   font-weight: 600;
 }
@@ -108,6 +108,6 @@
 .desenlace_no_comprado,
 .desenlace_reserva_vencida {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
 }

@@ -10,7 +10,7 @@
 }
 
 .resumen {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta-suave);
   margin: 0 0 12px;
   max-width: 70ch;
@@ -19,7 +19,7 @@
 .instruccion,
 .error {
   color: var(--color-tinta-suave);
-  font-size: 14px;
+  font-size: 15px;
   max-width: 70ch;
 }
 
@@ -32,7 +32,7 @@
   border-collapse: collapse;
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tabla th {
@@ -91,7 +91,7 @@
 .detalleCorreccion {
   display: block;
   font-family: var(--tipografia-analisis);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-estimado);
   text-align: right;
 }
@@ -100,13 +100,13 @@
   color: var(--color-estimado);
   font-family: var(--tipografia-analisis);
   font-style: italic;
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .notas {
   display: block;
   font-family: var(--tipografia-analisis);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-estimado);
   text-align: left;
   max-width: 44ch;

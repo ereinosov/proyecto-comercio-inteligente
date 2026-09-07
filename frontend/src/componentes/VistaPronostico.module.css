@@ -15,7 +15,7 @@
 .horizonteActivo,
 .horizonteInactivo {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   padding: 6px 12px;
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-analisis);
@@ -35,7 +35,7 @@
 
 .instruccion,
 .error {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta-suave);
   max-width: 70ch;
 }
@@ -46,7 +46,7 @@
 
 /* Veredicto: el pronóstico supera (o no) a su línea base determinista (SC-004). */
 .veredicto {
-  font-size: 15px;
+  font-size: 16px;
   font-weight: 600;
   margin: 0 0 6px;
   display: flex;
@@ -78,7 +78,7 @@
 }
 
 .factores {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   max-width: 70ch;
   margin: 4px 0 16px;
@@ -88,7 +88,7 @@
   border-collapse: collapse;
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tabla th,

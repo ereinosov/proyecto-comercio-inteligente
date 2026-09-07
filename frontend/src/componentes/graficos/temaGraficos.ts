@@ -53,7 +53,7 @@ export function fontFamily(registro: Registro): string {
 /** Props comunes de `<XAxis>` / `<YAxis>`: tick en Tinta Suave, sin línea de eje gruesa. */
 export function ejeProps(registro: Registro) {
   return {
-    tick: { fill: COLOR.eje, fontSize: 11, fontFamily: fontFamily(registro) },
+    tick: { fill: COLOR.eje, fontSize: 12, fontFamily: fontFamily(registro) },
     tickLine: false,
     axisLine: { stroke: COLOR.grid },
   } as const;

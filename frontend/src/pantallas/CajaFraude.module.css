@@ -24,7 +24,7 @@
 }
 
 .titulo {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   margin: 0 0 12px;
 }
@@ -37,7 +37,7 @@
 .segActivo,
 .segInactivo {
   font-family: var(--tipografia-analisis);
-  font-size: 15px;
+  font-size: 16px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -102,13 +102,13 @@
 }
 
 .subtitulo {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 600;
   margin: 0 0 8px;
 }
 
 .subtituloMenor {
-  font-size: 14px;
+  font-size: 15px;
   font-weight: 600;
   margin: 16px 0 6px;
   color: var(--color-tinta-suave);
@@ -116,7 +116,7 @@
 
 .nota,
 .notaBloqueada {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta-suave);
   max-width: 72ch;
   line-height: 1.5;
@@ -130,7 +130,7 @@
 }
 
 .error {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-critico);
 }
 
@@ -152,7 +152,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
 }
 
@@ -167,7 +167,7 @@
 
 .entrada {
   font-family: var(--tipografia-operacion);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -182,7 +182,7 @@
 
 .boton {
   font-family: var(--tipografia-analisis);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
@@ -205,7 +205,7 @@
   justify-content: space-between;
   align-items: baseline;
   gap: 12px;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .bloqueOperador {
@@ -226,14 +226,14 @@
   gap: 18px;
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
 }
 
 .valor {
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   flex-shrink: 0;
 }
@@ -243,7 +243,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-estimado);
 }
 
@@ -253,7 +253,7 @@
   gap: 6px;
   color: var(--color-atencion);
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .caducado,
@@ -279,7 +279,7 @@
   gap: 4px;
   text-align: left;
   font-family: var(--tipografia-analisis);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -298,7 +298,7 @@
   align-items: center;
   gap: 6px;
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .marcaSinExplicacion {
@@ -312,7 +312,7 @@
 .resumenAnomalia {
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
 }
 
@@ -320,7 +320,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
 }
 
@@ -348,7 +348,7 @@
 }
 
 .datos dt {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
 }
 
@@ -356,17 +356,17 @@
   margin: 2px 0 0;
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .snapshot {
   margin: 12px 0;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .snapshot pre {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   background: var(--color-superficie-base);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-analisis);
@@ -377,7 +377,7 @@
 .historial {
   margin: 0;
   padding-left: 18px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   display: flex;
   flex-direction: column;

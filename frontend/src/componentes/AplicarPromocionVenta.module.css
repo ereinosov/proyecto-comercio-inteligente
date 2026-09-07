@@ -7,7 +7,7 @@
    (La Regla del Segundo Tono, DESIGN.md v1.4.0). Mismo lenguaje que IdentificarCliente. */
 .abrir {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-acento-secundario);
   background: transparent;
   border: 1px solid var(--color-acento-secundario);
@@ -30,13 +30,13 @@
   align-items: center;
   gap: 6px;
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
 }
 
 .quitar {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   background: transparent;
   border: none;
@@ -59,7 +59,7 @@
 
 .vacio {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   margin: 0;
 }
@@ -69,7 +69,7 @@
   width: 100%;
   text-align: left;
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
   background: transparent;
@@ -87,7 +87,7 @@
 .cancelar {
   align-self: flex-start;
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   background: transparent;
   border: 1px solid var(--color-borde);

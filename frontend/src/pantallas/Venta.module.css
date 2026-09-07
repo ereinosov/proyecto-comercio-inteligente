@@ -21,7 +21,7 @@
   align-items: center;
   padding: 10px 20px;
   border-bottom: 1px solid var(--color-borde);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
 }
 
@@ -43,13 +43,13 @@
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .tabla th {
   text-align: left;
   font-weight: 500;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   padding: 8px 12px;
   border-bottom: 1px solid var(--color-borde);
@@ -106,14 +106,14 @@
 }
 
 .campoFila label {
-  font-size: 11px;
+  font-size: 12px;
   color: var(--color-tinta-suave);
 }
 
 .selectProducto,
 .inputCantidad {
   font-family: var(--tipografia-operacion);
-  font-size: 14px;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
@@ -139,12 +139,12 @@
   align-items: baseline;
   gap: 4px;
   color: var(--color-tinta-suave);
-  font-size: 12px;
+  font-size: 13px;
 }
 
 .inputCantidadLinea {
   font-family: var(--tipografia-operacion);
-  font-size: 14px;
+  font-size: 15px;
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
@@ -185,7 +185,7 @@
 
 .botonSecundario {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
@@ -202,7 +202,7 @@
    botón de contorno en el Acento Secundario (La Regla del Segundo Tono, DESIGN.md v1.4.0). */
 .botonTexto {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-acento-secundario);
   background: transparent;
   border: 1px solid var(--color-acento-secundario);
@@ -224,7 +224,7 @@
    junto a Nueva venta): borde neutro, texto Tinta Suave, mismo tamaño que el botón de al lado. */
 .botonCancelar {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   background: transparent;
   border: 1px solid var(--color-borde);
@@ -243,7 +243,7 @@
 }
 
 .senalAnotada {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
 }
 
@@ -251,7 +251,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-atencion);
 }
 
@@ -272,13 +272,14 @@
   border-top: 1px solid var(--color-borde);
 }
 
+/* Cifra focal de la pantalla: sube más agresivamente que el cuerpo (era 22px). */
 .total {
-  font-size: 22px;
+  font-size: 28px;
   font-weight: 600;
 }
 
 .totalEtiqueta {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 400;
   color: var(--color-tinta-suave);
   margin-right: 8px;
@@ -287,7 +288,7 @@
 /* Único uso de Verde Rasero en todo el archivo (La Regla de la Sola Voz). */
 .botonCobrar {
   font-family: var(--tipografia-operacion);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--color-superficie-alta);
   background: var(--color-marca);

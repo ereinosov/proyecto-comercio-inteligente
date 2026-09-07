@@ -9,7 +9,7 @@
 
 .texto {
   font-family: var(--tipografia-analisis);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   font-variant-numeric: tabular-nums;
 }

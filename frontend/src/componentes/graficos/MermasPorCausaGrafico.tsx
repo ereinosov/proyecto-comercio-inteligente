@@ -71,7 +71,7 @@ export function MermasPorCausaGrafico({ idSucursal }: { idSucursal: number }) {
             cursor={{ fill: "rgba(31, 86, 115, 0.06)" }}
             content={<TooltipPropio registro="analisis" formato={(v) => String(v)} />}
           />
-          <Legend wrapperStyle={{ fontFamily: fontFamily("analisis"), fontSize: 11, color: "#5A6862" }} />
+          <Legend wrapperStyle={{ fontFamily: fontFamily("analisis"), fontSize: 12, color: "#5A6862" }} />
           {CAUSAS.map((c, i) => (
             <Bar
               key={c.clave}

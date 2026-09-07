@@ -18,7 +18,7 @@
 }
 
 .titulo {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   margin: 0 0 12px;
 }
@@ -33,7 +33,7 @@
 .segActivo,
 .segInactivo {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   background: transparent;
   border: none;
   border-bottom: 2px solid transparent;
@@ -65,7 +65,7 @@
 }
 
 .filtroInactivos {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   display: inline-flex;
   align-items: center;
@@ -74,7 +74,7 @@
 
 .botonNuevo {
   font-family: var(--tipografia-analisis);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -88,14 +88,14 @@
 }
 
 .soloLectura {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   font-style: italic;
 }
 
 .error {
   color: var(--color-critico);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tablaContenedor {
@@ -109,7 +109,7 @@
   width: 100%;
   border-collapse: collapse;
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
 
@@ -143,7 +143,7 @@
 
 .accion {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   background: transparent;
   border: none;
@@ -161,7 +161,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .campoEtiqueta {
@@ -177,7 +177,7 @@
 
 .entrada {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -192,13 +192,13 @@
 
 .textoModal {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
 .listaDeps {
   margin: 4px 0 0;
   padding-left: 18px;
-  font-size: 13px;
+  font-size: 14px;
   line-height: 1.6;
 }

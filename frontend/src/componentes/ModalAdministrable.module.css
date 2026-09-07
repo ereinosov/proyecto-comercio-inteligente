@@ -38,7 +38,7 @@
 .titulo {
   margin: 0;
   font-family: var(--tipografia-analisis);
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   color: var(--color-tinta);
 }
@@ -74,7 +74,7 @@
 
 .error {
   margin: 0;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-critico);
 }
 
@@ -92,7 +92,7 @@
    mismo tamaño y padding que `.primaria` (bloque 4 de la ronda v1.4.0). */
 .cancelar {
   font-family: var(--tipografia-analisis);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   background: transparent;
   border: 1px solid var(--color-borde);
@@ -107,7 +107,7 @@
 
 .primaria {
   font-family: var(--tipografia-analisis);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-superficie-alta);
   background: var(--color-tinta);
   border: 1px solid var(--color-tinta);

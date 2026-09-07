@@ -6,7 +6,7 @@
    (La Regla del Segundo Tono, DESIGN.md v1.4.0). Contorno, nunca relleno; no compite con la tabla. */
 .abrir {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-acento-secundario);
   background: transparent;
   border: 1px solid var(--color-acento-secundario);
@@ -29,13 +29,13 @@
   align-items: center;
   gap: 6px;
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
 }
 
 .quitar {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   background: transparent;
   border: none;
@@ -58,7 +58,7 @@
 
 .input {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -84,7 +84,7 @@
   width: 100%;
   text-align: left;
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: transparent;
   border: none;
@@ -107,7 +107,7 @@
 .enlaceAccion,
 .enlace {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   background: transparent;
   border-radius: var(--radio-operacion);
   padding: 5px 10px;
@@ -148,7 +148,7 @@
   flex-direction: column;
   gap: 4px;
   font-family: var(--tipografia-analisis);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .campoModal span {
@@ -157,7 +157,7 @@
 
 .campoModal input {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);

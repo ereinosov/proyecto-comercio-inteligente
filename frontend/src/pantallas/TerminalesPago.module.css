@@ -22,13 +22,13 @@
 }
 
 .titulo {
-  font-size: 18px;
+  font-size: 19px;
   font-weight: 600;
   margin: 0;
 }
 
 .resumen {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
 }
 
@@ -48,7 +48,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   width: 150px;
 }
@@ -56,7 +56,7 @@
 .entrada {
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -71,7 +71,7 @@
 
 .boton {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
@@ -88,13 +88,13 @@
 
 .confirmado {
   color: var(--color-tinta-suave);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .errorForm,
 .error {
   color: var(--color-critico);
-  font-size: 13px;
+  font-size: 14px;
   margin: 4px 24px 0;
 }
 
@@ -111,7 +111,7 @@
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tabla th,
@@ -176,7 +176,7 @@
 }
 
 .referencias {
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   margin-top: 2px;
 }

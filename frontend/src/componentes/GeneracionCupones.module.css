@@ -10,7 +10,7 @@
 
 .instruccion {
   color: var(--color-tinta-suave);
-  font-size: 15px;
+  font-size: 16px;
   max-width: 70ch;
   margin: 0;
 }
@@ -27,13 +27,13 @@
   flex-direction: column;
   gap: 4px;
   font-family: var(--tipografia-analisis);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
 }
 
 .campo input {
   font-family: var(--tipografia-operacion);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -46,7 +46,7 @@
    Sin Dinero); sin fondo Tinta sólido tampoco, para no imitar el peso del botón de cobro. */
 .boton {
   font-family: var(--tipografia-analisis);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
@@ -65,19 +65,19 @@
 }
 
 .resumen {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   margin: 0;
 }
 
 .error {
   color: var(--color-critico);
-  font-size: 14px;
+  font-size: 15px;
   margin: 0;
 }
 
 .subtitulo {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   margin: 8px 0 0;
 }
@@ -85,7 +85,7 @@
 .tabla {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 15px;
 }
 
 .tabla th,
@@ -97,7 +97,7 @@
 
 .tabla th {
   font-family: var(--tipografia-operacion);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--color-tinta-suave);
   font-weight: 600;
 }

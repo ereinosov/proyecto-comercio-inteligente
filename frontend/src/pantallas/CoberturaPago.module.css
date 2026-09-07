@@ -18,13 +18,13 @@
 }
 
 .titulo {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 600;
   margin: 0;
 }
 
 .subtitulo {
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta-suave);
   margin: 4px 0 0;
   max-width: 70ch;
@@ -49,7 +49,7 @@
 }
 
 .bloqueTitulo {
-  font-size: 16px;
+  font-size: 17px;
   font-weight: 600;
   margin: 0 0 12px;
 }
@@ -65,7 +65,7 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   font-family: var(--tipografia-operacion);
 }
@@ -73,7 +73,7 @@
 .entrada,
 .select {
   font-family: var(--tipografia-operacion);
-  font-size: 14px;
+  font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
@@ -83,7 +83,7 @@
 
 .boton {
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-tinta);
@@ -93,14 +93,14 @@
 }
 
 .confirmado {
-  font-size: 13px;
+  font-size: 14px;
   color: var(--color-tinta-suave);
   font-family: var(--tipografia-operacion);
 }
 
 .error {
   color: var(--color-critico);
-  font-size: 13px;
+  font-size: 14px;
   margin: 6px 0 0;
 }
 
@@ -109,7 +109,7 @@
   border-collapse: collapse;
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
-  font-size: 13px;
+  font-size: 14px;
 }
 
 .tabla th,
