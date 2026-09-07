@@ -360,6 +360,12 @@ dato real) es **menor** que el de la línea base para el mismo tramo (SC-004). S
 respuesta del endpoint devuelve el pronóstico calculado pero con `vigente = FALSE` y
 `motivo_no_vigente = "no supera la linea base"`, y la interfaz muestra la línea base.
 
+El error retrospectivo se mide sobre una **cola de 14 días** (parámetro
+`VENTANA_VALIDACION_RETROSPECTIVA`): el suavizado se ajusta sobre el resto de la serie y se
+proyecta un paso a la vez sobre esos 14 días, comparando el error medio absoluto con el de la
+línea base para el mismo tramo. Los **horizontes** proyectados son `corto = 14 días` (extremo
+superior del rango 7–14 de FR-019, para reposición) y `medio = 30 días` (el que FR-019 fija).
+
 ### 8d. Estacionalidad intramensual (FR-019, horizonte medio de 30 días)
 
 **Decisión**: el mes se parte en **tramos fijos** y se calcula, por tramo, un multiplicador =
@@ -370,8 +376,9 @@ documentado, Assumptions del spec).
 
 Tramos por defecto (parámetro): `[1–7]`, `[8–15]`, `[16–22]`, `[23–fin de mes]`, con marca
 adicional de **quincena** para los días 14–16 y 29–31/1–2 (donde el enunciado sitúa los picos de
-pago de sueldo). Un tramo con menos de un mínimo de observaciones históricas usa multiplicador
-1,0 (sin ajuste) y se marca como tal.
+pago de sueldo). Un tramo con menos de un mínimo de observaciones históricas (parámetro
+`MINIMO_PERIODOS_POR_TRAMO`, por defecto **2**) usa multiplicador 1,0 (sin ajuste) y se marca
+como tal — no se estima un factor estacional desde un único día.
 
 **Alternativas descartadas**: descomposición STL / medias móviles centradas para aislar
 estacionalidad — es "descomposición estacional formal", excluida por `/speckit-clarify`;
@@ -475,6 +482,10 @@ desviarse.
 | Ventana de materialización | **90 días** | recompute-on-read (#3) | El pronóstico no necesita más historia; acota el coste de recalcular en cada lectura |
 | Tramos del mes | `[1–7] [8–15] [16–22] [23–fin]` + marca de quincena | Estacionalidad intramensual (#8d) | Capta picos de quincena/pago sin sobreajustar con histórico corto |
 | Mínimo sin quiebre para pronosticar | **14 períodos** | Umbral "datos insuficientes" (#10) | Media quincena de demanda observable real antes de arriesgar un número |
+| Días de horizonte corto | **14 días** | Horizonte `corto` del pronóstico (#8c, FR-019: "corto = 7–14 días") | Extremo superior del rango de reposición fijado por `/speckit-clarify`: cubre dos semanas de compra sin proyectar más allá de lo que la serie corta de un minimarket sostiene |
+| Días de horizonte medio | **30 días** | Horizonte `medio` del pronóstico (#8d, FR-019) | El horizonte medio que FR-019 fija explícitamente; misma ventana que N (un solo número rector) |
+| Ventana de validación retrospectiva | **14 días** | Cola fuera de muestra para comparar SES vs. línea base (#8c, SC-004) | Una quincena de días recientes con dato real reservados para medir el error retrospectivo; el resto de la serie ajusta el suavizado |
+| Mínimo de observaciones por tramo del mes | **2 períodos** | Multiplicador de estacionalidad intramensual (#8d) | Por debajo de 2 observaciones históricas de un tramo, su multiplicador se fija en 1,0 (sin ajuste) y se marca como tal — no se estima un factor estacional desde un único día |
 
 Todos son parámetros de configuración con estos valores de arranque; ajustarlos es una decisión
 de calibración **dentro** de los métodos ya fijados por `/speckit-clarify`, no una reapertura de

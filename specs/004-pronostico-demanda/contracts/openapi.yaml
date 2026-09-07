@@ -119,6 +119,13 @@ paths:
           content:
             application/json:
               schema: { $ref: '#/components/schemas/Error' }
+        '422':
+          description: |
+            `horizonte` no es `corto` ni `medio` (`codigo: "horizonte_invalido"`). El parámetro
+            se recibe como texto libre y se valida en la capa de servicio (FR-019).
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
         '409':
           description: |
             Se pidió un pronóstico de producción sobre un producto que sólo tiene datos sintéticos

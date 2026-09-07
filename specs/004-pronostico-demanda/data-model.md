@@ -106,6 +106,13 @@ historia").
 período con `valor: null` y un `estado: "no_estimable_censura_total"`; la columna `valor` se deja
 en 0 en la fila sólo como marcador no expuesto (nunca se presenta ese 0 al usuario — FR-012).
 
+*Campo `estado` de período (derivado, no columna)*: cada período de la serie corregida se expone
+con un `estado ∈ {`ok`, `no_estimable_censura_total`}` (`dominio/censura.py`: `ESTADO_OK`,
+`ESTADO_CENSURA_TOTAL`; mismo `enum` en `contracts/openapi.yaml`, `PuntoSerie.estado`). `ok` es el
+caso normal (con o sin corrección de quiebre); `no_estimable_censura_total` es el de la nota
+anterior. No se persiste como columna: se calcula al materializar la serie a partir de
+`censura_total`.
+
 ---
 
 ## `pronostico`
