@@ -64,6 +64,7 @@ Cardinalidad no acotada. Codificar en cualquier parte que las sucursales son dos
 | `precio_vigente` | `NUMERIC(12,4) NOT NULL` | Precio **base** del catálogo. Por unidad, o por kilogramo si `es_granel` |
 | `lleva_caducidad` | `BOOLEAN NOT NULL DEFAULT FALSE` | |
 | `moneda` | `CHAR(3) NOT NULL DEFAULT 'USD'` | ISO 4217. Ver nota de `venta.moneda` |
+| `url_imagen` | `TEXT NULL` | **US12** — URL externa de una imagen del producto para el catálogo en grid de Venta. Nulo ⇒ el frontend cae al ícono de familia de categoría (La Regla del Ícono por Categoría). El frontend además hace fallback en runtime con `onError`. Aditivo puro: ningún consumidor previo de `producto` la lee. Migración `0011`. |
 
 *Regla*: la política de cómo se fija `precio_vigente` pertenece a `003-precios-margenes`; este
 módulo solo lo almacena. El precio efectivo por sucursal se resuelve junto con

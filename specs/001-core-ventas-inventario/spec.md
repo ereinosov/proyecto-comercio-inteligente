@@ -425,6 +425,61 @@ operador desactivado tras la emisión: `401`.
 
 ---
 
+### User Story 12 - Catálogo de productos con imagen en la pantalla de Venta (Priority: P12)
+
+Hoy el cajero sólo puede agregar un producto al ticket escribiendo su nombre en el buscador
+(`SelectorProducto`). Esta historia añade, **como camino adicional que convive con el buscador**,
+un **catálogo en grid**: una grilla de tarjetas clickeables en la pantalla de Venta, cada una
+con la imagen del producto, su nombre, su código y su precio, y un botón de "agregar" que suma
+una unidad al ticket. La imagen se carga desde una **URL externa** configurable por producto
+(`producto.url_imagen`, nueva columna opcional); si no hay URL o si la URL falla al cargar, la
+tarjeta muestra el **ícono de familia de categoría** que ya existe (La Regla del Ícono por
+Categoría). La URL se edita desde el CRUD de Producto de Administración.
+
+Es un cambio de esquema ADITIVO sobre `producto`, entidad ya certificada de US1: una columna
+`TEXT NULL`, sin migración de datos, que ningún consumidor previo lee.
+
+**Why this priority**: es la última historia numerada; depende del flujo de venta (US1), del
+catálogo (`GET /productos`) y del CRUD de Producto de Administración. No toca ningún cálculo de
+dinero, existencias ni el contrato de `POST /ventas` — agregar por tarjeta produce exactamente
+el mismo renglón que agregar por el buscador. La decisión de alojar las imágenes fuera del
+repositorio (URL externa en vivo) es deliberada, con su riesgo de disponibilidad aceptado
+explícitamente y cubierto por el fallback obligatorio.
+
+**Independent Test**: configurar `url_imagen` en un producto con una URL que carga y dejar otro
+sin URL; abrir Venta y verificar que (a) el primero muestra su foto y el segundo el ícono de
+categoría; (b) romper la URL del primero (o desconectar) hace que su tarjeta caiga al ícono sin
+romper el grid; (c) hacer click en "agregar" de una tarjeta suma al ticket el mismo renglón,
+cantidad y cálculo de importe que agregar ese producto por el buscador; (d) el buscador
+`SelectorProducto` sigue funcionando igual que antes.
+
+**Acceptance Scenarios**:
+
+1. **Given** un producto con `url_imagen` accesible, **When** el cajero abre Venta, **Then** la
+   tarjeta de ese producto en el grid muestra la imagen de esa URL.
+2. **Given** un producto sin `url_imagen`, **When** se renderiza su tarjeta, **Then** muestra el
+   ícono SVG de su familia de categoría, nunca un hueco ni una imagen rota.
+3. **Given** un producto cuya `url_imagen` responde error o no carga, **When** el `<img>` dispara
+   `onError`, **Then** la tarjeta reemplaza la imagen por el ícono de familia de categoría y el
+   resto del grid sigue intacto.
+4. **Given** el grid del catálogo, **When** el cajero hace click en "agregar" de una tarjeta,
+   **Then** se añade al ticket un renglón idéntico —mismo producto, cantidad 1 (o el flujo de
+   peso para granel), mismo `precio_efectivo` y mismo importe— al que produce el buscador.
+5. **Given** las categorías reales del sistema, **When** el cajero elige una en el filtro de
+   chips sobre el grid, **Then** el grid muestra sólo los productos de esa categoría; "Todos"
+   quita el filtro.
+6. **Given** un `encargado` en Administración, **When** crea o edita un producto, **Then** puede
+   escribir o borrar una `url_imagen`; una URL que no empiece por `http://` o `https://` se
+   rechaza con `{codigo: "admin_url_imagen_invalida"}`, y vacía se guarda como `null`.
+7. **Given** una pantalla de 1366 px de ancho, **When** se renderiza Venta, **Then** el catálogo
+   y el ticket se ven sin scroll horizontal ni grid roto; por debajo del breakpoint del layout
+   de dos columnas se apilan en vertical.
+8. **Given** el botón "agregar" de cada tarjeta, **When** se inspecciona su color, **Then** no
+   usa el Verde Rasero (`--color-marca`): ese color sigue exclusivo del botón Cobrar (La Regla
+   de la Sola Voz).
+
+---
+
 ### Edge Cases
 
 - **Peso cero o negativo en báscula**: un renglón de granel con cantidad menor o igual a cero se
@@ -760,12 +815,42 @@ enmienda constitucional v2.4.0)**
   precios/pronóstico/promociones) quedan FUERA DEL ALCANCE de esta historia: no cambian y siguen
   aceptando peticiones sin token. Se anotan como candidatos a una historia futura.
 
+**Catálogo de productos con imagen (User Story 12)**
+
+- **FR-074**: `producto` gana una columna `url_imagen TEXT NULL` (migración `0011`, aditiva, sin
+  migración de datos). `GET /productos` y el listado/alta/edición de Producto de Administración
+  DEBEN incluirla en su respuesta. Ningún otro consumidor de `producto` la lee ni cambia.
+- **FR-075**: El alta y la edición de Producto de Administración aceptan `url_imagen` opcional en
+  el cuerpo. Si viene vacía o sólo espacios se persiste `null`. Si trae texto DEBE ser una URL
+  `http`/`https` bien formada; si no, se rechaza con `{codigo: "admin_url_imagen_invalida"}`. El
+  sistema NO comprueba que la imagen exista de verdad — eso lo resuelve el frontend en runtime.
+- **FR-076**: La pantalla de Venta DEBE ofrecer un catálogo en grid de tarjetas de producto
+  **además** del buscador `SelectorProducto`, no en su lugar. Cada tarjeta muestra la imagen
+  (vía el componente `ImagenProducto`), el nombre, el código y el precio, y un control de
+  agregar. Agregar un producto desde una tarjeta DEBE producir exactamente el mismo renglón que
+  agregarlo por el buscador (misma cantidad, mismo `precio_efectivo`, mismo importe) — una sola
+  lógica de negocio, reutilizada.
+- **FR-077**: `ImagenProducto` DEBE renderizar `<img>` cuando hay `url_imagen`, y caer al ícono
+  SVG de familia de categoría (La Regla del Ícono por Categoría) cuando `url_imagen` es nula/vacía
+  **o** cuando el `<img>` dispara `onError`. Nunca un hueco ni una imagen rota. El mismo
+  componente se usa en toda superficie que hoy muestra sólo el ícono de categoría de un producto
+  (catálogo nuevo y la celda de producto del ticket).
+- **FR-078**: El grid ofrece un filtro por categoría con las categorías reales del sistema
+  (`Categoria`), más "Todos". El layout de Venta pasa a dos columnas (catálogo · ticket) con el
+  encabezado a lo ancho y el total + Cobrar anclados abajo; por debajo del breakpoint de dos
+  columnas, catálogo y ticket se apilan en vertical, sin scroll horizontal a 1366 px.
+- **FR-079**: Ningún elemento nuevo de la pantalla de Venta usa el Verde Rasero (`--color-marca`)
+  — el control de agregar de cada tarjeta usa el tratamiento de acción secundaria/neutra. El
+  verde sigue exclusivo del botón Cobrar (La Regla de la Sola Voz).
+
 ### Key Entities
 
 Entidades ya asignadas a este módulo por la constitución vigente:
 
 - **sucursal**: local físico con su zona horaria. Cardinalidad no acotada.
 - **producto**: artículo del catálogo. Indica si se vende a granel y a qué categoría pertenece.
+  **Enmienda US12**: gana `url_imagen` (`TEXT NULL`), la URL externa de una imagen para el
+  catálogo en grid de Venta — opcional, con fallback al ícono de familia de categoría.
 - **categoria**: agrupación de productos; porta el umbral de días de capital inmovilizado.
 - **zona_exhibicion**: zona física de exhibición dentro de una sucursal, con su grado de
   privilegio. Este módulo la cataloga; el módulo de precios y márgenes la usa para sugerir

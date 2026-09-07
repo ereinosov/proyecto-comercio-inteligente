@@ -913,6 +913,17 @@ components:
             Precio base, o el override de producto_precio_sucursal si se indicó id_sucursal y
             existe una fila para esa combinación.
         moneda: { $ref: '#/components/schemas/Moneda' }
+        id_categoria:
+          type: integer
+          nullable: true
+        url_imagen:
+          type: string
+          nullable: true
+          description: |
+            US12 — URL externa de una imagen del producto para el catálogo en grid de Venta.
+            `null` cuando no se configuró; el frontend cae entonces al ícono de familia de
+            categoría (La Regla del Ícono por Categoría), y también hace fallback en runtime si
+            la URL falla al cargar. Editable desde Administración.
 
     Existencia:
       type: object

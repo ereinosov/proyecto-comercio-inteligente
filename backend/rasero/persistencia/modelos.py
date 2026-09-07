@@ -63,6 +63,11 @@ class Producto(Base):
     lleva_caducidad: Mapped[bool] = mapped_column(Boolean, nullable=False, default=False)
     moneda: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")
     activo: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # US12: URL externa de una imagen del producto para el catálogo de Venta. Opcional —
+    # `NULL` cae al ícono de familia de categoría (La Regla del Ícono por Categoría). El
+    # frontend además hace fallback en runtime si la URL falla al cargar. Aditivo puro: los
+    # consumidores de `producto` que no lo conozcan lo ignoran.
+    url_imagen: Mapped[str | None] = mapped_column(String, nullable=True)
 
 
 class ProductoPrecioSucursal(Base):

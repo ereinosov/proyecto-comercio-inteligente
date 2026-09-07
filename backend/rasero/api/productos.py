@@ -48,6 +48,7 @@ def listar_productos(
             "precio_efectivo": f"{p['precio_efectivo']:.4f}",
             "moneda": p["moneda"],
             "id_categoria": p["id_categoria"],
+            "url_imagen": p["url_imagen"],
         }
         for p in productos
     ]

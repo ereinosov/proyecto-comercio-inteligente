@@ -59,6 +59,8 @@ class ProductoCuerpo(BaseModel):
     es_granel: bool = False
     precio_vigente: Decimal
     lleva_caducidad: bool = False
+    # US12: URL externa de imagen del producto para el catálogo de Venta. Opcional.
+    url_imagen: str | None = None
 
 
 class ZonaCuerpo(BaseModel):
@@ -174,6 +176,7 @@ def crear_producto(
         es_granel=cuerpo.es_granel,
         precio_vigente=cuerpo.precio_vigente,
         lleva_caducidad=cuerpo.lleva_caducidad,
+        url_imagen=cuerpo.url_imagen,
         operador=operador,
     )
     sesion.commit()
@@ -270,6 +273,7 @@ def editar_producto(
         es_granel=cuerpo.es_granel,
         precio_vigente=cuerpo.precio_vigente,
         lleva_caducidad=cuerpo.lleva_caducidad,
+        url_imagen=cuerpo.url_imagen,
         operador=operador,
     )
     sesion.commit()

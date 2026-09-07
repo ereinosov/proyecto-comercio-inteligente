@@ -50,6 +50,7 @@ def listar_catalogo(
                 "precio_efectivo": precio_efectivo,
                 "moneda": producto.moneda,
                 "id_categoria": producto.id_categoria,
+                "url_imagen": producto.url_imagen,
                 "activo": producto.activo,
             }
         )

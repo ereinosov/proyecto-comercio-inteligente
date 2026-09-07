@@ -23,6 +23,7 @@ Los servicios no comitean: la transacción queda a cargo del endpoint (mismo pat
 from __future__ import annotations
 
 from decimal import Decimal
+from urllib.parse import urlparse
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -197,6 +198,7 @@ def crear_producto(
     es_granel: bool,
     precio_vigente: Decimal,
     lleva_caducidad: bool,
+    url_imagen: str | None = None,
     operador: Operador,
 ) -> Producto:
     requiere_rol(operador, "encargado")
@@ -209,6 +211,7 @@ def crear_producto(
         es_granel=bool(es_granel),
         precio_vigente=Decimal(precio_vigente),
         lleva_caducidad=bool(lleva_caducidad),
+        url_imagen=_valida_url_imagen(url_imagen),
     )
     sesion.add(producto)
     sesion.flush()
@@ -224,6 +227,7 @@ def actualizar_producto(
     es_granel: bool,
     precio_vigente: Decimal,
     lleva_caducidad: bool,
+    url_imagen: str | None = None,
     operador: Operador,
 ) -> Producto:
     requiere_rol(operador, "encargado")
@@ -235,8 +239,25 @@ def actualizar_producto(
     producto.es_granel = bool(es_granel)
     producto.precio_vigente = Decimal(precio_vigente)
     producto.lleva_caducidad = bool(lleva_caducidad)
+    producto.url_imagen = _valida_url_imagen(url_imagen)
     sesion.flush()
     return producto
+
+
+def _valida_url_imagen(valor: str | None) -> str | None:
+    """US12: la URL de imagen es opcional. Si viene vacía o sólo espacios, se guarda `NULL`. Si
+    trae texto, DEBE ser una URL http(s) bien formada — no se comprueba que la imagen exista de
+    verdad (eso lo resuelve el frontend en runtime con el fallback al ícono de categoría)."""
+    if valor is None or not valor.strip():
+        return None
+    limpio = valor.strip()
+    partes = urlparse(limpio)
+    if partes.scheme not in ("http", "https") or not partes.netloc:
+        raise ErrorAdministracion(
+            "admin_url_imagen_invalida",
+            "La URL de la imagen debe empezar por http:// o https://, o dejarse vacía.",
+        )
+    return limpio
 
 
 def _valida_categoria(sesion: Session, id_categoria: int | None) -> None:
@@ -607,6 +628,7 @@ def _a_dict(entidad: str, f) -> dict:
             "precio_vigente": f"{f.precio_vigente:.4f}",
             "lleva_caducidad": f.lleva_caducidad,
             "moneda": f.moneda,
+            "url_imagen": f.url_imagen,
             "activo": f.activo,
         }
     if entidad == "zonas":

@@ -145,6 +145,76 @@ def test_crear_producto_nuevo_desde_administracion(sesion):
     assert cuerpo["activo"] is True and cuerpo["precio_vigente"] == "2.5000"
 
 
+def test_crear_y_editar_producto_persiste_url_imagen(sesion):
+    """US12: la URL externa de imagen es opcional; si se envía, se persiste y se devuelve en el
+    alta, en la edición y en el catálogo (GET /productos)."""
+    encargado = crear_operador(sesion, es_encargado=True)
+    cab = headers_sesion(sesion, encargado)
+    categoria = Categoria(nombre=_nombre("Cat"))
+    sesion.add(categoria)
+    sesion.commit()
+
+    url = "https://cdn.example.com/img/atun.jpg"
+    alta = cliente.post(
+        "/administracion/productos",
+        json={
+            "nombre": _nombre("Prod"),
+            "id_categoria": categoria.id_categoria,
+            "es_granel": False,
+            "precio_vigente": "2.5000",
+            "lleva_caducidad": False,
+            "url_imagen": url,
+        },
+        headers=cab,
+    )
+    assert alta.status_code == 201, alta.text
+    id_producto = alta.json()["id_producto"]
+    assert alta.json()["url_imagen"] == url
+
+    # aparece en el catálogo que consume la pantalla de Venta
+    catalogo = cliente.get("/productos").json()
+    fila = next(p for p in catalogo if p["id_producto"] == id_producto)
+    assert fila["url_imagen"] == url
+
+    # editar a vacío -> se guarda NULL (no todos los productos necesitan imagen)
+    edit = cliente.put(
+        f"/administracion/productos/{id_producto}",
+        json={
+            "nombre": alta.json()["nombre"],
+            "id_categoria": categoria.id_categoria,
+            "es_granel": False,
+            "precio_vigente": "2.5000",
+            "lleva_caducidad": False,
+            "url_imagen": "  ",
+        },
+        headers=cab,
+    )
+    assert edit.status_code == 200, edit.text
+    assert edit.json()["url_imagen"] is None
+
+
+def test_crear_producto_con_url_imagen_malformada_es_rechazado(sesion):
+    encargado = crear_operador(sesion, es_encargado=True)
+    cab = headers_sesion(sesion, encargado)
+    categoria = Categoria(nombre=_nombre("Cat"))
+    sesion.add(categoria)
+    sesion.commit()
+
+    r = cliente.post(
+        "/administracion/productos",
+        json={
+            "nombre": _nombre("Prod"),
+            "id_categoria": categoria.id_categoria,
+            "es_granel": False,
+            "precio_vigente": "2.5000",
+            "lleva_caducidad": False,
+            "url_imagen": "atun.jpg",
+        },
+        headers=cab,
+    )
+    assert r.status_code >= 400 and r.status_code != 201, r.text
+
+
 def test_editar_cliente_no_requiere_encargado(sesion):
     cajero = crear_operador(sesion, es_encargado=False)
     sesion.commit()

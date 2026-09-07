@@ -48,6 +48,19 @@ desarrollo). Ver `spec.md` User Story 11 (FR-065 a FR-073), `data-model.md` (`op
 mecanismo central de autorización — línea base de pruebas antes y después (401 passed antes),
 pruebas nuevas de suplantación por cuerpo, token expirado, turno cerrado y operador desactivado.
 
+**User Story 12 (P12, catálogo de productos con imagen)** — añadida en la ronda de evolución
+visual (Fase 3b). Cambio de esquema **aditivo**: `producto.url_imagen TEXT NULL` (migración
+`0011`, sin migración de datos, ningún consumidor previo la lee). `GET /productos` y el CRUD de
+Producto de Administración la incluyen; `_valida_url_imagen` exige `http(s)` o vacío. Frontend:
+componente `ImagenProducto` (`<img>` con `onError` → ícono de familia de categoría, reutilizando
+la lógica de `IconoCategoria`); catálogo en grid con filtro de chips por categoría en `Venta.tsx`,
+que pasa a un **layout de dos columnas** (catálogo · ticket); `SelectorProducto` se conserva sin
+cambios de comportamiento — ambos caminos conviven. Las imágenes se alojan **fuera del
+repositorio** (URL externa en vivo): decisión consciente, riesgo de disponibilidad aceptado
+explícitamente y cubierto por el fallback obligatorio. Excepción puntual al Principio III: se
+añade `vitest` sólo para el test de comportamiento de `ImagenProducto`. Ver `spec.md` User Story
+12 (FR-074 a FR-079), `data-model.md` (`producto`), `tasks.md` y la enmienda de `DESIGN.md`.
+
 **User Story 9 (P9, corregir el carrito antes de cobrar)** — añadida por auditoría de uso tras la
 certificación de US1. Es puramente de frontend: el carrito de `Venta.tsx` vive en `useState`
 (`renglones`) y no se persiste hasta "Cobrar" (verificado en el código). US9 solo añade lógica de
