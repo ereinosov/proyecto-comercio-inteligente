@@ -12,9 +12,10 @@
  * lógica de cobro, idempotencia, anulación, visita de cliente ni redención de promoción.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarCategorias, listarProductos, type Categoria, type Producto } from "../servicios/productos";
+import { listarExistencias } from "../servicios/inventario";
 import { ImagenProducto } from "../componentes/ImagenProducto";
 import { SelectorProducto } from "../componentes/SelectorProducto";
 import { CrearProductoModal } from "../componentes/CrearProductoModal";
@@ -87,6 +88,9 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   const { esEncargadoOMas } = useRol(rol);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
+  // US14: existencia total por producto en la sucursal del turno. Una sola consulta, la comparten
+  // el catálogo y el buscador; se refresca al cobrar (el stock cambió).
+  const [existencias, setExistencias] = useState<Map<number, number>>(new Map());
   const [creandoProducto, setCreandoProducto] = useState(false);
   const [renglones, setRenglones] = useState<RenglonTicket[]>([]);
   const [agregando, setAgregando] = useState(false);
@@ -105,10 +109,17 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   const [enviandoConsulta, setEnviandoConsulta] = useState(false);
   const [consultaAnotada, setConsultaAnotada] = useState<string | null>(null);
 
+  const recargarExistencias = useCallback(() => {
+    listarExistencias(turno.id_sucursal)
+      .then((filas) => setExistencias(new Map(filas.map((f) => [f.id_producto, f.cantidad]))))
+      .catch(() => setExistencias(new Map()));
+  }, [turno.id_sucursal]);
+
   useEffect(() => {
     listarProductos(turno.id_sucursal).then(setProductos);
     listarCategorias().then(setCategorias).catch(() => setCategorias([]));
-  }, [turno.id_sucursal]);
+    recargarExistencias();
+  }, [turno.id_sucursal, recargarExistencias]);
 
   const productoNuevo = productos.find((p) => p.id_producto === idProductoNuevo);
 
@@ -287,6 +298,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
       // nunca llega a verse (defecto detectado al verificar visualmente).
       setCobrando(false);
       setConfirmado(true);
+      recargarExistencias(); // US14: el stock cambió con esta venta.
       setTimeout(() => {
         setVentaConfirmada(venta);
         setConfirmado(false);
@@ -435,6 +447,8 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
             productos={productos}
             categorias={categorias}
             onAgregar={agregarDesdeCatalogo}
+            existencias={existencias}
+            idSucursal={turno.id_sucursal}
           />
         </section>
 
@@ -511,6 +525,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
                           autoAbrir
                           seleccionado={productoNuevo ?? null}
                           onSeleccionar={(p) => setIdProductoNuevo(p?.id_producto ?? "")}
+                          existencias={existencias}
                         />
                       </span>
                     </div>

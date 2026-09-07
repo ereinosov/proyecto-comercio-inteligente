@@ -10,8 +10,10 @@ import { ErrorApi } from "../servicios/clienteHttp";
 import { listarProductos, type Producto } from "../servicios/productos";
 import { listarSucursales, type Sucursal } from "../servicios/sucursales";
 import { type Traspaso, despacharTraspaso } from "../servicios/traspasos";
+import { listarExistencias } from "../servicios/inventario";
 import { RecepcionTraspaso } from "./RecepcionTraspaso";
 import { Boton } from "../componentes/Boton";
+import { ExistenciaProducto } from "../componentes/ExistenciaProducto";
 import estilos from "./Inventario.module.css";
 
 interface Props {
@@ -31,10 +33,15 @@ export function DespachoTraspaso({ idSucursal }: Props) {
   const [enTransito, setEnTransito] = useState<Traspaso | null>(null);
   const [despachando, setDespachando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // US14: existencia total por producto en la sucursal de ORIGEN.
+  const [existencias, setExistencias] = useState<Map<number, number>>(new Map());
 
   useEffect(() => {
     listarProductos(idSucursal).then(setProductos).catch(() => setProductos([]));
     listarSucursales().then(setSucursales).catch(() => setSucursales([]));
+    listarExistencias(idSucursal)
+      .then((filas) => setExistencias(new Map(filas.map((f) => [f.id_producto, f.cantidad]))))
+      .catch(() => setExistencias(new Map()));
   }, [idSucursal]);
 
   const destinos = sucursales.filter((s) => s.id_sucursal !== idSucursal);
@@ -124,6 +131,7 @@ export function DespachoTraspaso({ idSucursal }: Props) {
           <tr>
             <th>Producto</th>
             <th className={estilos.num}>Cantidad</th>
+            <th>En origen</th>
           </tr>
         </thead>
         <tbody>
@@ -155,6 +163,15 @@ export function DespachoTraspaso({ idSucursal }: Props) {
                   value={l.cantidad}
                   onChange={(e) => cambiarLinea(i, "cantidad", e.target.value)}
                 />
+              </td>
+              <td>
+                {l.id_producto > 0 && (
+                  <ExistenciaProducto
+                    idSucursal={idSucursal}
+                    idProducto={l.id_producto}
+                    total={existencias.get(l.id_producto)}
+                  />
+                )}
               </td>
             </tr>
           ))}

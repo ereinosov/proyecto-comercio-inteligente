@@ -118,7 +118,10 @@
 }
 
 .filaResultado {
-  display: block;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--espacio-3);
   width: 100%;
   text-align: left;
   font-family: var(--tipografia-operacion);
@@ -132,6 +135,19 @@
 
 .filaResultado:hover {
   background: var(--color-superficie-base);
+}
+
+/* US14: existencia total junto al nombre del producto en los resultados del buscador. */
+.stock,
+.stockCritico {
+  flex-shrink: 0;
+  font-size: var(--texto-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta-suave);
+}
+.stockCritico {
+  color: var(--color-critico);
+  font-weight: var(--peso-fuerte);
 }
 
 .acciones {

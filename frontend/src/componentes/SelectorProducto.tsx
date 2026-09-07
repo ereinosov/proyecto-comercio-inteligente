@@ -20,6 +20,8 @@ interface Props {
   /** Abre el buscador de entrada, sin el paso previo "+ Elegir producto". Para el flujo de
    *  caja, de mayor frecuencia: el cajero ya quiere teclear el nombre. */
   autoAbrir?: boolean;
+  /** US14: existencia total por id_producto, para mostrarla junto a cada resultado. */
+  existencias?: Map<number, number>;
 }
 
 export function SelectorProducto({
@@ -27,6 +29,7 @@ export function SelectorProducto({
   seleccionado,
   onSeleccionar,
   autoAbrir = false,
+  existencias,
 }: Props) {
   const [abierto, setAbierto] = useState(autoAbrir);
   const [busqueda, setBusqueda] = useState("");
@@ -109,13 +112,25 @@ export function SelectorProducto({
           <p className={estilos.pista}>Ningún producto coincide con «{busqueda.trim()}».</p>
         ) : (
           <ul className={estilos.resultados}>
-            {resultados.map((p) => (
-              <li key={p.id_producto}>
-                <button type="button" className={estilos.filaResultado} onClick={() => elegir(p)}>
-                  {p.nombre}
-                </button>
-              </li>
-            ))}
+            {resultados.map((p) => {
+              const stock = existencias?.get(p.id_producto);
+              return (
+                <li key={p.id_producto}>
+                  <button
+                    type="button"
+                    className={estilos.filaResultado}
+                    onClick={() => elegir(p)}
+                  >
+                    {p.nombre}
+                    {stock !== undefined && (
+                      <span className={stock <= 0 ? estilos.stockCritico : estilos.stock}>
+                        Stock {stock}
+                      </span>
+                    )}
+                  </button>
+                </li>
+              );
+            })}
           </ul>
         )}
         <button

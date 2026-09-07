@@ -18,6 +18,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Categoria, Producto } from "../servicios/productos";
 import { ImagenProducto } from "./ImagenProducto";
+import { ExistenciaProducto } from "./ExistenciaProducto";
 import { EstadoVacio } from "./EstadoVacio";
 import { Paginador } from "./Paginador";
 import { Buscador } from "./Buscador";
@@ -30,9 +31,18 @@ interface Props {
   productos: Producto[];
   categorias: Categoria[];
   onAgregar: (producto: Producto) => void;
+  /** US14: existencia total por id_producto en la sucursal del turno (una sola consulta en Venta). */
+  existencias: Map<number, number>;
+  idSucursal: number;
 }
 
-export function CatalogoProductos({ productos, categorias, onAgregar }: Props) {
+export function CatalogoProductos({
+  productos,
+  categorias,
+  onAgregar,
+  existencias,
+  idSucursal,
+}: Props) {
   const [idCategoria, setIdCategoria] = useState<number | null>(null);
   const [texto, setTexto] = useState("");
   const [pagina, setPagina] = useState(1);
@@ -132,6 +142,11 @@ export function CatalogoProductos({ productos, categorias, onAgregar }: Props) {
                       +
                     </button>
                   </div>
+                  <ExistenciaProducto
+                    idSucursal={idSucursal}
+                    idProducto={p.id_producto}
+                    total={existencias.get(p.id_producto)}
+                  />
                 </div>
               </li>
             ))}

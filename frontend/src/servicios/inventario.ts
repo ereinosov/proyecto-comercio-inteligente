@@ -23,6 +23,16 @@ export interface Existencia {
   es_granel: boolean;
 }
 
+/** US14: un lote del desglose de existencia de un producto. `costo_unitario` sólo llega si se
+ *  pidió `incluir_costo` — la pantalla de Venta nunca lo pide. */
+export interface LoteExistencia {
+  id_lote: number;
+  cantidad: number;
+  fecha_caducidad: string | null;
+  instante_entrada: string;
+  costo_unitario?: string | null;
+}
+
 export interface CapitalInmovilizado {
   id_lote: number;
   id_producto: number;
@@ -48,6 +58,19 @@ export function registrarEntrada(datos: {
 export function listarExistencias(idSucursal: number, idProducto?: number): Promise<Existencia[]> {
   const q = idProducto !== undefined ? `&id_producto=${idProducto}` : "";
   return clienteHttp.get<Existencia[]>(`/existencias?id_sucursal=${idSucursal}${q}`);
+}
+
+/** US14: desglose por lote del saldo de un producto en una sucursal, en orden FEFO.
+ *  `incluirCosto` sólo lo usan superficies con derecho a ver margen (traspasos), nunca Venta. */
+export function existenciasPorLote(
+  idSucursal: number,
+  idProducto: number,
+  incluirCosto = false,
+): Promise<LoteExistencia[]> {
+  const costo = incluirCosto ? "&incluir_costo=true" : "";
+  return clienteHttp.get<LoteExistencia[]>(
+    `/existencias/lotes?id_sucursal=${idSucursal}&id_producto=${idProducto}${costo}`,
+  );
 }
 
 export function listarCapitalInmovilizado(idSucursal: number): Promise<CapitalInmovilizado[]> {

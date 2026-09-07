@@ -1,0 +1,81 @@
+/* Existencia por lote (US14). Medidas de la escala de tokens.css. Sin sombra. */
+
+.contenedor {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+.operacion {
+  font-family: var(--tipografia-operacion);
+}
+.analisis {
+  font-family: var(--tipografia-analisis);
+}
+
+.disparador {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-1);
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  font: inherit;
+  color: var(--color-tinta-suave);
+}
+.disparador:hover .total {
+  color: var(--color-tinta);
+}
+
+.total,
+.totalCritico {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--texto-xs);
+}
+.totalCritico {
+  color: var(--color-critico);
+  font-weight: var(--peso-fuerte);
+}
+
+.caret {
+  font-size: var(--texto-xs);
+}
+
+.desglose {
+  border-left: 2px solid var(--color-borde);
+  padding-left: var(--espacio-2);
+}
+
+.lista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+
+.fila,
+.filaCritica {
+  display: flex;
+  gap: var(--espacio-2);
+  font-size: var(--texto-xs);
+  color: var(--color-tinta-suave);
+}
+.filaCritica .cantidad {
+  color: var(--color-critico);
+  font-weight: var(--peso-fuerte);
+}
+
+.cantidad {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+  min-width: 3ch;
+  text-align: right;
+}
+
+.nota {
+  margin: 0;
+  font-size: var(--texto-xs);
+  color: var(--color-tinta-suave);
+}
