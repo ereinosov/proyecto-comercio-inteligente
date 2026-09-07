@@ -116,7 +116,7 @@ export function DespachoTraspaso({ idSucursal }: Props) {
         </div>
       </div>
 
-      <table className={estilos.tabla}>
+      <table className={`${estilos.tabla} ${estilos.tablaEditable}`}>
         <thead>
           <tr>
             <th>Producto</th>

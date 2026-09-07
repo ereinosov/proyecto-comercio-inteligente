@@ -39,11 +39,30 @@
 
 .tabla {
   width: 100%;
+  /* Anchos de columna estables (no dependientes del contenido de la fila más ancha): el
+     encabezado cae siempre sobre su columna aunque haya pocas filas. Producto toma el resto. */
+  table-layout: fixed;
   border-collapse: collapse;
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
   font-size: 15px;
+}
+
+.tabla th:nth-child(2) {
+  width: 104px;
+}
+
+.tabla th:nth-child(3) {
+  width: 96px;
+}
+
+.tabla th:nth-child(4) {
+  width: 116px;
+}
+
+.tabla th:nth-child(5) {
+  width: 40px;
 }
 
 .tabla th {
@@ -64,8 +83,19 @@
   vertical-align: middle;
 }
 
-.num {
+/* `.tabla th.num` / `.tabla td.num` (0,2,1) — DEBE ganar a `.tabla th { text-align: left }`
+   (0,1,1). Con sólo `.num` (0,1,0) el encabezado numérico se quedaba alineado a la izquierda
+   mientras su columna de datos iba a la derecha: ésa era la causa real del descuadre. */
+.tabla th.num,
+.tabla td.num {
   text-align: right;
+}
+
+/* "Cantidad" contiene un <input> (borde+padding propios) seguido de la unidad. Su encabezado se
+   sangra a la derecha 12 (celda) + 18 (caja de unidad) + 4 (gap) + 9 (borde+padding-r del input)
+   para caer justo sobre el número, no sobre la unidad ni el borde del campo. */
+.tabla th.thCantidad {
+  padding-right: 43px;
 }
 
 /* Ícono de familia de categoría + nombre (La Regla del Ícono por Categoría). */
@@ -133,16 +163,20 @@
   text-align: right;
 }
 
-/* US9 — edición inline de la cantidad/peso de un renglón del carrito. */
+/* US9 — edición inline de la cantidad/peso de un renglón del carrito. El grupo llena la celda y
+   se alinea a la derecha: [ input (llena) ][ unidad (ancho fijo) ]. */
 .cantidadEditable {
-  display: inline-flex;
+  display: flex;
   align-items: baseline;
+  justify-content: flex-end;
   gap: 4px;
   color: var(--color-tinta-suave);
   font-size: 13px;
 }
 
 .inputCantidadLinea {
+  flex: 1;
+  min-width: 0;
   font-family: var(--tipografia-operacion);
   font-size: 15px;
   font-variant-numeric: tabular-nums;
@@ -150,9 +184,18 @@
   background: var(--color-superficie-alta);
   border: 1px solid var(--color-borde);
   border-radius: var(--radio-operacion);
-  padding: 4px 6px;
-  width: 72px;
+  padding: 4px 8px;
   text-align: right;
+}
+
+/* Unidad ("u" / "kg"): caja de ancho fijo a la derecha del número — su ancho es el que el
+   encabezado "Cantidad" descuenta (.thCantidad) para caer sobre el número, no sobre la unidad. */
+.unidad {
+  flex-shrink: 0;
+  display: inline-block;
+  width: 18px;
+  text-align: left;
+  color: var(--color-tinta-suave);
 }
 
 .inputCantidadLinea:focus-visible {

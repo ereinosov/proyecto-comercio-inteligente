@@ -135,7 +135,7 @@ export function ResolucionConteo({ conteo, productos, onResuelto, onCancelar }: 
         Escribe lo que contaste en estantería y bodega. Deja en blanco lo que no cuentes en esta
         sesión.
       </p>
-      <table className={estilos.tabla}>
+      <table className={`${estilos.tabla} ${estilos.tablaEditable}`}>
         <thead>
           <tr>
             <th>Producto</th>

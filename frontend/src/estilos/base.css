@@ -16,3 +16,19 @@ body,
 body {
   margin: 0;
 }
+
+/* Los <input type="number"> del sistema (cantidad en el carrito de Venta, traspasos, conteo
+   físico) viven en columnas de tabla alineadas a la derecha. Las flechas de spinner nativas de
+   Chrome roban ~17px al borde derecho del campo y descuadran el número respecto del encabezado
+   de su columna. Se ocultan en todo el sistema — la cantidad se teclea, nunca se pulsa. Mismo
+   criterio que `Selector.module.css`, que ya anula la apariencia nativa del <select>. */
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+input[type="number"]::-webkit-outer-spin-button,
+input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}

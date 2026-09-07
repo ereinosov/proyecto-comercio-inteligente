@@ -50,8 +50,30 @@
   vertical-align: middle;
 }
 
-.num {
+/* `.tabla th.num` / `.tabla td.num` (0,2,1) DEBE ganar a `.tabla th { text-align: left }`
+   (0,1,1): con sólo `.num` el encabezado numérico quedaba a la izquierda de su columna. */
+.tabla th.num,
+.tabla td.num {
   text-align: right;
+}
+
+/* Tabla de captura de conteo (ResolucionConteo): la última columna tiene un <input>. Ancho fijo
+   para que el encabezado no dependa del contenido, el input llena su columna y el encabezado se
+   sangra el inset del campo (borde 1 + padding-r 8 + padding de celda 12 = 21) para caer sobre
+   el número. */
+.tablaEditable {
+  table-layout: fixed;
+}
+
+.tablaEditable th:last-child {
+  width: 150px;
+  padding-right: 21px;
+}
+
+.tablaEditable td:last-child .inputCantidad {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 4px 8px;
 }
 
 .inputCantidad {

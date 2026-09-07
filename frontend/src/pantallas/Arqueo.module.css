@@ -138,7 +138,11 @@
   background: var(--color-superficie-alta);
 }
 
-.der {
+/* `.tabla th.der` / `.tabla td.der` (0,2,1) DEBE ganar a `.tabla th, .tabla td { text-align:
+   left }` (0,1,1): con sólo `.der` los encabezados "Esperado"/"Contado" quedaban a la izquierda
+   mientras sus columnas de importes iban a la derecha. */
+.tabla th.der,
+.tabla td.der {
   text-align: right;
 }
 

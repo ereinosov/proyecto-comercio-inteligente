@@ -384,7 +384,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
           <thead>
             <tr>
               <th>Producto</th>
-              <th className={estilos.num}>Cantidad</th>
+              <th className={`${estilos.num} ${estilos.thCantidad}`}>Cantidad</th>
               <th className={estilos.num}>Precio</th>
               <th className={estilos.num}>Importe</th>
               <th aria-label="Quitar" />
@@ -414,7 +414,9 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
                       onChange={(e) => editarCantidadRenglon(r.idLocal, e.target.value)}
                       aria-label={`Cantidad de ${r.producto.nombre}`}
                     />
-                    {r.cantidadGramos !== undefined ? "kg" : "u"}
+                    <span className={estilos.unidad}>
+                      {r.cantidadGramos !== undefined ? "kg" : "u"}
+                    </span>
                   </span>
                 </td>
                 <td className={estilos.num}>{formatearMoneda(r.producto.precio_efectivo)}</td>

@@ -118,7 +118,7 @@ export function RecepcionTraspaso({ traspaso, productos, onConfirmado }: Props) 
       <p className={estilos.nota}>
         Confirma cuánto llegó de cada producto del traspaso #{traspaso.id_traspaso}.
       </p>
-      <table className={estilos.tabla}>
+      <table className={`${estilos.tabla} ${estilos.tablaEditable}`}>
         <thead>
           <tr>
             <th>Producto</th>
