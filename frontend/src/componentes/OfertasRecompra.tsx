@@ -10,11 +10,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
+  cancelarOfertaRecompra,
   detectarOfertasRecompra,
   listarOfertasRecompra,
   type OfertaRecompra,
   type ResultadoDeteccion,
 } from "../servicios/promociones";
+import { Boton } from "./Boton";
 import estilos from "./OfertasRecompra.module.css";
 
 const ETIQUETA_DESENLACE: Record<OfertaRecompra["desenlace"], string> = {
@@ -103,6 +105,26 @@ export function OfertasRecompra({ idSucursal }: { idSucursal: number }) {
                 {o.justificacion.ventana_dias} días (ventas{" "}
                 {o.justificacion.ventas_consideradas.join(", ")}).
               </p>
+              {o.desenlace === "pendiente" && (
+                <Boton
+                  variante="neutra"
+                  registro="analisis"
+                  tamano="sm"
+                  onClick={async () => {
+                    if (!window.confirm("¿Cancelar esta oferta de recompra?")) return;
+                    try {
+                      await cancelarOfertaRecompra(o.id_oferta_recompra);
+                      recargar();
+                    } catch (e) {
+                      setError(
+                        e instanceof ErrorApi ? e.message : "No se pudo cancelar la oferta."
+                      );
+                    }
+                  }}
+                >
+                  Cancelar oferta
+                </Boton>
+              )}
             </li>
           ))}
         </ul>

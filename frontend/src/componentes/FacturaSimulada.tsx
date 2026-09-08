@@ -8,17 +8,28 @@
 
 import { etiquetaMedioPago, formatearMoneda } from "../utilidades/formato";
 import type { Factura } from "../servicios/facturas";
+// Logo monocromático del comercio: DESIGN.md v1.3.0/v1.4.0 lo reservó para reportes,
+// dashboards y estados vacíos; se amplía aquí al documento formal de la factura simulada.
+import marcaMono from "../activos/marca/despensa-logo-mono-800w.png";
 import estilos from "./FacturaSimulada.module.css";
 
 export function FacturaSimulada({ factura }: { factura: Factura }) {
   const c = factura.comprador;
   const esNota = factura.tipo === "nota_credito";
   return (
-    <div className={estilos.documento}>
+    <div className={`${estilos.documento} ${esNota ? estilos.docNota : ""}`.trim()}>
       <p className={estilos.aviso}>{factura.aviso_simulacion}</p>
+
+      {esNota && (
+        <p className={estilos.avisoNota}>
+          No es una segunda factura: es la <strong>nota de crédito</strong> que revierte la
+          factura de esta venta. Sus importes van en negativo y el neto de las dos es cero.
+        </p>
+      )}
 
       <header className={estilos.encabezado}>
         <div>
+          <img className={estilos.logo} src={marcaMono} alt="" aria-hidden="true" />
           <strong className={estilos.emisor}>{factura.emisor.razon_social}</strong>
           <div className={estilos.dato}>RUC: {factura.emisor.ruc}</div>
           {factura.emisor.direccion && <div className={estilos.dato}>{factura.emisor.direccion}</div>}

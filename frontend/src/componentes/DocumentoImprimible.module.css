@@ -49,4 +49,10 @@
   [data-noprint] {
     display: none !important;
   }
+
+  /* La hoja se monta en un portal a <body>, hermana de #root. Al imprimir, todo lo demás de
+     la app (nav, pantalla de fondo, barra de scroll) se oculta: sólo sale la factura. */
+  :global(body.imprimiendo-doc #root) {
+    display: none !important;
+  }
 }

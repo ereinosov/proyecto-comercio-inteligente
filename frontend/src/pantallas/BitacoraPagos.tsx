@@ -9,10 +9,11 @@
 import { useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
-  consultarBitacora,
+  consultarBitacoraPagina,
   type EntradaBitacora,
   type TipoEventoBitacora,
 } from "../servicios/pagos";
+import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import estilos from "./BitacoraPagos.module.css";
 
 const TIPOS: TipoEventoBitacora[] = [
@@ -36,6 +37,8 @@ const CRITICOS = new Set<TipoEventoBitacora>(["pan_rechazado", "terminal_expuest
 
 export function BitacoraPagos({ idSucursal }: { idSucursal: number }) {
   const [entradas, setEntradas] = useState<EntradaBitacora[]>([]);
+  const [total, setTotal] = useState(0);
+  const [pagina, setPagina] = useState(1);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
   const [tipo, setTipo] = useState<TipoEventoBitacora | "">("");
@@ -43,22 +46,38 @@ export function BitacoraPagos({ idSucursal }: { idSucursal: number }) {
   useEffect(() => {
     setCargando(true);
     setError(null);
-    consultarBitacora(idSucursal, tipo ? { tipoEvento: tipo } : {})
-      .then(setEntradas)
+    consultarBitacoraPagina(idSucursal, {
+      ...(tipo ? { tipoEvento: tipo } : {}),
+      pagina,
+      tamanoPagina: TAMANO_PAGINA,
+    })
+      .then(({ items, total: t }) => {
+        setEntradas(items);
+        setTotal(t ?? items.length);
+      })
       .catch((e) =>
         setError(e instanceof ErrorApi ? e.message : "No se pudo cargar la bitácora.")
       )
       .finally(() => setCargando(false));
-  }, [idSucursal, tipo]);
+  }, [idSucursal, tipo, pagina]);
+
+  useEffect(() => setPagina(1), [idSucursal, tipo]);
+
+  const totalPaginas = Math.max(1, Math.ceil(total / TAMANO_PAGINA));
 
   return (
     <div className={estilos.pantalla}>
       <div className={estilos.encabezado}>
-        <h2 className={estilos.titulo}>Bitácora de pagos</h2>
+        <h2 className={estilos.titulo}>Registro de seguridad</h2>
         <span className={estilos.resumen}>
-          {entradas.length} entrada{entradas.length === 1 ? "" : "s"} · sólo lectura
+          {total} evento{total === 1 ? "" : "s"} · sólo lectura
         </span>
       </div>
+
+      <p className={estilos.resumen} style={{ padding: "0 24px" }}>
+        Rastro inmutable de los hechos de seguridad de pagos: tokens emitidos, PAN rechazado,
+        firmware y terminales. Para las ventas y su medio de pago, usa «Cobros por venta».
+      </p>
 
       <div className={estilos.filtros}>
         <select
@@ -121,6 +140,11 @@ export function BitacoraPagos({ idSucursal }: { idSucursal: number }) {
           </tbody>
         </table>
       </div>
+      {!cargando && entradas.length > 0 && (
+        <div className={estilos.paginadorZona}>
+          <Paginador pagina={pagina} totalPaginas={totalPaginas} onCambiar={setPagina} numerado />
+        </div>
+      )}
     </div>
   );
 }

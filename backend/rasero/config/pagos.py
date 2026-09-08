@@ -34,15 +34,36 @@ RETENCION_BITACORA_ANIOS: int = int(os.environ.get("PAGOS_RETENCION_BITACORA_ANI
 
 # Última versión de firmware conocida por modelo de datáfono (research.md #3, #10). Lo puebla el
 # negocio. Vacío para un modelo ⇒ "versión de referencia desconocida", nunca "al día" (FR-010).
+# El default trae un catálogo de DEMOSTRACIÓN de los modelos que la semilla registra, para que
+# la pantalla no muestre "versión de referencia desconocida" en todas las terminales sembradas.
+# Sobrescribible por `PAGOS_ULTIMA_VERSION_FIRMWARE` (JSON) en un despliegue real.
 ULTIMA_VERSION_FIRMWARE: dict[str, str] = json.loads(
-    os.environ.get("PAGOS_ULTIMA_VERSION_FIRMWARE", "{}")
+    os.environ.get(
+        "PAGOS_ULTIMA_VERSION_FIRMWARE",
+        json.dumps(
+            {
+                "Verifone V240m": "3.4.1",
+                "Ingenico Move 5000": "5.2.0",
+                "PAX A920": "8.1.0",
+                "Datafono Genérico": "2.0.0",
+            }
+        ),
+    )
 )
 
 # Versiones/modelos de firmware con vulnerabilidad de clonación conocida (research.md #3, #10). Cada
 # entrada: `{modelo?, version, referencia}`. Lo puebla el negocio desde boletines del fabricante o
 # avisos de seguridad. Vacía ⇒ 0 terminales marcadas "expuesta a clonación" (Edge Case del spec).
+# Default de DEMOSTRACIÓN; sobrescribible por `PAGOS_LISTA_FIRMWARE_VULNERABLE` (JSON).
 LISTA_FIRMWARE_VULNERABLE: list[dict] = json.loads(
-    os.environ.get("PAGOS_LISTA_FIRMWARE_VULNERABLE", "[]")
+    os.environ.get(
+        "PAGOS_LISTA_FIRMWARE_VULNERABLE",
+        json.dumps(
+            [
+                {"modelo": "PAX A920", "version": "7.9.0", "referencia": "BOLETIN-PAX-2025-04"},
+            ]
+        ),
+    )
 )
 
 # Prefijos BIN → marca de tarjeta (research.md #4). Tabla estática mínima; un prefijo no mapeado

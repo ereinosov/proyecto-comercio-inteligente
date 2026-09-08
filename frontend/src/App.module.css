@@ -24,7 +24,9 @@
   gap: var(--espacio-1);
   padding: 0 var(--espacio-6);
   background: var(--color-superficie-alta);
-  border-bottom: 1px solid var(--color-borde-fuerte);
+  border-bottom: 1.5px solid var(--color-borde-fuerte);
+  /* v2.0.0: el armazón se despega de la primera pantalla con un relieve inferior. */
+  box-shadow: var(--sombra-1);
 }
 
 /* El nav global lleva SOLO el wordmark de Rasero (la herramienta), al extremo izquierdo. */
@@ -163,14 +165,16 @@
 
 .desplegable {
   position: absolute;
-  top: 100%;
+  top: calc(100% + 4px);
   left: 0;
-  min-width: 180px;
+  min-width: 190px;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde-fuerte);
+  border: 1.5px solid var(--color-borde-fuerte);
   border-radius: var(--radio-operacion);
+  box-shadow: var(--sombra-2);
 }
 
 .opcion,

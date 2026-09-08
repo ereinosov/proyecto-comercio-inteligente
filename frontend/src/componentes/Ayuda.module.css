@@ -1,0 +1,52 @@
+.envoltura {
+  position: relative;
+  display: inline-flex;
+  vertical-align: middle;
+}
+
+.disparador {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--color-tinta-suave);
+  cursor: help;
+}
+
+.disparador:focus-visible {
+  outline: var(--foco-anillo);
+  outline-offset: 2px;
+  border-radius: 50%;
+}
+
+.globo {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 20;
+  width: max-content;
+  max-width: 260px;
+  padding: var(--espacio-2) var(--espacio-3);
+  background: var(--color-superficie-alta);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-2);
+  border-radius: var(--radio-analisis);
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  line-height: 1.4;
+  color: var(--color-tinta);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+.envoltura:hover .globo,
+.disparador:focus-visible + .globo {
+  opacity: 1;
+  visibility: visible;
+}

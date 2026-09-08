@@ -14,6 +14,12 @@ const ETIQUETAS: Record<RolProducto, string> = {
   generador_margen: "Generador de margen",
 };
 
+const GLOSA: Record<RolProducto, string> = {
+  gancho_trafico:
+    "Se vende barato, cerca del costo, para atraer clientes a la tienda; el margen lo dejan otros productos.",
+  generador_margen: "Deja margen: sostiene la rentabilidad de la sucursal.",
+};
+
 export function RolProductoSelector({ idProducto }: { idProducto: number }) {
   const [rol, setRol] = useState<RolProducto | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -65,6 +71,7 @@ export function RolProductoSelector({ idProducto }: { idProducto: number }) {
           </button>
         ))}
       </div>
+      {rol !== null && <p className={estilos.sinClasificar}>{GLOSA[rol]}</p>}
       {error && <p className={estilos.sinClasificar}>{error}</p>}
     </div>
   );

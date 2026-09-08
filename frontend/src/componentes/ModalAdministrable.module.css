@@ -17,7 +17,8 @@
   width: 100%;
   max-width: 420px;
   background: var(--color-superficie-base);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-2);
   border-radius: var(--radio-analisis);
   overflow: hidden;
   display: flex;

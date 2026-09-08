@@ -6,11 +6,14 @@
  * —texto, forma e color— nunca solo por color (DESIGN.md).
  */
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
-import { type Producto } from "../servicios/productos";
+import { listarCategorias, type Categoria, type Producto } from "../servicios/productos";
 import { type ConteoFisico, resolverConteo } from "../servicios/conteos";
 import { Boton } from "../componentes/Boton";
+import { Buscador } from "../componentes/Buscador";
+import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
+import { ImagenProducto } from "../componentes/ImagenProducto";
 import estilos from "./ConteoFisico.module.css";
 
 interface Props {
@@ -61,6 +64,34 @@ export function ResolucionConteo({ conteo, productos, onResuelto, onCancelar }: 
   const [resultado, setResultado] = useState<ConteoFisico | null>(null);
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [categorias, setCategorias] = useState<Categoria[]>([]);
+  const [filtro, setFiltro] = useState("");
+  const [idCategoria, setIdCategoria] = useState<number | "todas">("todas");
+  const [pagina, setPagina] = useState(1);
+
+  useEffect(() => {
+    listarCategorias().then(setCategorias).catch(() => setCategorias([]));
+  }, []);
+
+  const nombreCategoria = (id: number | null) =>
+    categorias.find((c) => c.id_categoria === id)?.nombre ?? null;
+
+  const filtroNorm = filtro.trim().toLowerCase();
+  const visibles = alcance.filter(
+    (p) =>
+      (idCategoria === "todas" || p.id_categoria === idCategoria) &&
+      (!filtroNorm || p.nombre.toLowerCase().includes(filtroNorm)),
+  );
+  const totalPaginas = Math.max(1, Math.ceil(visibles.length / TAMANO_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const pagVisibles = visibles.slice(
+    (paginaActual - 1) * TAMANO_PAGINA,
+    paginaActual * TAMANO_PAGINA,
+  );
+  const capturados = alcance.filter(
+    (p) => contadas[p.id_producto] !== undefined && contadas[p.id_producto] !== "",
+  ).length;
 
   async function resolver() {
     const renglones = alcance
@@ -134,18 +165,64 @@ export function ResolucionConteo({ conteo, productos, onResuelto, onCancelar }: 
       <h2 className={estilos.titulo}>Capturar conteo #{conteo.id_conteo_fisico}</h2>
       <p className={estilos.subtitulo}>
         Escribe lo que contaste en estantería y bodega. Deja en blanco lo que no cuentes en esta
-        sesión.
+        sesión. Lo capturado se conserva al cambiar de página o de filtro.
       </p>
+
+      <div className={estilos.fila}>
+        <div className={estilos.campo} style={{ flex: 1, minWidth: 200 }}>
+          <Buscador
+            valor={filtro}
+            onCambiar={(t) => {
+              setFiltro(t);
+              setPagina(1);
+            }}
+            placeholder="Buscar producto por nombre…"
+          />
+        </div>
+        <label className={estilos.campo}>
+          <span>Categoría</span>
+          <select
+            className={estilos.inputCantidad}
+            style={{ width: "auto", textAlign: "left" }}
+            value={idCategoria}
+            onChange={(e) => {
+              setIdCategoria(e.target.value === "todas" ? "todas" : Number(e.target.value));
+              setPagina(1);
+            }}
+          >
+            <option value="todas">Todas</option>
+            {categorias.map((c) => (
+              <option key={c.id_categoria} value={c.id_categoria}>
+                {c.nombre}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      <p className={estilos.subtitulo}>
+        {capturados} de {alcance.length} productos con conteo capturado.
+      </p>
+
       <table className={`${estilos.tabla} ${estilos.tablaEditable}`}>
         <thead>
           <tr>
+            <th style={{ width: 44 }} aria-label="Imagen" />
             <th>Producto</th>
             <th className={estilos.num}>Contado</th>
           </tr>
         </thead>
         <tbody>
-          {alcance.map((p) => (
+          {pagVisibles.map((p) => (
             <tr key={p.id_producto}>
+              <td>
+                <ImagenProducto
+                  urlImagen={p.url_imagen}
+                  nombreCategoria={nombreCategoria(p.id_categoria)}
+                  nombreProducto={p.nombre}
+                  tamano={32}
+                />
+              </td>
               <td>{p.nombre}</td>
               <td className={estilos.num}>
                 <input
@@ -162,8 +239,18 @@ export function ResolucionConteo({ conteo, productos, onResuelto, onCancelar }: 
               </td>
             </tr>
           ))}
+          {pagVisibles.length === 0 && (
+            <tr>
+              <td colSpan={3} className={estilos.subtitulo}>
+                Ningún producto coincide con el filtro.
+              </td>
+            </tr>
+          )}
         </tbody>
       </table>
+      {totalPaginas > 1 && (
+        <Paginador pagina={paginaActual} totalPaginas={totalPaginas} onCambiar={setPagina} numerado />
+      )}
       {error && <p className={estilos.error}>{error}</p>}
       <div className={estilos.fila}>
         <Boton variante="primaria" onClick={resolver} disabled={guardando}>

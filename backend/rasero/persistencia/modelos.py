@@ -839,7 +839,7 @@ class Cupon(Base):
     __table_args__ = (
         CheckConstraint("motivo IN ('fecha_fija_cumpleanos')", name="ck_cupon_motivo"),
         CheckConstraint(
-            "estado IN ('generado','redimido','vencido')", name="ck_cupon_estado"
+            "estado IN ('generado','redimido','vencido','anulado')", name="ck_cupon_estado"
         ),
         UniqueConstraint(
             "id_cliente", "fecha_objetivo", name="uq_cupon_cliente_fecha_objetivo"

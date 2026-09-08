@@ -48,7 +48,8 @@
   font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   padding: 6px 8px;
 }
@@ -70,7 +71,8 @@
   width: 100%;
   border-collapse: collapse;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   font-size: 14px;
 }
@@ -103,4 +105,17 @@
   border-radius: 50%;
   background: currentColor;
   flex-shrink: 0;
+}
+
+.buscadorFiltro {
+  display: inline-flex;
+  align-items: center;
+  min-width: 220px;
+}
+
+.paginadorZona {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 24px var(--espacio-2);
 }

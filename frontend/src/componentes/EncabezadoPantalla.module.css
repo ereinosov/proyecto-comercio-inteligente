@@ -3,7 +3,17 @@
 
 .encabezado {
   flex-shrink: 0;
-  border-bottom: 1px solid var(--color-borde-fuerte);
+  /* v2.0.0: la cabecera de pantalla se asienta en el tono medio y proyecta un relieve corto
+     sobre el cuerpo — deja de ser "más de la misma hoja". */
+  background: var(--color-superficie-media);
+  border-bottom: 1.5px solid var(--color-borde-fuerte);
+  box-shadow: 0 1px 0 var(--color-borde), var(--sombra-1);
+  position: relative;
+  z-index: 2;
+}
+
+.titulo {
+  letter-spacing: -0.01em;
 }
 
 .operacion {

@@ -10,11 +10,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
+  anularCupon,
   generarCupones,
   listarCuponesPagina,
   type Cupon,
   type ResultadoGeneracion,
 } from "../servicios/promociones";
+import { Boton } from "./Boton";
 import { nombreClienteODefecto } from "../utilidades/formato";
 import { Paginador, TAMANO_PAGINA } from "./Paginador";
 import estilos from "./GeneracionCupones.module.css";
@@ -31,11 +33,13 @@ const ETIQUETA_ESTADO: Record<Cupon["estado"], string> = {
   generado: "Generado",
   redimido: "Redimido",
   vencido: "Vencido",
+  anulado: "Anulado",
 };
 
 export function GeneracionCupones() {
   const [desde, setDesde] = useState(hoyISO());
   const [hasta, setHasta] = useState(enDiasISO(21));
+  const [descuento, setDescuento] = useState("10");
   const [generando, setGenerando] = useState(false);
   const [ultimoResultado, setUltimoResultado] = useState<ResultadoGeneracion | null>(null);
   const [cupones, setCupones] = useState<Cupon[]>([]);
@@ -65,7 +69,7 @@ export function GeneracionCupones() {
     setGenerando(true);
     setError(null);
     try {
-      const resultado = await generarCupones(desde, hasta);
+      const resultado = await generarCupones(desde, hasta, { porcentajeDescuento: descuento });
       setUltimoResultado(resultado);
       setPagina(1);
       recargar();
@@ -91,6 +95,16 @@ export function GeneracionCupones() {
         <label className={estilos.campo}>
           <span>Hasta</span>
           <input type="date" value={hasta} onChange={(e) => setHasta(e.target.value)} />
+        </label>
+        <label className={estilos.campo}>
+          <span>Descuento (%)</span>
+          <input
+            type="number"
+            min={1}
+            max={100}
+            value={descuento}
+            onChange={(e) => setDescuento(e.target.value)}
+          />
         </label>
         <button
           className={estilos.boton}
@@ -126,6 +140,7 @@ export function GeneracionCupones() {
               <th>Vigencia</th>
               <th>Descuento</th>
               <th>Estado</th>
+              <th />
             </tr>
           </thead>
           <tbody>
@@ -142,6 +157,28 @@ export function GeneracionCupones() {
                   <span className={estilos[`estado_${c.estado}`]}>
                     {ETIQUETA_ESTADO[c.estado]}
                   </span>
+                </td>
+                <td>
+                  {c.estado === "generado" && (
+                    <Boton
+                      variante="fantasma"
+                      registro="analisis"
+                      tamano="sm"
+                      onClick={async () => {
+                        if (!window.confirm(`¿Anular el cupón ${c.id_cupon}?`)) return;
+                        try {
+                          await anularCupon(c.id_cupon);
+                          recargar();
+                        } catch (e) {
+                          setError(
+                            e instanceof ErrorApi ? e.message : "No se pudo anular el cupón."
+                          );
+                        }
+                      }}
+                    >
+                      Anular
+                    </Boton>
+                  )}
                 </td>
               </tr>
             ))}

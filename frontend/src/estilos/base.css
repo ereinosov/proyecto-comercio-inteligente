@@ -24,7 +24,55 @@ body {
   color: var(--color-tinta);
   background: var(--color-superficie-base);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  font-feature-settings: "cv05" 1, "ss01" 1; /* IBM Plex Sans: 'l' con cola, '1' sin serifa */
+}
+
+/* v2.0.0 — La Regla del Relieve Medido. Toda tabla de contenido del sistema es una superficie
+   levantada: contorno de 1.5px + relieve `--sombra-1`. Cero-especificidad para que un módulo
+   pueda anularla, pero ningún `.tabla` del sistema lo hace: todos son una hoja blanca con
+   borde sobre la base. */
+:where(table) {
+  border-collapse: collapse;
+  box-shadow: var(--sombra-1);
+}
+
+/* Superficies de navegación del armazón: el nav se despega de la primera pantalla con un
+   relieve inferior; los desplegables FLOTAN sobre el contenido. */
+
+/* Cromados del navegador que ningún sistema de diseño dibuja pero que delatan una página
+   ensamblada: selección de texto, cursor y barra de scroll se tiñen de la paleta. */
+::selection {
+  background: color-mix(in srgb, var(--color-marca) 22%, transparent);
+  color: var(--color-tinta);
+}
+
+* {
+  caret-color: var(--color-marca);
+}
+
+@supports (scrollbar-color: auto) {
+  * {
+    scrollbar-color: var(--color-borde-fuerte) transparent;
+    scrollbar-width: thin;
+  }
+}
+
+::-webkit-scrollbar {
+  width: 11px;
+  height: 11px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-borde-fuerte);
+  border: 3px solid var(--color-superficie-base);
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-tinta-suave);
 }
 
 /* Anillo de foco único del sistema (token `--foco-anillo`). Baja especificidad con :where()
@@ -66,6 +114,11 @@ input[type="number"]::-webkit-inner-spin-button {
 
   [data-noprint] {
     display: none !important;
+  }
+
+  /* El relieve es de pantalla; en papel sólo cuenta el borde. */
+  * {
+    box-shadow: none !important;
   }
 }
 

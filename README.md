@@ -10,6 +10,11 @@
   <img alt="Método" src="https://img.shields.io/badge/m%C3%A9todo-Spec--Kit%20%C2%B7%20constituci%C3%B3n%20v2.7.2-6b7280?style=flat-square">
 </p>
 
+<p align="center">
+  <img src="frontend/src/activos/marca/rasero-icon-512.png" alt="" width="28" valign="middle">
+  &nbsp;<sub>UTEQ · Facultad de Ciencias de la Computación · Software · Construcción del Software · Eduardo Reinoso Vélez</sub>
+</p>
+
 ---
 
 **Rasero** es una plataforma de comercio minorista inteligente para una tienda de barrio con
@@ -239,6 +244,8 @@ simulada**, sin validez tributaria, con aviso visible.
 
 ---
 
-<sub>Proyecto académico. «Despensa Los Ríos» y sus sucursales son datos de demostración; no
-aparecen en ningún identificador técnico. Rasero es la herramienta; el comercio de ejemplo es
-solo un juego de semillas.</sub>
+<sub>Proyecto académico — Universidad Técnica Estatal de Quevedo (UTEQ), Facultad de Ciencias de
+la Computación (FCC), carrera de Software, materia Construcción del Software. Autor: Eduardo
+Reinoso Vélez. «Despensa Los Ríos» y sus sucursales son datos de demostración; no aparecen en
+ningún identificador técnico. Rasero es la herramienta; el comercio de ejemplo es solo un juego
+de semillas.</sub>

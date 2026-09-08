@@ -25,6 +25,7 @@ import type { Turno } from "../servicios/turnos";
 import { formatearCaja, formatearMoneda } from "../utilidades/formato";
 import { Boton } from "../componentes/Boton";
 import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
+import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import marcaSistema from "../activos/marca/rasero-wordmark-512w.png";
 import estilos from "./Arqueo.module.css";
 
@@ -60,6 +61,9 @@ export function Arqueo({ turno, modoCierre = false, onListo }: Props) {
   const [arqueos, setArqueos] = useState<Arqueo[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
+  // Paginación client-side: `GET /caja/arqueos` no acepta parámetros de paginación en el
+  // backend y trae todo el historial de la sucursal; se pagina en memoria.
+  const [pagina, setPagina] = useState(1);
 
   const [montoContado, setMontoContado] = useState("");
   const [motivo, setMotivo] = useState("");
@@ -79,6 +83,14 @@ export function Arqueo({ turno, modoCierre = false, onListo }: Props) {
   }
 
   useEffect(recargar, [idSucursal]);
+  useEffect(() => setPagina(1), [idSucursal]);
+
+  const totalPaginas = Math.max(1, Math.ceil(arqueos.length / TAMANO_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const arqueosPagina = arqueos.slice(
+    (paginaActual - 1) * TAMANO_PAGINA,
+    paginaActual * TAMANO_PAGINA,
+  );
 
   const totalFaltante = useMemo(
     () =>
@@ -210,7 +222,7 @@ export function Arqueo({ turno, modoCierre = false, onListo }: Props) {
               </tr>
             </thead>
             <tbody>
-              {arqueos.map((a) => (
+              {arqueosPagina.map((a) => (
                 <tr key={a.id_arqueo}>
                   <td>{a.id_turno}</td>
                   <td>{a.dia_local}</td>
@@ -224,6 +236,11 @@ export function Arqueo({ turno, modoCierre = false, onListo }: Props) {
               ))}
             </tbody>
           </table>
+        </div>
+      )}
+      {!cargando && arqueos.length > 0 && (
+        <div className={estilos.paginadorZona}>
+          <Paginador pagina={paginaActual} totalPaginas={totalPaginas} onCambiar={setPagina} numerado />
         </div>
       )}
     </div>

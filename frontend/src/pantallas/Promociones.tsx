@@ -18,17 +18,19 @@
 import { useState } from "react";
 import { GeneracionCupones } from "../componentes/GeneracionCupones";
 import { OfertasRecompra } from "../componentes/OfertasRecompra";
+import { RendimientoCampanias } from "../componentes/RendimientoCampanias";
 import { ResultadoExperimento } from "../componentes/ResultadoExperimento";
 import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
 import { Segmentado } from "../componentes/Segmentado";
 import estilos from "./Promociones.module.css";
 
-type Vista = "cupones" | "recompra" | "reactivacion";
+type Vista = "cupones" | "recompra" | "reactivacion" | "rendimiento";
 
 const VISTAS: { valor: Vista; texto: string }[] = [
   { valor: "cupones", texto: "Cupones por fecha fija" },
   { valor: "recompra", texto: "Ofertas de recompra" },
   { valor: "reactivacion", texto: "Experimento de reactivación" },
+  { valor: "rendimiento", texto: "Rendimiento" },
 ];
 
 export function Promociones({ idSucursal }: { idSucursal: number }) {
@@ -53,6 +55,7 @@ export function Promociones({ idSucursal }: { idSucursal: number }) {
           {vista === "cupones" && <GeneracionCupones />}
           {vista === "recompra" && <OfertasRecompra idSucursal={idSucursal} />}
           {vista === "reactivacion" && <ResultadoExperimento />}
+          {vista === "rendimiento" && <RendimientoCampanias idSucursal={idSucursal} />}
         </div>
       </div>
     </div>

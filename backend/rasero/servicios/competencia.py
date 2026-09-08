@@ -115,6 +115,52 @@ def capturar_observacion(
     return observacion
 
 
+def listar_observaciones(sesion: Session, *, id_producto: int | None = None) -> list[dict]:
+    """Observaciones de competencia capturadas, más recientes primero. Para el historial de la
+    pantalla de captura (revisar y corregir lo que se registró mal).
+    """
+    ahora = datetime.now(timezone.utc)
+    stmt = (
+        select(ObservacionPrecio, CanalCompetencia.nombre)
+        .join(
+            CanalCompetencia,
+            CanalCompetencia.id_canal_competencia == ObservacionPrecio.id_canal_competencia,
+        )
+        .order_by(ObservacionPrecio.instante_captura.desc())
+    )
+    if id_producto is not None:
+        stmt = stmt.where(ObservacionPrecio.id_producto == id_producto)
+    filas = sesion.execute(stmt).all()
+    return [
+        {
+            "id_observacion_precio": obs.id_observacion_precio,
+            "id_producto": obs.id_producto,
+            "canal": canal,
+            "presentacion": f"{Decimal(obs.presentacion_cantidad):g} {obs.presentacion_unidad}",
+            "precio_observado": f"{Decimal(obs.precio_observado):.2f}",
+            "fuente": obs.fuente,
+            "origen_captura": obs.origen_captura,
+            "comparable": obs.comparable,
+            "instante_captura": obs.instante_captura.isoformat(),
+            "dias_de_antiguedad": dias_de_antiguedad(obs.instante_captura, ahora),
+        }
+        for obs, canal in filas
+    ]
+
+
+def eliminar_observacion(sesion: Session, *, id_observacion_precio: int) -> None:
+    """Borra una observación mal capturada. `observacion_precio` es un dato de APOYO a la
+    decisión de precio (no un asiento contable ni una tabla de sólo-anexado como
+    `bitacora_auditoria`): corregir "registré mal algo" es rehacerlo, así que se admite el
+    borrado. El sistema NUNCA ajustó ningún precio a partir de ella (FR-028).
+    """
+    obs = sesion.get(ObservacionPrecio, id_observacion_precio)
+    if obs is None:
+        raise RecursoNoEncontrado(f"La observación {id_observacion_precio} no existe.")
+    sesion.delete(obs)
+    sesion.commit()
+
+
 def _precio_propio(sesion: Session, *, id_producto: int, id_sucursal: int) -> Decimal:
     producto = sesion.get(Producto, id_producto)
     if producto is None:

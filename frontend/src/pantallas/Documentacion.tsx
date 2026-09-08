@@ -34,6 +34,7 @@ const SECCIONES: { id: string; titulo: string }[] = [
   { id: "modelo-datos", titulo: "10 · Modelo de datos (tablas)" },
   { id: "speckit", titulo: "11 · Aplicación de Spec Kit" },
   { id: "glosario", titulo: "12 · Glosario" },
+  { id: "creditos", titulo: "13 · Créditos académicos" },
 ];
 
 function P({ children }: { children: ReactNode }) {
@@ -926,9 +927,11 @@ export function Documentacion({ onVolver }: Props) {
       <div className={estilos.barra}>
         <img className={estilos.marcaSistema} src={marcaSistema} alt="Rasero" width={88} height={22} />
         <h1 className={estilos.tituloBarra}>Documentación del sistema</h1>
-        <Boton variante="neutra" registro="analisis" onClick={onVolver}>
-          Volver a la apertura de turno
-        </Boton>
+        <span className={estilos.accionBarra}>
+          <Boton variante="neutra" registro="analisis" onClick={onVolver}>
+            Volver a la apertura de turno
+          </Boton>
+        </span>
       </div>
 
       <div className={estilos.marco}>
@@ -1774,6 +1777,27 @@ export function Documentacion({ onVolver }: Props) {
                 [<span className={estilos.termino}>Capital inmovilizado</span>, "Dinero «dormido» en stock que no rota (lotes antiguos sin salida)."],
                 [<span className={estilos.termino}>Tres portadores</span>, "Regla de diseño: todo dato incierto se marca con color + forma + texto, nunca solo color (falla ante daltonismo, impresión b/n o reflejo de pantalla)."],
                 [<span className={estilos.termino}>Registro «Operación» / «Análisis»</span>, "Los dos modos visuales del sistema: denso y con tablas para la caja; con aire y una decisión por bloque para las pantallas donde se decide."],
+              ]}
+            />
+          </section>
+
+          {/* ─── 13 · Créditos académicos ─────────────────────────────────────────────────── */}
+          <section id="creditos" className={estilos.seccion}>
+            <h2 className={estilos.h2}>13 · Créditos académicos</h2>
+            <P>
+              Rasero es un proyecto académico desarrollado para la materia{" "}
+              <F>Construcción del Software</F>, carrera de <F>Software</F>, en la{" "}
+              <F>Facultad de Ciencias de la Computación (FCC)</F> de la{" "}
+              <F>Universidad Técnica Estatal de Quevedo (UTEQ)</F>.
+            </P>
+            <Tabla
+              cabeceras={["Dato", "Valor"]}
+              filas={[
+                ["Universidad", "Universidad Técnica Estatal de Quevedo (UTEQ)"],
+                ["Facultad", "Facultad de Ciencias de la Computación (FCC)"],
+                ["Carrera", "Software"],
+                ["Materia", "Construcción del Software"],
+                ["Estudiante", "Eduardo Reinoso Vélez"],
               ]}
             />
           </section>

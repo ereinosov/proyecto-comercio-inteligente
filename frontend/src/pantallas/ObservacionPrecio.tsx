@@ -11,10 +11,14 @@ import { listarProductos, type Producto } from "../servicios/productos";
 import {
   agregarCanal,
   capturarObservacion,
+  eliminarObservacion,
   listarCanales,
+  listarObservaciones,
   type CanalCompetencia,
+  type ObservacionHistorial,
   type PresentacionUnidad,
 } from "../servicios/competencia";
+import { formatearMoneda } from "../utilidades/formato";
 import { Boton } from "../componentes/Boton";
 import estilos from "./Competencia.module.css";
 
@@ -35,11 +39,22 @@ export function ObservacionPrecio({ idTurno }: Props) {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [ok, setOk] = useState<string | null>(null);
+  const [historial, setHistorial] = useState<ObservacionHistorial[]>([]);
 
   useEffect(() => {
     listarProductos().then(setProductos).catch(() => setProductos([]));
     listarCanales().then(setCanales).catch(() => setCanales([]));
   }, []);
+
+  function recargarHistorial(id: number | "") {
+    if (id === "") {
+      setHistorial([]);
+      return;
+    }
+    listarObservaciones(id).then(setHistorial).catch(() => setHistorial([]));
+  }
+
+  useEffect(() => recargarHistorial(idProducto), [idProducto]);
 
   async function capturar() {
     if (idProducto === "" || !canalNombre.trim() || !cantidad || !precio || !fuente.trim()) {
@@ -67,9 +82,14 @@ export function ObservacionPrecio({ idTurno }: Props) {
           ? "Observación registrada y comparable."
           : "Observación registrada; su presentación no admite normalización, se marca no comparable.",
       );
+      recargarHistorial(idProducto);
+      // Campos limpios tras registrar: la siguiente captura empieza de cero.
+      setCanalNombre("");
       setCantidad("");
+      setUnidad("unidad");
       setPrecio("");
       setFuente("");
+      setOrigen("manual");
     } catch (e) {
       setError(e instanceof ErrorApi ? e.message : "No se pudo registrar la observación.");
     } finally {
@@ -86,7 +106,7 @@ export function ObservacionPrecio({ idTurno }: Props) {
       </p>
 
       <div className={estilos.formulario}>
-        <div className={estilos.campo}>
+        <div className={`${estilos.campo} ${estilos.campoAncho}`}>
           <label htmlFor="op-producto">Producto propio</label>
           <select
             id="op-producto"
@@ -105,7 +125,7 @@ export function ObservacionPrecio({ idTurno }: Props) {
           </select>
         </div>
 
-        <div className={estilos.campo}>
+        <div className={`${estilos.campo} ${estilos.campoAncho}`}>
           <label htmlFor="op-canal">Canal (comercio observado)</label>
           <input
             id="op-canal"
@@ -113,7 +133,7 @@ export function ObservacionPrecio({ idTurno }: Props) {
             list="op-canales"
             value={canalNombre}
             onChange={(e) => setCanalNombre(e.target.value)}
-            placeholder="Nómbralo si es nuevo"
+            placeholder="Nombre del comercio (Tía, Aki, tienda de la esquina…)"
           />
           <datalist id="op-canales">
             {canales.map((c) => (
@@ -123,16 +143,18 @@ export function ObservacionPrecio({ idTurno }: Props) {
         </div>
 
         <div className={estilos.campo}>
-          <label htmlFor="op-cantidad">Presentación</label>
+          <label htmlFor="op-cantidad">Tamaño de la presentación</label>
           <input
             id="op-cantidad"
             className={estilos.entrada}
             type="number"
             min={0}
             step="0.001"
+            placeholder="p. ej. 500"
             value={cantidad}
             onChange={(e) => setCantidad(e.target.value)}
           />
+          <small>Cómo lo vende la competencia: 500 g, 1 unidad, 900 ml…</small>
         </div>
         <div className={estilos.campo}>
           <label htmlFor="op-unidad">Unidad</label>
@@ -170,6 +192,7 @@ export function ObservacionPrecio({ idTurno }: Props) {
             onChange={(e) => setFuente(e.target.value)}
             placeholder="visita, folleto, foto…"
           />
+          <small>De dónde sacaste el dato.</small>
         </div>
 
         <div className={estilos.campo}>
@@ -185,13 +208,52 @@ export function ObservacionPrecio({ idTurno }: Props) {
           </select>
         </div>
 
-        <Boton variante="primaria" registro="analisis" onClick={capturar} disabled={guardando}>
-          {guardando ? "Guardando…" : "Registrar observación"}
-        </Boton>
+        <div className={estilos.campoAncho}>
+          <Boton variante="primaria" registro="analisis" onClick={capturar} disabled={guardando}>
+            {guardando ? "Guardando…" : "Registrar observación"}
+          </Boton>
+        </div>
       </div>
 
       {error && <p className={estilos.error}>{error}</p>}
       {ok && <p className={estilos.ok}>{ok}</p>}
+
+      {idProducto !== "" && (
+        <div className={estilos.comparacion}>
+          <h3 className={estilos.titulo}>Observaciones de este producto</h3>
+          {historial.length === 0 ? (
+            <p className={estilos.instruccion}>Todavía no hay observaciones para este producto.</p>
+          ) : (
+            historial.map((o) => (
+              <div className={estilos.bloqueObs} key={o.id_observacion_precio}>
+                <span className={estilos.canal}>{o.canal}</span>
+                <span className={estilos.cifras}>
+                  {formatearMoneda(o.precio_observado)} · {o.presentacion} · {o.fuente} · hace{" "}
+                  {o.dias_de_antiguedad} d{!o.comparable && " · no comparable"}
+                </span>
+                <Boton
+                  variante="neutra"
+                  registro="analisis"
+                  tamano="sm"
+                  onClick={async () => {
+                    if (!window.confirm("¿Eliminar esta observación mal capturada?")) return;
+                    try {
+                      await eliminarObservacion(o.id_observacion_precio);
+                      recargarHistorial(idProducto);
+                    } catch (e) {
+                      setError(
+                        e instanceof ErrorApi ? e.message : "No se pudo eliminar la observación.",
+                      );
+                    }
+                  }}
+                >
+                  Eliminar
+                </Boton>
+              </div>
+            ))
+          )}
+        </div>
+      )}
     </div>
   );
 }

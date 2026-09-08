@@ -23,6 +23,7 @@ import { listarSucursales, type Sucursal } from "../servicios/sucursales";
 import { Selector } from "./Selector";
 import marcaSistema from "../activos/marca/rasero-wordmark-512w.png";
 import logoComercioPorDefecto from "../activos/marca/despensa-logo-color-800w.png";
+import marcaMono from "../activos/marca/despensa-logo-mono-800w.png";
 import estilos from "./AperturaTurno.module.css";
 
 const LOGO_COMERCIO: string = import.meta.env.VITE_LOGO_COMERCIO ?? logoComercioPorDefecto;
@@ -115,14 +116,33 @@ export function AperturaTurno({ onTurnoAbierto, avisoSesion, onVerDocumentacion 
 
   return (
     <div className={estilos.contenedor}>
-      <img
-        className={estilos.marca}
-        src={marcaSistema}
-        alt="Rasero"
-        width={84}
-        height={21}
-      />
+      {/* Detalle de fondo: las líneas de graduación de un rasero (la tablilla que nivela el
+          grano al ras) — motivo propio de la marca, no decoración genérica. Muy tenue, nunca
+          compite con la tarjeta (La Regla del Hueco que Enseña, extendida). */}
+      <svg className={estilos.trazoFondo} viewBox="0 0 420 420" aria-hidden="true">
+        <g stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+          <line x1="0" y1="48" x2="150" y2="48" />
+          <line x1="0" y1="78" x2="110" y2="78" />
+          <line x1="0" y1="108" x2="190" y2="108" />
+          <line x1="0" y1="138" x2="90" y2="138" />
+          <line x1="0" y1="168" x2="160" y2="168" />
+        </g>
+      </svg>
+      <img className={estilos.aguaMarca} src={marcaMono} alt="" aria-hidden="true" />
+
+      {/* Marca de sistema: FUERA de la tarjeta, arriba — Rasero es la herramienta detrás de la
+          marca del comercio, no parte de su tarjeta de identidad (La Regla de la Identidad del
+          Comercio). */}
+      <div className={estilos.marcaSistemaFuera}>
+        <img src={marcaSistema} alt="Rasero" width={88} height={22} />
+        <span>Nivela el dato. Decide con criterio.</span>
+      </div>
+
       <form className={estilos.panel} onSubmit={confirmar}>
+        {/* Filo de Rasero: acento verde estructural en el borde superior de la tarjeta — la
+            tabla que nivela. El verde es identidad de armazón (La Regla de la Sola Voz,
+            formalización v1.5.0), no una acción. */}
+        <div className={estilos.filo} aria-hidden="true" />
         <header className={estilos.cabecera}>
           <img className={estilos.logoComercio} src={LOGO_COMERCIO} alt={NOMBRE_COMERCIO ?? "Comercio"} />
           <p className={estilos.contexto}>

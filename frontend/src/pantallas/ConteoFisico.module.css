@@ -30,7 +30,8 @@
   width: 100%;
   border-collapse: collapse;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   font-size: 15px;
 }
@@ -173,7 +174,8 @@
   gap: 6px;
   max-height: 220px;
   overflow-y: auto;
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   padding: 10px 12px;
   background: var(--color-superficie-alta);

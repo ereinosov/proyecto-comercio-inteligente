@@ -4,10 +4,12 @@
  * como "no calculable", nunca como cero (FR-035).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { listarProductos, type Producto } from "../servicios/productos";
 import { listarCapitalInmovilizado, type CapitalInmovilizado as Fila } from "../servicios/inventario";
 import { formatearMoneda } from "../utilidades/formato";
+import { Buscador } from "../componentes/Buscador";
+import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import estilos from "./Inventario.module.css";
 
 interface Props {
@@ -18,6 +20,19 @@ export function CapitalInmovilizado({ idSucursal }: Props) {
   const [filas, setFilas] = useState<Fila[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
   const [cargando, setCargando] = useState(true);
+  // Búsqueda y paginación client-side: `GET /capital-inmovilizado` no acepta parámetros de
+  // paginación en el backend y trae todos los lotes sobre el umbral; se filtra y se pagina en
+  // memoria, mismo patrón que Pronostico.tsx.
+  const [texto, setTexto] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(1);
+
+  useEffect(() => {
+    const t = setTimeout(() => setBusqueda(texto), 200);
+    return () => clearTimeout(t);
+  }, [texto]);
+
+  useEffect(() => setPagina(1), [busqueda]);
 
   useEffect(() => {
     setCargando(true);
@@ -31,6 +46,19 @@ export function CapitalInmovilizado({ idSucursal }: Props) {
 
   const nombre = (id: number) =>
     productos.find((p) => p.id_producto === id)?.nombre ?? `Producto ${id}`;
+
+  const filasFiltradas = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return q ? filas.filter((f) => nombre(f.id_producto).toLowerCase().includes(q)) : filas;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filas, productos, busqueda]);
+
+  const totalPaginas = Math.max(1, Math.ceil(filasFiltradas.length / TAMANO_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const filasPagina = filasFiltradas.slice(
+    (paginaActual - 1) * TAMANO_PAGINA,
+    paginaActual * TAMANO_PAGINA,
+  );
 
   return (
     <div className={estilos.pantalla}>
@@ -46,6 +74,17 @@ export function CapitalInmovilizado({ idSucursal }: Props) {
       ) : filas.length === 0 ? (
         <p className={estilos.ok}>Ningún lote supera hoy el umbral de su categoría.</p>
       ) : (
+        <>
+        <div className={estilos.buscadorCapital}>
+          <Buscador
+            valor={texto}
+            onCambiar={setTexto}
+            placeholder="Buscar producto por nombre…"
+          />
+        </div>
+        {filasFiltradas.length === 0 ? (
+          <p className={estilos.nota}>Ningún producto coincide con la búsqueda.</p>
+        ) : (
         <table className={estilos.tabla}>
           <thead>
             <tr>
@@ -58,7 +97,7 @@ export function CapitalInmovilizado({ idSucursal }: Props) {
             </tr>
           </thead>
           <tbody>
-            {filas.map((f) => (
+            {filasPagina.map((f) => (
               <tr key={f.id_lote}>
                 <td>{nombre(f.id_producto)}</td>
                 <td>#{f.id_lote}</td>
@@ -79,6 +118,11 @@ export function CapitalInmovilizado({ idSucursal }: Props) {
             ))}
           </tbody>
         </table>
+        )}
+        {filasFiltradas.length > 0 && (
+          <Paginador pagina={paginaActual} totalPaginas={totalPaginas} onCambiar={setPagina} />
+        )}
+        </>
       )}
     </div>
   );

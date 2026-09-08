@@ -30,6 +30,21 @@ export function despacharTraspaso(datos: {
   return clienteHttp.post<Traspaso>("/traspasos", datos);
 }
 
+export function listarTraspasos(opciones: {
+  estado?: Traspaso["estado"];
+  idSucursalOrigen?: number;
+  idSucursalDestino?: number;
+} = {}): Promise<Traspaso[]> {
+  const params = new URLSearchParams();
+  if (opciones.estado) params.set("estado", opciones.estado);
+  if (opciones.idSucursalOrigen !== undefined)
+    params.set("id_sucursal_origen", String(opciones.idSucursalOrigen));
+  if (opciones.idSucursalDestino !== undefined)
+    params.set("id_sucursal_destino", String(opciones.idSucursalDestino));
+  const q = params.toString();
+  return clienteHttp.get<Traspaso[]>(`/traspasos${q ? `?${q}` : ""}`);
+}
+
 export function recibirTraspaso(
   idTraspaso: number,
   renglones: { id_producto: number; cantidad_recibida: number }[],

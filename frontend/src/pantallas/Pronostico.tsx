@@ -8,7 +8,7 @@
  * descensura contra datos sintéticos (User Story 2), y la declaración de sustitutos (User Story 6).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { DeclararSustituto } from "../componentes/DeclararSustituto";
 import { SerieDemanda } from "../componentes/SerieDemanda";
 import { ValidacionDescensura } from "../componentes/ValidacionDescensura";
@@ -17,6 +17,9 @@ import { ErrorApi } from "../servicios/clienteHttp";
 import { listarProductos, type Producto } from "../servicios/productos";
 import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
 import { Segmentado } from "../componentes/Segmentado";
+import { Buscador } from "../componentes/Buscador";
+import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
+import { EstadoVacio } from "../componentes/EstadoVacio";
 import estilos from "./Pronostico.module.css";
 
 type Vista = "pronostico" | "serie" | "validacion" | "sustitutos";
@@ -47,12 +50,28 @@ export function Pronostico({ idSucursal }: { idSucursal: number }) {
   const [vista, setVista] = useState<Vista>(
     qaDescensuraActiva() ? "validacion" : "pronostico"
   );
+  // Búsqueda y paginación client-side: el catálogo completo ya llega en una sola llamada
+  // (no hay endpoint paginado de productos), así que se filtra y se pagina en memoria —
+  // mismo patrón de debounce de 200ms que Clientes.tsx / IdentificarCliente.tsx.
+  const [texto, setTexto] = useState("");
+  const [busqueda, setBusqueda] = useState("");
+  const [pagina, setPagina] = useState(1);
+
+  useEffect(() => {
+    const t = setTimeout(() => setBusqueda(texto), 200);
+    return () => clearTimeout(t);
+  }, [texto]);
+
+  useEffect(() => setPagina(1), [busqueda]);
 
   useEffect(() => {
     setCargando(true);
     setError(null);
     setIdSeleccionado(null);
     setVista(qaDescensuraActiva() ? "validacion" : "pronostico");
+    setTexto("");
+    setBusqueda("");
+    setPagina(1);
     listarProductos(idSucursal)
       .then(setProductos)
       .catch((e) =>
@@ -60,6 +79,18 @@ export function Pronostico({ idSucursal }: { idSucursal: number }) {
       )
       .finally(() => setCargando(false));
   }, [idSucursal]);
+
+  const productosFiltrados = useMemo(() => {
+    const q = busqueda.trim().toLowerCase();
+    return q ? productos.filter((p) => p.nombre.toLowerCase().includes(q)) : productos;
+  }, [productos, busqueda]);
+
+  const totalPaginas = Math.max(1, Math.ceil(productosFiltrados.length / TAMANO_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const productosPagina = productosFiltrados.slice(
+    (paginaActual - 1) * TAMANO_PAGINA,
+    paginaActual * TAMANO_PAGINA,
+  );
 
   const productoSeleccionado = productos.find((p) => p.id_producto === idSeleccionado) ?? null;
 
@@ -75,22 +106,41 @@ export function Pronostico({ idSucursal }: { idSucursal: number }) {
         )}
         {!error && !cargando && productos.length > 0 && (
           <>
-            <ul className={estilos.lista}>
-              {productos.map((producto) => (
-                <li key={producto.id_producto}>
-                  <button
-                    className={
-                      idSeleccionado === producto.id_producto
-                        ? `${estilos.bloque} ${estilos.bloqueSeleccionado}`
-                        : estilos.bloque
-                    }
-                    onClick={() => setIdSeleccionado(producto.id_producto)}
-                  >
-                    {producto.nombre}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <div className={estilos.lista}>
+              <Buscador
+                valor={texto}
+                onCambiar={setTexto}
+                placeholder="Buscar producto por nombre…"
+              />
+              {productosFiltrados.length === 0 ? (
+                <EstadoVacio
+                  glifo="lista"
+                  titulo="Ningún producto coincide con la búsqueda"
+                  descripcion="Prueba con otra parte del nombre; la búsqueda ignora mayúsculas."
+                  registro="analisis"
+                />
+              ) : (
+                <>
+                  <ul className={estilos.listaUl}>
+                    {productosPagina.map((producto) => (
+                      <li key={producto.id_producto}>
+                        <button
+                          className={
+                            idSeleccionado === producto.id_producto
+                              ? `${estilos.bloque} ${estilos.bloqueSeleccionado}`
+                              : estilos.bloque
+                          }
+                          onClick={() => setIdSeleccionado(producto.id_producto)}
+                        >
+                          {producto.nombre}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                  <Paginador pagina={paginaActual} totalPaginas={totalPaginas} onCambiar={setPagina} />
+                </>
+              )}
+            </div>
 
             <div className={estilos.panelDetalle}>
               {!productoSeleccionado && (

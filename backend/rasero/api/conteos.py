@@ -5,7 +5,7 @@
   producto y lote y genera los ajustes trazables (FR-030, FR-032). No clasifica la causa.
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -28,6 +28,20 @@ class RenglonContadoNuevo(BaseModel):
 
 class ResolucionConteo(BaseModel):
     renglones: list[RenglonContadoNuevo] = Field(min_length=1)
+
+
+@router.get("/conteos-fisicos")
+def listar_conteos(
+    id_sucursal: int | None = Query(default=None),
+    estado: str | None = Query(default=None),
+    sesion: Session = Depends(obtener_sesion),
+) -> list[dict]:
+    return servicio_conteos.listar_conteos(sesion, id_sucursal=id_sucursal, estado=estado)
+
+
+@router.get("/conteos-fisicos/{id_conteo_fisico}")
+def obtener_conteo(id_conteo_fisico: int, sesion: Session = Depends(obtener_sesion)) -> dict:
+    return servicio_conteos.obtener_conteo(sesion, id_conteo_fisico=id_conteo_fisico)
 
 
 @router.post("/conteos-fisicos", status_code=status.HTTP_201_CREATED)

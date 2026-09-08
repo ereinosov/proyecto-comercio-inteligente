@@ -23,6 +23,7 @@ import { ModalAdministrable } from "../componentes/ModalAdministrable";
 import { CampoIdentificador } from "../componentes/CampoIdentificador";
 import { Obligatorio } from "../componentes/Obligatorio";
 import { Buscador } from "../componentes/Buscador";
+import { Ayuda } from "../componentes/Ayuda";
 import { FugaPorSegmentoGrafico } from "../componentes/graficos/FugaPorSegmentoGrafico";
 import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import { Boton } from "../componentes/Boton";
@@ -307,24 +308,54 @@ export function Clientes() {
                   calcular su valor.
                 </p>
               ) : (
-                <dl className={estilos.desglose}>
-                  <div className={estilos.bloqueDesglose}>
-                    <dt>Puntuación compuesta</dt>
-                    <dd className={estilos.compuesto}>{Math.round(detalle.valor.compuesto)}</dd>
-                  </div>
-                  <div className={estilos.bloqueDesglose}>
-                    <dt>Frecuencia</dt>
-                    <dd>{Math.round(detalle.valor.percentil_frecuencia)}º percentil</dd>
-                  </div>
-                  <div className={estilos.bloqueDesglose}>
-                    <dt>Monto</dt>
-                    <dd>{Math.round(detalle.valor.percentil_monto)}º percentil</dd>
-                  </div>
-                  <div className={estilos.bloqueDesglose}>
-                    <dt>Margen</dt>
-                    <dd>{Math.round(detalle.valor.percentil_margen)}º percentil</dd>
-                  </div>
-                </dl>
+                <>
+                  <p className={estilos.avisoInsuficiente}>
+                    Cada número es un <strong>percentil</strong>: la posición de este cliente
+                    dentro de la tienda (0–100), no un valor absoluto.
+                  </p>
+                  <dl className={estilos.desglose}>
+                    <div className={estilos.bloqueDesglose}>
+                      <dt>
+                        Puntuación compuesta{" "}
+                        <Ayuda
+                          etiqueta="Qué es la puntuación compuesta"
+                          texto="Promedio de los tres percentiles de abajo (0–100). 100 = este cliente está en lo más alto de la tienda en frecuencia, monto y margen a la vez."
+                        />
+                      </dt>
+                      <dd className={estilos.compuesto}>{Math.round(detalle.valor.compuesto)}</dd>
+                    </div>
+                    <div className={estilos.bloqueDesglose}>
+                      <dt>
+                        Frecuencia{" "}
+                        <Ayuda
+                          etiqueta="Qué mide el percentil de frecuencia"
+                          texto="Percentil de qué tan seguido compra, frente al resto de clientes. 90 = compra más seguido que el 90 % de ellos."
+                        />
+                      </dt>
+                      <dd>{Math.round(detalle.valor.percentil_frecuencia)}º percentil</dd>
+                    </div>
+                    <div className={estilos.bloqueDesglose}>
+                      <dt>
+                        Monto{" "}
+                        <Ayuda
+                          etiqueta="Qué mide el percentil de monto"
+                          texto="Percentil de cuánto ha gastado en total, frente al resto de clientes."
+                        />
+                      </dt>
+                      <dd>{Math.round(detalle.valor.percentil_monto)}º percentil</dd>
+                    </div>
+                    <div className={estilos.bloqueDesglose}>
+                      <dt>
+                        Margen{" "}
+                        <Ayuda
+                          etiqueta="Qué mide el percentil de margen"
+                          texto="Percentil del margen que dejan sus compras, ponderado por el monto de cada visita."
+                        />
+                      </dt>
+                      <dd>{Math.round(detalle.valor.percentil_margen)}º percentil</dd>
+                    </div>
+                  </dl>
+                </>
               )}
             </div>
           )}

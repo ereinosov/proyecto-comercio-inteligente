@@ -1,107 +1,161 @@
-/* Registro de Operación: sin tarjetas anidadas, radio 2px, cero sombras (La Regla del Filo, No
-   la Sombra). Verde Rasero NO aparece aquí — se reserva para la acción de cobro de la pantalla
-   de venta (La Regla de la Sola Voz).
-
-   La Regla de la Identidad del Comercio (DESIGN.md v1.3.0): cabecera de marca con fondo blanco
-   y el logo a color como elemento principal; el wordmark de Rasero, pequeño y discreto, ARRIBA
-   de la tarjeta. */
+/* Apertura de turno — la puerta del sistema. Registro de Operación (radio 2px, IBM Plex Sans).
+   v2.0.1: el wordmark de Rasero + la tesis del producto viven FUERA de la tarjeta, arriba de
+   ella — la herramienta detrás de la marca del comercio, nunca dentro de su tarjeta de
+   identidad (La Regla de la Identidad del Comercio). La marca del COMERCIO sigue sobre blanco,
+   dentro de la tarjeta. Dos detalles de fondo muy tenues en esquinas opuestas —la marca de agua
+   del logo mono del comercio y el trazo de graduación del rasero— dan profundidad sin degradado
+   ni fondo oscuro (Do's and Don'ts). */
 
 .contenedor {
+  position: relative;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  background: var(--color-superficie-base);
+  gap: var(--espacio-4);
+  padding: var(--espacio-8) var(--espacio-4);
+  background: var(--color-superficie-media);
   font-family: var(--tipografia-operacion);
+  overflow: hidden;
 }
 
-/* Wordmark de Rasero: marca de sistema pequeña y discreta, encima de la tarjeta, fuera de ella. */
-.marca {
-  height: 21px;
+/* Marca de agua del logo mono del comercio: grande, muy tenue, anclada a una esquina para dar
+   profundidad a un fondo que si no se leería como "una hoja y ya". */
+.aguaMarca {
+  position: absolute;
+  right: -8%;
+  bottom: -12%;
+  width: min(60vw, 640px);
+  opacity: 0.05;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Segundo detalle de fondo, esquina opuesta: las líneas de graduación de un rasero. Motivo
+   propio de marca (nunca un patrón genérico), en Verde Rasero muy tenue — uno de los tres usos
+   permitidos del verde es el wordmark; este trazo vive junto al wordmark de la marca de
+   sistema, no como una cuarta aparición suelta. Sin degradados (Do's and Don'ts). */
+.trazoFondo {
+  position: absolute;
+  left: -2%;
+  top: -4%;
+  width: min(46vw, 420px);
+  height: auto;
+  color: var(--color-marca);
+  opacity: 0.07;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Marca de sistema: fuera de la tarjeta, arriba de ella — Rasero es la herramienta detrás de la
+   marca del comercio (La Regla de la Identidad del Comercio), no un elemento de su tarjeta. */
+.marcaSistemaFuera {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-1);
+}
+
+.marcaSistemaFuera img {
+  height: 22px;
   width: auto;
-  display: block;
-  opacity: 0.7;
+  opacity: 0.85;
+}
+
+.marcaSistemaFuera span {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-xs);
+  letter-spacing: 0.01em;
+  color: var(--color-tinta-suave);
 }
 
 .panel {
+  position: relative;
+  z-index: 1;
   width: 100%;
-  max-width: 380px;
+  max-width: 400px;
   background: var(--color-superficie-alta);
-  /* Contorno estructural (v1.10.0): la tarjeta blanca sobre la Superficie Base necesita el
-     marco fuerte para no leerse como una hoja suelta — es el máximo recurso del sistema, no
-     hay sombra. */
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-2);
   border-radius: var(--radio-operacion);
   overflow: hidden;
 }
 
+/* Filo de Rasero: acento verde de 5px en el borde superior. */
+.filo {
+  height: 5px;
+  background: var(--color-marca);
+}
+
 /* Cabecera de marca del comercio: fondo blanco (el logo a color no está pensado para fondo
-   oscuro), logo centrado como elemento principal. El corte marca/formulario es una separación
-   de regiones dentro de la tarjeta -> nivel estructural. */
+   oscuro), logo centrado como elemento principal (La Regla de la Identidad del Comercio). */
 .cabecera {
   background: var(--color-superficie-alta);
-  border-bottom: 1px solid var(--color-contorno);
-  padding: 28px 24px 20px;
+  border-bottom: 1.5px solid var(--color-contorno);
+  padding: var(--espacio-8) var(--espacio-6) var(--espacio-6);
   text-align: center;
 }
 
 .logoComercio {
   display: block;
-  width: 260px;
-  max-width: 80%;
+  width: 220px;
+  max-width: 72%;
   height: auto;
   margin: 0 auto;
 }
 
-/* Nombre de sucursal + caja: más pequeño, Tinta Suave, con aire respecto al logo (>= 12px). */
 .contexto {
-  margin: 16px 0 0;
-  font-size: 14px;
+  margin: var(--espacio-4) 0 0;
+  font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
 }
 
 .ultimaApertura {
-  margin: 4px 0 0;
-  font-size: 13px;
+  margin: var(--espacio-1) 0 0;
+  font-size: var(--texto-xs);
   color: var(--color-tinta-suave);
+  font-variant-numeric: tabular-nums;
 }
 
 .pieComercio {
+  position: relative;
+  z-index: 1;
   margin: 0;
-  font-size: 12px;
+  font-size: var(--texto-xs);
   color: var(--color-tinta-suave);
 }
 
-/* Enlace a la documentación del sistema: superficie de demostración, no parte del flujo de
-   apertura de turno. Tratamiento discreto —texto en Tinta Suave, subrayado al pasar el cursor—
-   fuera de la tarjeta, para que no compita con "Abrir turno". */
 .enlaceDoc {
+  position: relative;
+  z-index: 1;
   font-family: var(--tipografia-operacion);
-  font-size: 13px;
-  color: var(--color-tinta-suave);
+  font-size: var(--texto-sm);
+  color: var(--color-acento-secundario);
   background: transparent;
-  border: none;
-  padding: 4px;
+  border: 1.5px solid var(--color-acento-secundario);
+  border-radius: var(--radio-operacion);
+  padding: var(--espacio-2) var(--espacio-4);
   cursor: pointer;
+  transition: background var(--transicion), color var(--transicion);
 }
 
 .enlaceDoc:hover {
-  color: var(--color-tinta);
-  text-decoration: underline;
+  background: var(--color-acento-secundario);
+  color: var(--color-superficie-alta);
 }
 
-/* Bloques del formulario con más respiro entre sí: 20px, no el espaciado ajustado anterior. */
 .campos {
-  padding: 24px 24px 4px;
+  padding: var(--espacio-6) var(--espacio-6) var(--espacio-1);
 }
 
 .campo {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  margin-bottom: 20px;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-6);
 }
 
 .campo:last-child {
@@ -109,54 +163,55 @@
 }
 
 .etiqueta {
-  font-size: 13px;
+  font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
 }
 
 .input {
   font-family: var(--tipografia-operacion);
-  font-size: 16px;
+  font-size: 22px;
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
-  background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  background: var(--color-superficie-hundida);
+  border: 1.5px solid var(--color-borde-fuerte);
   border-radius: var(--radio-operacion);
-  padding: 12px;
-  letter-spacing: 0.3em;
+  padding: var(--espacio-3);
+  letter-spacing: 0.5em;
   text-align: center;
 }
 
 .input:focus-visible {
-  outline: 2px solid var(--color-tinta);
-  outline-offset: 1px;
+  outline: var(--foco-anillo);
+  outline-offset: var(--foco-separacion);
+  background: var(--color-superficie-alta);
 }
 
 .error {
-  font-size: 14px;
+  font-size: var(--texto-sm);
   color: var(--color-critico);
-  margin: 12px 24px 0;
+  margin: var(--espacio-3) var(--espacio-6) 0;
 }
 
 .boton {
-  width: calc(100% - 48px);
-  margin: 20px 24px 24px;
+  width: calc(100% - 2 * var(--espacio-6));
+  margin: var(--espacio-6);
   font-family: var(--tipografia-operacion);
-  font-size: 16px;
-  font-weight: 600;
-  color: var(--color-tinta);
-  background: var(--color-superficie-alta);
-  border: 1px solid var(--color-tinta);
+  font-size: var(--texto-md);
+  font-weight: var(--peso-fuerte);
+  color: var(--color-superficie-alta);
+  background: var(--color-tinta);
+  border: 1.5px solid var(--color-tinta);
   border-radius: var(--radio-operacion);
-  padding: 12px;
+  padding: var(--espacio-3);
   cursor: pointer;
+  transition: background var(--transicion);
 }
 
 .boton:disabled {
-  color: var(--color-tinta-suave);
-  border-color: var(--color-borde);
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
 .boton:not(:disabled):hover {
-  background: var(--color-superficie-base);
+  background: var(--color-tinta-fuerte);
 }

@@ -46,6 +46,24 @@ export function obtenerSerieDemanda(
   return clienteHttp.get<PuntoSerie[]>(`/demanda?${params.toString()}`);
 }
 
+/** Unidades vendidas (demanda observada) de un producto en una sucursal en los últimos `dias`.
+ *  Suma `demanda_observada` de la serie que 004 reconstruye desde `movimiento_inventario`. */
+export async function unidadesVendidasUltimos(
+  idSucursal: number,
+  idProducto: number,
+  dias: number
+): Promise<number> {
+  const hasta = new Date();
+  const desde = new Date(Date.now() - dias * 86_400_000);
+  const serie = await obtenerSerieDemanda(
+    idSucursal,
+    idProducto,
+    desde.toISOString().slice(0, 10),
+    hasta.toISOString().slice(0, 10)
+  );
+  return serie.reduce((acc, p) => acc + (Number(p.demanda_observada) || 0), 0);
+}
+
 // --------------------------------------------------------------------------
 // User Story 2 — validación de la descensura con datos sintéticos (T029)
 // --------------------------------------------------------------------------

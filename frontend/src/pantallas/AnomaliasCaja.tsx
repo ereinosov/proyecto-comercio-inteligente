@@ -17,6 +17,8 @@ import { ErrorApi } from "../servicios/clienteHttp";
 import { listarAnomalias, resolverAnomalia, type AnomaliaCaja } from "../servicios/caja";
 import { formatearMoneda } from "../utilidades/formato";
 import { Boton } from "../componentes/Boton";
+import { EstadoVacio } from "../componentes/EstadoVacio";
+import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import estilos from "./CajaFraude.module.css";
 
 export function AnomaliasCaja({
@@ -30,6 +32,9 @@ export function AnomaliasCaja({
   const [error, setError] = useState<string | null>(null);
   const [idSeleccionada, setIdSeleccionada] = useState<number | null>(null);
   const [soloAbiertas, setSoloAbiertas] = useState(true);
+  // Paginación client-side: `GET /caja/anomalias` no acepta parámetros de paginación en el
+  // backend y trae todo el historial de la sucursal; se pagina en memoria.
+  const [pagina, setPagina] = useState(1);
 
   const [resolucion, setResolucion] = useState("");
   const [errorForm, setErrorForm] = useState<string | null>(null);
@@ -44,6 +49,14 @@ export function AnomaliasCaja({
   }
 
   useEffect(recargar, [idSucursal, soloAbiertas]);
+  useEffect(() => setPagina(1), [idSucursal, soloAbiertas]);
+
+  const totalPaginas = Math.max(1, Math.ceil(anomalias.length / TAMANO_PAGINA));
+  const paginaActual = Math.min(pagina, totalPaginas);
+  const anomaliasPagina = anomalias.slice(
+    (paginaActual - 1) * TAMANO_PAGINA,
+    paginaActual * TAMANO_PAGINA,
+  );
 
   const seleccionada = anomalias.find((a) => a.id_anomalia_caja === idSeleccionada) ?? null;
 
@@ -76,7 +89,7 @@ export function AnomaliasCaja({
         </label>
         {error && <p className={estilos.error}>{error}</p>}
         <ul className={estilos.lista}>
-          {anomalias.map((a) => (
+          {anomaliasPagina.map((a) => (
             <li key={a.id_anomalia_caja}>
               <button
                 className={[
@@ -110,13 +123,21 @@ export function AnomaliasCaja({
             <li className={estilos.nota}>Ninguna anomalía en esta vista.</li>
           )}
         </ul>
+        {anomalias.length > 0 && (
+          <Paginador pagina={paginaActual} totalPaginas={totalPaginas} onCambiar={setPagina} />
+        )}
       </div>
 
-      <div className={estilos.columnaDetalle}>
-        {!seleccionada && (
-          <p className={estilos.nota}>Elige una anomalía de la lista para revisarla.</p>
-        )}
-        {seleccionada && (
+      {!seleccionada ? (
+        <div className={estilos.detalleVacio}>
+          <EstadoVacio
+            glifo="seleccion"
+            titulo="Elige una anomalía"
+            descripcion="Aquí verás su magnitud, el período y turno atribuidos, el snapshot de indicadores del operador y el campo para escribir su resolución. El sistema nunca la cierra por su cuenta."
+          />
+        </div>
+      ) : (
+        <div className={estilos.columnaDetalle}>
           <div key={seleccionada.id_anomalia_caja} className={estilos.detalleRevelado}>
             <h2 className={estilos.subtitulo}>
               Anomalía {seleccionada.id_anomalia_caja} · {seleccionada.origen}
@@ -190,8 +211,8 @@ export function AnomaliasCaja({
               </p>
             )}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

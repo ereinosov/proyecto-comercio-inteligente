@@ -7,6 +7,7 @@
 import { clienteHttp } from "./clienteHttp";
 
 export interface RenglonConteo {
+  id_conteo_renglon?: number;
   id_producto: number;
   id_lote: number | null;
   cantidad_esperada: number;
@@ -21,6 +22,21 @@ export interface ConteoFisico {
   instante_inicio: string;
   instante_resolucion: string | null;
   renglones?: RenglonConteo[];
+}
+
+export function listarConteos(opciones: {
+  idSucursal?: number;
+  estado?: ConteoFisico["estado"];
+} = {}): Promise<ConteoFisico[]> {
+  const params = new URLSearchParams();
+  if (opciones.idSucursal !== undefined) params.set("id_sucursal", String(opciones.idSucursal));
+  if (opciones.estado) params.set("estado", opciones.estado);
+  const q = params.toString();
+  return clienteHttp.get<ConteoFisico[]>(`/conteos-fisicos${q ? `?${q}` : ""}`);
+}
+
+export function obtenerConteo(idConteo: number): Promise<ConteoFisico> {
+  return clienteHttp.get<ConteoFisico>(`/conteos-fisicos/${idConteo}`);
 }
 
 export function iniciarConteo(datos: {

@@ -51,7 +51,8 @@
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   padding: 7px 9px;
 }
@@ -75,7 +76,8 @@
   width: 100%;
   border-collapse: collapse;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   font-size: 15px;
 }
@@ -133,6 +135,10 @@
 .ok {
   font-size: 13px;
   color: var(--color-tinta-suave);
+}
+
+.buscadorCapital {
+  margin-bottom: var(--espacio-1);
 }
 
 /* Discrepancia de traspaso: tres portadores (texto + forma + color), nunca solo color. */

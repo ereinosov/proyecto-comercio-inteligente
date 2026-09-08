@@ -3,9 +3,8 @@
  * T048 anomalías US4). Montos y valoraciones llegan como cadena decimal; cantidades como número
  * entero (gramos para granel) — ver contracts/openapi.yaml.
  *
- * Las rutas bloqueadas (`ejecutarCruceOperador`, y `registrarMerma` con `id_conteo_renglon`) devuelven
- * `409 caja_bloqueado_por_001` mientras 001 no implemente su User Story 5 — comportamiento
- * controlado y esperado, no un fallo.
+ * `ejecutarCruceOperador` y `registrarMerma` con `id_conteo_renglon` quedaron DESBLOQUEADAS
+ * cuando 001 implementó su User Story 5 (conteo físico): ejercen la lógica real, sin 409.
  */
 
 import { clienteHttp } from "./clienteHttp";
@@ -232,13 +231,28 @@ export function obtenerIndicadoresOperador(
   return clienteHttp.get<IndicadoresRespuesta>(`/caja/indicadores-operador?${params}`);
 }
 
+export interface DetalleCruceProducto {
+  id_producto: number;
+  faltante_bruto: string;
+  merma_descontada: string;
+  anulaciones_descontadas: string;
+  faltante_no_explicado: string;
+  anomalia: number | null;
+}
+
+export interface ResultadoCruce {
+  id_conteo_fisico: number | null;
+  anomalias_creadas: number[];
+  detalle: DetalleCruceProducto[] | string;
+}
+
 export function ejecutarCruceOperador(cuerpo: {
   id_sucursal: number;
   desde: string;
   hasta: string;
   id_conteo_fisico?: number | null;
-}): Promise<unknown> {
-  return clienteHttp.post<unknown>("/caja/cruce-operador", cuerpo);
+}): Promise<ResultadoCruce> {
+  return clienteHttp.post<ResultadoCruce>("/caja/cruce-operador", cuerpo);
 }
 
 // --- Anomalías (US4) -----------------------------------------------------

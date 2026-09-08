@@ -47,7 +47,7 @@ export function MargenPorProductoGrafico({ productos, margenes, cargando = false
     .sort((a, b) => b.margenPct - a.margenPct)
     .slice(0, TOP_N);
 
-  const alto = Math.max(180, filas.length * 26 + 48);
+  const alto = Math.min(300, Math.max(180, filas.length * 24 + 48));
 
   return (
     <GraficoContenedor

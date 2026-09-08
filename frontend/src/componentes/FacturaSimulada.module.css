@@ -4,12 +4,37 @@
 .documento {
   max-width: 62ch;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde-fuerte);
+  border: 1.5px solid var(--color-borde-fuerte);
   border-radius: var(--radio-operacion);
+  box-shadow: var(--sombra-1);
   padding: var(--espacio-6);
   font-family: var(--tipografia-operacion);
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
+}
+
+/* La nota de crédito se distingue de la factura de un vistazo: franja izquierda en crítico
+   (revierte dinero) y aviso propio arriba, para que no se lea como "la factura duplicada". */
+.docNota {
+  border-left: 4px solid var(--color-critico);
+}
+
+.avisoNota {
+  margin: 0 0 var(--espacio-4);
+  padding: var(--espacio-2) var(--espacio-3);
+  border: 1.5px solid var(--color-critico);
+  border-radius: var(--radio-operacion);
+  background: color-mix(in srgb, var(--color-critico) 7%, var(--color-superficie-alta));
+  color: var(--color-critico);
+  font-size: var(--texto-sm);
+  line-height: var(--lh-normal);
+}
+
+@media print {
+  .documento {
+    box-shadow: none;
+    break-inside: avoid;
+  }
 }
 
 .aviso {
@@ -29,6 +54,13 @@
   gap: var(--espacio-4);
   padding-bottom: var(--espacio-3);
   border-bottom: 1px solid var(--color-borde);
+}
+
+.logo {
+  display: block;
+  height: 28px;
+  width: auto;
+  margin-bottom: var(--espacio-2);
 }
 
 .emisor {

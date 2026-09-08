@@ -7,16 +7,18 @@
 
 import { useState } from "react";
 import { BitacoraPagos } from "./BitacoraPagos";
+import { CobrosPorVenta } from "./CobrosPorVenta";
 import { CoberturaPago } from "./CoberturaPago";
 import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
 import { Segmentado } from "../componentes/Segmentado";
 import estilos from "./CajaFraude.module.css";
 
-type Vista = "cobertura" | "bitacora";
+type Vista = "cobertura" | "cobros" | "bitacora";
 
 const VISTAS: { valor: Vista; texto: string }[] = [
   { valor: "cobertura", texto: "Cobertura de medios" },
-  { valor: "bitacora", texto: "Bitácora de pagos" },
+  { valor: "cobros", texto: "Cobros por venta" },
+  { valor: "bitacora", texto: "Registro de seguridad" },
 ];
 
 export function Pagos({ idSucursal, idOperador }: { idSucursal: number; idOperador: number }) {
@@ -38,6 +40,7 @@ export function Pagos({ idSucursal, idOperador }: { idSucursal: number; idOperad
         {vista === "cobertura" && (
           <CoberturaPago idSucursal={idSucursal} idOperador={idOperador} />
         )}
+        {vista === "cobros" && <CobrosPorVenta idSucursal={idSucursal} />}
         {vista === "bitacora" && <BitacoraPagos idSucursal={idSucursal} />}
       </div>
     </div>

@@ -53,6 +53,28 @@ export function capturarObservacion(datos: {
   return clienteHttp.post("/observaciones-precio", datos);
 }
 
+export interface ObservacionHistorial {
+  id_observacion_precio: number;
+  id_producto: number;
+  canal: string;
+  presentacion: string;
+  precio_observado: string;
+  fuente: string;
+  origen_captura: string;
+  comparable: boolean;
+  instante_captura: string;
+  dias_de_antiguedad: number;
+}
+
+export function listarObservaciones(idProducto?: number): Promise<ObservacionHistorial[]> {
+  const q = idProducto !== undefined ? `?id_producto=${idProducto}` : "";
+  return clienteHttp.get<ObservacionHistorial[]>(`/observaciones-precio${q}`);
+}
+
+export function eliminarObservacion(idObservacion: number): Promise<void> {
+  return clienteHttp.del<void>(`/observaciones-precio/${idObservacion}`);
+}
+
 export function compararPrecios(
   idProducto: number,
   idSucursal: number,

@@ -8,7 +8,7 @@
 
 from decimal import Decimal
 
-from fastapi import APIRouter, Depends, Response, status
+from fastapi import APIRouter, Depends, Query, Response, status
 from pydantic import BaseModel
 from sqlalchemy import select
 from sqlalchemy.orm import Session
@@ -94,6 +94,23 @@ def capturar_observacion(
         "id_turno": obs.id_turno,
         "comparable": obs.comparable,
     }
+
+
+@router.get("/observaciones-precio")
+def listar_observaciones(
+    id_producto: int | None = Query(default=None),
+    sesion: Session = Depends(obtener_sesion),
+) -> list[dict]:
+    return servicio_competencia.listar_observaciones(sesion, id_producto=id_producto)
+
+
+@router.delete("/observaciones-precio/{id_observacion_precio}", status_code=status.HTTP_204_NO_CONTENT)
+def eliminar_observacion(
+    id_observacion_precio: int, sesion: Session = Depends(obtener_sesion)
+) -> None:
+    servicio_competencia.eliminar_observacion(
+        sesion, id_observacion_precio=id_observacion_precio
+    )
 
 
 @router.get("/productos/{id_producto}/comparacion-precios")

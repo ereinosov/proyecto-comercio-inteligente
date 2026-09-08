@@ -59,7 +59,8 @@
 }
 
 .tarjeta {
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
   background: var(--color-superficie-alta);
   padding: 16px 18px;

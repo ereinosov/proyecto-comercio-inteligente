@@ -60,7 +60,7 @@ export function MermasPorCausaGrafico({ idSucursal }: { idSucursal: number }) {
           ? "Vuelve a abrir esta pantalla; si persiste, revisa el servicio de caja."
           : "Aquí aparecerá la valoración de las mermas de esta sucursal apilada por causa y agrupada por semana, en cuanto se registre alguna."
       }
-      alto={280}
+      alto={240}
     >
       <ResponsiveContainer width="100%" height="100%">
         <BarChart data={filas} margin={{ top: 4, right: 16, bottom: 4, left: 0 }}>

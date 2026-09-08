@@ -59,7 +59,8 @@
   width: 100%;
   max-width: 78ch;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
   overflow: hidden;
   font-family: var(--tipografia-operacion);
@@ -107,7 +108,8 @@
 
 .tarjeta {
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
   padding: var(--espacio-4);
 }
@@ -153,7 +155,8 @@
 
 .grupo {
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
   padding: var(--espacio-4);
 }

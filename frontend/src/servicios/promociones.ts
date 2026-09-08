@@ -14,7 +14,7 @@ import { clienteHttp } from "./clienteHttp";
 // User Story 1 — cupón por fecha fija + redención transversal (T017)
 // --------------------------------------------------------------------------
 
-export type EstadoCupon = "generado" | "redimido" | "vencido";
+export type EstadoCupon = "generado" | "redimido" | "vencido" | "anulado";
 
 export interface Cupon {
   id_cupon: number;
@@ -56,13 +56,46 @@ export interface Redencion {
 export function generarCupones(
   desde: string,
   hasta: string,
-  nombreCampania?: string
+  opciones: { nombreCampania?: string; porcentajeDescuento?: string } = {}
 ): Promise<ResultadoGeneracion> {
   return clienteHttp.post<ResultadoGeneracion>("/promociones/cupones/generacion", {
     desde,
     hasta,
-    nombre_campania: nombreCampania,
+    nombre_campania: opciones.nombreCampania,
+    porcentaje_descuento: opciones.porcentajeDescuento,
   });
+}
+
+export function anularCupon(idCupon: number): Promise<{ id_cupon: number; estado: EstadoCupon }> {
+  return clienteHttp.post(`/promociones/cupones/${idCupon}/anulacion`, {});
+}
+
+export interface RendimientoCampanias {
+  id_sucursal: number;
+  periodo: { desde: string; hasta: string };
+  cupones: {
+    emitidos: number;
+    redimidos: number;
+    vencidos: number;
+    anulados: number;
+    tasa_redencion: string;
+  };
+  ofertas_recompra: { propuestas: number; compradas: number; reserva_vencida: number };
+  por_mecanismo: {
+    tipo_origen: string;
+    descuento_otorgado: string;
+    ventas_influidas: number;
+  }[];
+}
+
+export function rendimientoCampanias(
+  idSucursal: number,
+  desde: string,
+  hasta: string
+): Promise<RendimientoCampanias> {
+  return clienteHttp.get<RendimientoCampanias>(
+    `/promociones/campanias/rendimiento?id_sucursal=${idSucursal}&desde=${desde}&hasta=${hasta}`
+  );
 }
 
 export function listarCupones(opciones?: {
@@ -145,6 +178,13 @@ export function detectarOfertasRecompra(idSucursal: number): Promise<ResultadoDe
   return clienteHttp.post<ResultadoDeteccion>("/promociones/ofertas-recompra/deteccion", {
     id_sucursal: idSucursal,
   });
+}
+
+export function cancelarOfertaRecompra(idOferta: number): Promise<OfertaRecompra> {
+  return clienteHttp.post<OfertaRecompra>(
+    `/promociones/ofertas-recompra/${idOferta}/cancelacion`,
+    {}
+  );
 }
 
 export function listarOfertasRecompra(opciones?: {

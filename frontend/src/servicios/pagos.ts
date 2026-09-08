@@ -147,6 +147,42 @@ export function registrarTerminal(cuerpo: {
   return clienteHttp.post<TerminalPago>("/pagos/terminales", cuerpo);
 }
 
+export interface Cobro {
+  id_venta: number;
+  instante: string;
+  total: string;
+  moneda: string;
+  medio_pago: string | null;
+  id_operador: number;
+  operador: string;
+  anulada: boolean;
+}
+
+export interface CobrosResumen {
+  id_sucursal: number;
+  cobros: Cobro[];
+  total_por_medio: { medio_pago: string; total: string }[];
+}
+
+export function listarCobros(
+  idSucursal: number,
+  opciones: { desde?: string; hasta?: string } = {}
+): Promise<CobrosResumen> {
+  const params = new URLSearchParams({ id_sucursal: String(idSucursal) });
+  if (opciones.desde) params.set("desde", opciones.desde);
+  if (opciones.hasta) params.set("hasta", opciones.hasta);
+  return clienteHttp.get<CobrosResumen>(`/pagos/cobros?${params}`);
+}
+
+export interface ModeloFirmware {
+  modelo: string;
+  ultima_version_referencia: string;
+}
+
+export function listarModelosFirmware(): Promise<ModeloFirmware[]> {
+  return clienteHttp.get<ModeloFirmware[]>("/pagos/modelos-firmware");
+}
+
 export function listarTerminales(
   idSucursal: number,
   soloConSenal = false

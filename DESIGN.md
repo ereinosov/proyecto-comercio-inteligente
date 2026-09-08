@@ -8,8 +8,10 @@ colors:
   tinta-suave: "#5A6862"
   marca: "#0F5132"
   acento-secundario: "#7A6A56"
-  borde: "#C4CFC5"
-  borde-fuerte: "#A6B4A8"
+  superficie-media: "#E6EBE7"
+  superficie-hundida: "#CDD6CE"
+  borde: "#BCC8BD"
+  borde-fuerte: "#8E9F91"
   atencion: "#9A5B08"
   critico: "#8E2A2A"
   estimado: "#1F5673"
@@ -57,6 +59,65 @@ components:
 <!--
 INFORME DE IMPACTO — enmienda del sistema de diseño
 ==================================================
+Cambio de versión: 1.11.0 → 2.0.0 (MAYOR — INVIERTE una regla nombrada. Primera enmienda mayor
+del sistema de diseño).
+
+Motivo: tras cinco rondas de refuerzo de tono/borde (v1.5.0–v1.11.0) el propietario seguía
+leyendo "casi todas las pantallas medio vacías, como una hoja y ya". La causa esta vez NO era
+el tono: era que el sistema se había prohibido el único recurso de profundidad que un ojo
+reconoce sin esfuerzo —la sombra— y compensaba sólo con borde y salto de tono, que a esta
+escala ya estaban al máximo. El propietario pidió y aprobó explícitamente un "rediseño más
+audaz" con relieve.
+
+REGLA INVERTIDA — "La Regla del Filo, No la Sombra" → "La Regla del Relieve Medido".
+Antes: cero `box-shadow` en todo el sistema; la profundidad se transmitía SÓLO con tono y
+borde. Ahora: dos niveles de sombra tokenizados —`--sombra-1` (superficie de contenido
+levantada: tabla, bloque, panel, nav) y `--sombra-2` (plano que flota: modal, desplegable,
+panel flotante, telón de documento)—, ambos con OFFSET real y BLUR suave (nunca un halo de
+offset cero, nunca la sombra dura de bloque del neobrutalismo), tintados con el matiz
+verde-tinta de la paleta para que la sombra pertenezca al mundo Rasero. El borde y el salto de
+tono NO se retiran: la sombra los acompaña, la superficie sigue teniendo su contorno de 1.5px.
+
+REGLAS INTACTAS: La Regla del Significado, La Regla de la Sola Voz (el verde sigue en cobro +
+wordmark + acento de nav; se añade su uso como "filo" de 5px en la puerta del sistema y como
+banda de la barra de Documentación — ambos son chrome de identidad, no contenido), La Regla de
+los Tres Portadores, La Regla del Ícono (nada de emoji), La Regla de la Voz de Análisis, La
+Regla del Registro Sin Dinero, La Regla de la Identidad del Comercio (el logo a color del
+comercio sigue SIEMPRE sobre blanco).
+
+AÑADIDOS de token (`tokens.css`, en sync con `.impeccable/design.json`):
+  - `--color-superficie-media` #E6EBE7 y `--color-superficie-hundida` #CDD6CE — "La Regla de
+    los Tres Planos": un tono de respiro entre bloques / cabecera de pantalla, y un tono de
+    pozo (encabezado sticky, celda deshabilitada, canal de un input numérico, fondo de `<pre>`).
+  - `--sombra-1`, `--sombra-2` (arriba).
+  - `--borde-contorno: 1.5px solid var(--color-contorno)` — el perímetro de una superficie
+    pasa de 1px a 1.5px (pedido explícito: "aumenta el grosor de los bordes"). Los separadores
+    internos siguen 1px.
+  - `--transicion: 130ms ease` — transición única de hover/estado.
+  - Tonos de neutro oscurecidos otra vez: `borde` #C4CFC5 → #BCC8BD, `borde-fuerte` #A6B4A8 →
+    #8E9F91.
+
+CROMADOS DEL NAVEGADOR (`base.css`): selección de texto en Verde Rasero al 22 %, `caret-color`
+verde, barra de scroll teñida de la paleta, `font-feature-settings` de IBM Plex Sans.
+
+PANTALLAS: la puerta del sistema (apertura de turno) recibe un pase de personalidad —filo verde
+de 5px, "vía Rasero" con el wordmark y la tesis del producto bajo el logo del comercio, marca
+de agua del mono, elevación `--sombra-2`, PIN grande sobre pozo—. La barra de Documentación
+pasa a banda verde con wordmark reversado. Precios y Mermas pasan a dos columnas compactas
+(gráfico contenido a la derecha, no una banda a lo ancho). El nombre de la vista "Bitácora de
+pagos" pasa a "Registro de seguridad" (no era un libro de ventas; ésa es la vista nueva
+"Cobros por venta"). El formulario de captura de competencia pasa a una rejilla real de dos
+columnas.
+
+Sincronización con la constitución: PENDIENTE (junto con v1.4.0–v1.11.0). Esta enmienda mayor
+invierte una regla nombrada; requiere registro en el historial de `constitution.md` con la
+razón "introduce el relieve por sombra (dos niveles tokenizados, con blur suave, tintados de
+la paleta); tres planos de neutro; contorno de 1.5px; pase de identidad en la puerta del
+sistema — todo aprobado explícitamente por el propietario".
+
+--><!--
+INFORME DE IMPACTO — enmienda del sistema de diseño (histórico)
+==============================================================
 Cambio de versión: 1.7.0 → 1.8.0 (MENOR — un componente base nuevo, migración transversal a
 componentes ya especificados; ninguna regla se elimina ni se invierte).
 
@@ -352,7 +413,8 @@ compromete dinero.
 
 - Dos registros formales (Operación 2px / Análisis 6px) que se eligen por contexto de uso, no por gusto
 - Cifras tabulares reales: las columnas de dinero y peso alinean por dígito
-- Cero sombras: la profundidad se transmite con tono y borde
+- Relieve medido (v2.0.0): la profundidad se transmite con tono, borde de 1.5px Y dos niveles
+  de sombra tokenizada, con blur suave y tintada de la paleta — nunca un halo ni una sombra dura
 - Color semántico reservado a su significado, nunca decorativo
 - Toda incertidumbre se comunica con tres portadores simultáneos, nunca solo con color
 
@@ -380,7 +442,12 @@ reservado a la acción secundaria neutra.
   se recorten como un objeto sobre él, sin necesidad de sombra (v1.11.0; era #E9EDE9, y #F1F4F1
   antes de v1.5.0).
 - **Superficie Alta** (#FFFFFF): planos que se levantan sobre la base — el cuerpo de una tabla, la
-  fila activa. La única forma de "elevar" algo en este sistema.
+  fila activa. Junto con el borde y la sombra `--sombra-1`, es lo que hace que una superficie de
+  contenido se lea como un objeto.
+- **Superficie Media** (#E6EBE7) y **Superficie Hundida** (#CDD6CE) (v2.0.0, La Regla de los Tres
+  Planos): un tono de respiro entre bloques y para la cabecera de pantalla; y un tono de pozo —
+  encabezado sticky de tabla, celda deshabilitada, canal de un `<input>` numérico, fondo de un
+  `<pre>`—. Ninguno es un fondo oscuro; son medio punto arriba y abajo de la base.
 - **Tinta** (#1B2621): todo el texto de lectura. Casi negro, con el mismo matiz verde de la base,
   para que la página no se lea como tinta de imprenta sobre papel ajeno.
 - **Tinta Suave** (#5A6862): encabezados de columna, unidades, texto de apoyo. Nunca para una cifra
@@ -551,9 +618,23 @@ de la misma variante miden lo mismo en toda pantalla.
 
 ## Elevation & Depth
 
-**Este sistema no usa sombras.** Ninguna. La profundidad se transmite con dos recursos: el salto
-de tono entre Superficie Base (#DDE4DE) y Superficie Alta (#FFFFFF), y el borde. Un plano blanco
-sobre el fondo agrisado ya está "arriba"; no necesita simular que flota.
+**Este sistema usa relieve medido (v2.0.0).** La profundidad se transmite con TRES recursos que
+trabajan juntos: el salto de tono entre Superficie Base (#DDE4DE) y Superficie Alta (#FFFFFF), el
+borde estructural de 1.5px (`--color-contorno`), y **dos niveles de sombra tokenizada**:
+
+- **`--sombra-1`** `0 1px 2px rgba(16,32,26,.05), 0 3px 10px rgba(16,32,26,.06)` — la superficie
+  de contenido que se levanta sobre la base: toda tabla de Operación, todo bloque de Análisis,
+  el panel de detalle, la tarjeta del catálogo, el nav global. Muy contenida: acompaña al
+  contorno, no lo reemplaza.
+- **`--sombra-2`** `0 6px 16px rgba(16,32,26,.12), 0 18px 44px rgba(16,32,26,.14)` — el plano que
+  FLOTA sobre el contenido: `ModalAdministrable`, el panel desplegable del nav, los paneles
+  flotantes (identificar cliente, aplicar promoción), el telón del documento imprimible, la
+  tarjeta de apertura de turno.
+
+Ambas llevan **offset real y blur suave** —nunca un halo de offset cero, nunca la sombra dura de
+bloque (`4px 4px 0`) del neobrutalismo— y están tintadas con el matiz verde-tinta (#10201A) de
+la paleta, para que la sombra pertenezca a este mundo y no se lea como importada. Los degradados
+y los fondos oscuros siguen prohibidos.
 
 **Salto de tono (v1.5.0).** Superficie Base pasó de #F1F4F1 a **#E9EDE9**: el mismo verde
 agrisado, un punto más profundo. El salto de luminosidad a Superficie Alta sube de ~4% a ~7% —
@@ -575,9 +656,15 @@ peso del contorno de todo el sistema: el token `--color-contorno` en `tokens.css
 
 ### Named Rules
 
-**La Regla del Filo, No la Sombra.** Cuando una región necesite separarse de su entorno, se
-separa con borde y tono. Añadir `box-shadow` es importar el vocabulario de otro sistema, y en un
-registro de alta densidad las sombras se acumulan hasta emborronar la retícula.
+**La Regla del Relieve Medido (v2.0.0, invierte "La Regla del Filo, No la Sombra").** Una
+superficie de contenido se separa de su entorno con TRES recursos a la vez: salto de tono,
+contorno de 1.5px y `--sombra-1`. Un plano que flota (modal, desplegable, panel flotante) usa
+`--sombra-2`. Sólo se usan esas dos sombras del sistema —nunca un `box-shadow` inventado por
+componente, nunca un halo de offset cero, nunca la sombra dura de bloque—; y la sombra nunca
+sustituye al borde, lo acompaña. En un registro de alta densidad la sombra es mínima a propósito
+(el primer nivel apenas 6 % de opacidad) para que la retícula no se emborrone al acumularse.
+El histórico de por qué el sistema estuvo cinco versiones sin sombra vive en el informe de
+impacto de v2.0.0.
 
 ## Shapes
 
@@ -1013,10 +1100,10 @@ del operador en la barra responde "¿de quién es este turno?" sin abrir otra pa
   texto de la escala `--texto-*` (v1.5.0). Nunca un literal nuevo.
 - **Do** usar IBM Plex Sans en todo control, tabla y etiqueta; Source Serif 4 sólo en títulos
   ≥ 20px y prosa de Análisis (La Regla de la Voz de Análisis).
-- **Do** transmitir profundidad con el salto de tono #DDE4DE → #FFFFFF, el hairline #C4CFC5
-  entre filas y columnas, y el contorno estructural `--color-contorno` (#A6B4A8) en el
-  perímetro de toda tabla, bloque, panel o modal (v1.10.0, tonos reforzados en v1.11.0) —
-  nunca una sombra.
+- **Do** transmitir profundidad con los tres recursos juntos (v2.0.0): el salto de tono
+  #DDE4DE → #FFFFFF, el contorno de 1.5px `--color-contorno` (#8E9F91) en el perímetro de toda
+  tabla, bloque, panel o modal, y `--sombra-1` en la superficie levantada / `--sombra-2` en la
+  que flota. El hairline #BCC8BD sigue separando filas y columnas dentro de la superficie.
 - **Do** acompañar todo dato incierto o envejecido con sus tres portadores.
 - **Do** reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla —
   y cero veces en una pantalla que no tiene esa acción.
@@ -1029,7 +1116,10 @@ del operador en la barra responde "¿de quién es este turno?" sin abrir otra pa
 
 ### Don't:
 
-- **Don't** usar `box-shadow` en ninguna parte del sistema.
+- **Don't** inventar un `box-shadow` por componente — sólo existen `--sombra-1` (contenido
+  levantado) y `--sombra-2` (plano que flota); ninguna otra, ningún halo de offset cero, ninguna
+  sombra dura de bloque (La Regla del Relieve Medido, v2.0.0).
+- **Don't** usar la sombra en lugar del borde: una superficie de contenido lleva las dos.
 - **Don't** usar degradados ni fondos oscuros.
 - **Don't** usar los semánticos (#9A5B08, #8E2A2A, #1F5673) por énfasis o decoración.
 - **Don't** rellenar de Acento Secundario #7A6A56 ni usarlo con función de dinero o de estado:
@@ -1179,4 +1269,16 @@ una aclaración sin cambio de significado.
   secundario). Sincronización con la constitución **pendiente** (junto con v1.4.0–v1.10.0; la
   tabla de paleta de la constitución ya arrastraba #F1F4F1 desde antes de v1.5.0).
 
-**Versión**: 1.11.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-08
+- **2.0.0** (2026-09-08) — MAYOR (primera enmienda mayor): **INVIERTE "La Regla del Filo, No la
+  Sombra"** → **"La Regla del Relieve Medido"**. Introduce dos niveles de sombra tokenizada
+  (`--sombra-1` contenido levantado, `--sombra-2` plano que flota), con offset + blur suave,
+  tintadas de la paleta, sin sustituir al borde. Añade **La Regla de los Tres Planos**
+  (`--color-superficie-media` #E6EBE7, `--color-superficie-hundida` #CDD6CE). Contorno del
+  perímetro de superficie de 1px → **1.5px** (`--borde-contorno`); `borde` #C4CFC5 → #BCC8BD,
+  `borde-fuerte` #A6B4A8 → #8E9F91. Cromados del navegador teñidos de la paleta (selección,
+  caret, scrollbar). Pase de personalidad en la puerta del sistema (apertura de turno) y en la
+  barra de Documentación. Precios y Mermas a dos columnas compactas; "Bitácora de pagos" →
+  "Registro de seguridad" (más "Cobros por venta", vista nueva). Aprobado explícitamente por el
+  propietario. Sincronización con la constitución **pendiente** (junto con v1.4.0–v1.11.0).
+
+**Versión**: 2.0.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-08

@@ -37,37 +37,61 @@
   font-size: 15px;
 }
 
+/* v2.0.0 — rejilla real de dos columnas: cada campo ocupa su celda, la microcopia reserva su
+   altura, y nada baila porque un campo tenga nota y otro no. */
 .formulario {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: flex-end;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--espacio-4) var(--espacio-4);
+  align-items: start;
+  max-width: 620px;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
-  padding: 20px 24px;
+  padding: var(--espacio-6);
 }
 
 .campo {
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: var(--espacio-2);
+  min-width: 0;
+}
+
+.campoAncho {
+  grid-column: 1 / -1;
 }
 
 .campo label {
-  font-size: 14px;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
+}
+
+.campo small {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-xs);
+  color: var(--color-tinta-suave);
+  line-height: 1.35;
 }
 
 .entrada,
 .seleccion {
-  font-family: var(--tipografia-analisis);
-  font-size: 16px;
+  width: 100%;
+  box-sizing: border-box;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-base);
   color: var(--color-tinta);
-  background: var(--color-superficie-base);
-  border: 1px solid var(--color-contorno);
+  background: var(--color-superficie-hundida);
+  border: 1.5px solid var(--color-borde-fuerte);
   border-radius: var(--radio-analisis);
-  padding: 8px 10px;
+  padding: 0 var(--espacio-3);
+  height: var(--alto-control);
+}
+
+.seleccion {
+  padding: 0 var(--espacio-2);
 }
 
 .entrada:focus-visible,
@@ -111,7 +135,8 @@
 
 .bloqueObs {
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
   padding: 16px 20px;
   display: flex;

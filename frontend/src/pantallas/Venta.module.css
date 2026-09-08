@@ -100,7 +100,8 @@
   table-layout: fixed;
   border-collapse: collapse;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   font-size: var(--texto-base);
 }
@@ -443,12 +444,30 @@
   text-align: center;
 }
 
+/* La factura original, ya anulada, queda plegada tras una nota de crédito. */
+.facturaOriginal {
+  width: 100%;
+}
+
+.facturaOriginal > summary {
+  cursor: pointer;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  color: var(--color-acento-secundario);
+  padding: var(--espacio-2) 0;
+}
+
+.facturaOriginal[open] > summary {
+  margin-bottom: var(--espacio-3);
+}
+
 .resumenConfirmado {
   display: flex;
   flex-direction: column;
   align-items: center;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   padding: var(--espacio-8);
   min-width: 320px;

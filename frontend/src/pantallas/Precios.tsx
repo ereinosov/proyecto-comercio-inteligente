@@ -15,6 +15,7 @@
 
 import { useEffect, useState } from "react";
 import { RolProductoSelector } from "../componentes/RolProductoSelector";
+import { RentabilidadProducto } from "../componentes/RentabilidadProducto";
 import { SugerenciaPrecioColocacion } from "../componentes/SugerenciaPrecioColocacion";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { listarMargenes, type MargenProducto } from "../servicios/precios";
@@ -123,16 +124,6 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
     <div className={estilos.pantalla}>
       <EncabezadoPantalla titulo="Precios y Márgenes" registro="analisis" />
 
-      {!error && (
-        <div className={estilos.zonaGrafico}>
-          <MargenPorProductoGrafico
-            productos={productos}
-            margenes={margenes}
-            cargando={cargando}
-          />
-        </div>
-      )}
-
       <div className={estilos.cuerpo}>
         {error && <p className={estilos.error}>{error}</p>}
         {!error && cargando && <EsqueletoLista filas={8} registro="analisis" altoFila={54} />}
@@ -179,19 +170,46 @@ export function Precios({ idSucursal }: { idSucursal: number }) {
               )}
             </div>
 
-            <div className={estilos.panelDetalle}>
+            <div className={estilos.columnaDerecha}>
+              {!error && (
+                <div className={estilos.zonaGrafico}>
+                  <MargenPorProductoGrafico
+                    productos={productos}
+                    margenes={margenes}
+                    cargando={cargando}
+                  />
+                </div>
+              )}
               {!productoSeleccionado && (
-                <p className={estilos.instruccion}>
-                  Elige un producto de la lista para clasificarlo y ver sus sugerencias.
-                </p>
+                <div className={estilos.detalleVacio}>
+                  <EstadoVacio
+                    glifo="seleccion"
+                    titulo="Elige un producto"
+                    descripcion="Aquí verás su rentabilidad real —costo, precio y ganancia por unidad—, cuánto se ha vendido, su rol comercial y las sugerencias de precio y colocación."
+                  />
+                </div>
               )}
               {productoSeleccionado && (
-                <div key={productoSeleccionado.id_producto} className={estilos.detalleRevelado}>
+                <div
+                  key={productoSeleccionado.id_producto}
+                  className={`${estilos.panelDetalle} ${estilos.detalleRevelado}`}
+                >
                   <h2 className={estilos.nombreDetalle}>{productoSeleccionado.nombre}</h2>
                   <RolProductoSelector idProducto={productoSeleccionado.id_producto} />
+                  <RentabilidadProducto
+                    idProducto={productoSeleccionado.id_producto}
+                    idSucursal={idSucursal}
+                    margen={margenes.get(productoSeleccionado.id_producto)}
+                  />
                   <SugerenciaPrecioColocacion
                     idProducto={productoSeleccionado.id_producto}
                     idSucursal={idSucursal}
+                    costoVigente={
+                      margenes.get(productoSeleccionado.id_producto)?.costo_vigente ?? null
+                    }
+                    precioVigente={
+                      margenes.get(productoSeleccionado.id_producto)?.precio_vigente ?? null
+                    }
                   />
                 </div>
               )}

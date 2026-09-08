@@ -42,6 +42,7 @@ class GeneracionCupones(BaseModel):
     desde: date
     hasta: date
     nombre_campania: str | None = None
+    porcentaje_descuento: str | float | int | None = None
 
 
 class RedencionNueva(BaseModel):
@@ -60,9 +61,40 @@ def generar_cupones(cuerpo: GeneracionCupones, sesion: Session = Depends(obtener
         desde=cuerpo.desde,
         hasta=cuerpo.hasta,
         nombre_campania=cuerpo.nombre_campania,
+        porcentaje_descuento=cuerpo.porcentaje_descuento,
     )
     sesion.commit()
     return resultado
+
+
+@router.post("/cupones/{id_cupon}/anulacion", dependencies=_soloEncargado)
+def anular_cupon(id_cupon: int, sesion: Session = Depends(obtener_sesion)) -> dict:
+    cupon = servicio_promociones.anular_cupon(sesion, id_cupon=id_cupon)
+    sesion.commit()
+    return {"id_cupon": cupon.id_cupon, "estado": cupon.estado}
+
+
+@router.post("/ofertas-recompra/{id_oferta_recompra}/cancelacion", dependencies=_soloEncargado)
+def cancelar_oferta_recompra(
+    id_oferta_recompra: int, sesion: Session = Depends(obtener_sesion)
+) -> dict:
+    oferta = servicio_promociones.cancelar_oferta_recompra(
+        sesion, id_oferta_recompra=id_oferta_recompra
+    )
+    sesion.commit()
+    return servicio_promociones._oferta_a_respuesta(oferta)
+
+
+@router.get("/campanias/rendimiento", dependencies=_soloEncargado)
+def rendimiento_campanias(
+    id_sucursal: int,
+    desde: date = Query(...),
+    hasta: date = Query(...),
+    sesion: Session = Depends(obtener_sesion),
+) -> dict:
+    return servicio_promociones.rendimiento_campanias(
+        sesion, id_sucursal=id_sucursal, desde=desde, hasta=hasta
+    )
 
 
 @router.get("/cupones")

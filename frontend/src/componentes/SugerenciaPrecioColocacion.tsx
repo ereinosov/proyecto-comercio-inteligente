@@ -35,9 +35,14 @@ function textoMargen(margen: number | null): string {
 export function SugerenciaPrecioColocacion({
   idProducto,
   idSucursal,
+  costoVigente = null,
+  precioVigente = null,
 }: {
   idProducto: number;
   idSucursal: number;
+  /** Costo y precio vigentes del producto en la sucursal, para comparar contra el sugerido. */
+  costoVigente?: string | null;
+  precioVigente?: string | null;
 }) {
   const [sugerenciaPrecio, setSugerenciaPrecio] = useState<SugerenciaPrecio | null>(null);
   const [errorPrecio, setErrorPrecio] = useState<string | null>(null);
@@ -104,6 +109,29 @@ export function SugerenciaPrecioColocacion({
         {!errorPrecio && sugerenciaPrecio && (
           <div className={sugerenciaPrecio.aplicada ? estilos.confirmada : undefined}>
             <p className={estilos.precioSugerido}>${sugerenciaPrecio.precio_sugerido}</p>
+            {(() => {
+              const sug = Number(sugerenciaPrecio.precio_sugerido);
+              const pv = precioVigente != null ? Number(precioVigente) : null;
+              const cv = costoVigente != null ? Number(costoVigente) : null;
+              const delta = pv != null ? sug - pv : null;
+              const margenResultante =
+                cv != null && sug > 0 ? ((sug - cv) / sug) * 100 : null;
+              return (
+                <p className={estilos.instruccion}>
+                  {delta != null && (
+                    <>
+                      vs. precio vigente:{" "}
+                      {delta === 0
+                        ? "sin cambio"
+                        : `${delta > 0 ? "+" : ""}$${delta.toFixed(2)}`}
+                    </>
+                  )}
+                  {margenResultante != null && (
+                    <> · margen resultante: {margenResultante.toFixed(0)}%</>
+                  )}
+                </p>
+              );
+            })()}
             <dl className={estilos.insumos}>
               <div>
                 <dt>Margen usado</dt>

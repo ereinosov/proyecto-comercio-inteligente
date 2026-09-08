@@ -38,6 +38,15 @@
         ],
         "createdAt": "2026-09-08T05:07:51.119Z",
         "reason": "pre-existing design system: .cita (cita textual del enunciado) and .nota (aviso, mismo criterio que FacturaSimulada) predate this change; documented in the file header. Not introduced by the DB-model/scope edit."
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "frontend/src/componentes/FacturaSimulada.module.css"
+        ],
+        "createdAt": "2026-09-08T15:33:45.289Z",
+        "reason": "DESIGN.md sanctions a 3-4px semantic left border as a state carrier (already ignored for Precios .bordeNegativo, Clientes fuga, Documentacion callouts); .docNota uses the identical 4px critico stripe to mark the credit note as money-reversing, distinct from the invoice"
       }
     ]
   }

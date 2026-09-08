@@ -24,6 +24,7 @@ from rasero.persistencia.sesion import obtener_sesion
 from rasero.seguridad import exige_rol
 from rasero.servicios import bitacora_pagos as servicio_bitacora
 from rasero.servicios import cobertura_pago as servicio_cobertura
+from rasero.servicios import cobros_pagos as servicio_cobros
 from rasero.servicios import terminales_pago as servicio_terminales
 from rasero.servicios import tokenizacion as servicio_token
 from rasero.servicios.tokenizacion import token_pago_a_respuesta
@@ -166,6 +167,20 @@ def registrar_terminal(
     return servicio_terminales._terminal_a_respuesta(terminal)
 
 
+@router.get("/modelos-firmware")
+def listar_modelos_firmware() -> list[dict]:
+    """Modelos de datáfono con una última versión de referencia conocida. Un modelo fuera de
+    esta lista queda con "versión de referencia desconocida" hasta que el negocio registre su
+    versión (variable de entorno `PAGOS_ULTIMA_VERSION_FIRMWARE`).
+    """
+    from rasero.config import pagos as cfg
+
+    return [
+        {"modelo": modelo, "ultima_version_referencia": version}
+        for modelo, version in sorted(cfg.ULTIMA_VERSION_FIRMWARE.items())
+    ]
+
+
 @router.get("/terminales")
 def listar_terminales(
     id_sucursal: int | None = None,
@@ -275,6 +290,21 @@ def consultar_pago_de_venta(
 # ==========================================================================
 # User Story 4 — bitácora de auditoría de pagos (T041)
 # ==========================================================================
+
+
+@router.get("/cobros")
+def listar_cobros(
+    id_sucursal: int | None = None,
+    desde: date | None = None,
+    hasta: date | None = None,
+    sesion: Session = Depends(obtener_sesion),
+) -> dict:
+    """Libro de ventas de la sucursal con la forma de pago de cada una y el total cobrado por
+    medio en el período. Sólo lectura sobre 001.
+    """
+    return servicio_cobros.listar_cobros(
+        sesion, id_sucursal=id_sucursal, desde=desde, hasta=hasta
+    )
 
 
 @router.get("/bitacora")

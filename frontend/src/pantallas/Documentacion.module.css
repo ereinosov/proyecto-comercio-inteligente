@@ -11,7 +11,12 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  height: 100vh;
+  /* v2.0.1: 100% en vez de 100vh — igual que el resto de pantallas de la app y que
+     `html, body, #root` en base.css. `100vh` no sigue el redimensionado dinámico de la barra
+     de direcciones/teclado del navegador (móvil) ni el alto real de un contenedor embebido: el
+     armazón flex quedaba más alto que el viewport visible y la barra superior (`.barra`)
+     terminaba empujada fuera de vista o recortada por `overflow: hidden`. */
+  height: 100%;
   overflow: hidden;
   background: var(--color-superficie-base);
   font-family: var(--tipografia-analisis);
@@ -20,30 +25,36 @@
 
 .marca {
   position: absolute;
-  right: var(--espacio-8);
-  bottom: var(--espacio-6);
-  width: 200px;
-  opacity: 0.05;
+  right: -4%;
+  bottom: -8%;
+  width: min(48vw, 460px);
+  opacity: 0.055;
   pointer-events: none;
+  z-index: 0;
 }
 
-/* Barra superior propia: wordmark de Rasero a la izquierda, acción "Volver" a la derecha.
-   Esta pantalla vive fuera del armazón con nav, así que trae su propia cabecera. */
+/* Barra superior propia — v2.0.0: banda de identidad en Verde Rasero con el wordmark reversado,
+   igual que la puerta del sistema (apertura de turno). El wordmark es uno de los tres usos
+   permitidos del verde (La Regla de la Sola Voz, formalización v1.5.0). */
 .barra {
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--espacio-4);
-  padding: var(--espacio-3) var(--espacio-8);
-  background: var(--color-superficie-alta);
-  border-bottom: 1px solid var(--color-contorno);
+  padding: var(--espacio-4) var(--espacio-8);
+  background: var(--color-marca);
+  border-bottom: 1.5px solid var(--color-marca-fuerte);
+  box-shadow: var(--sombra-1);
+  position: relative;
+  z-index: 2;
 }
 
 .marcaSistema {
   height: 22px;
   width: auto;
   display: block;
+  filter: brightness(0) invert(1);
 }
 
 .tituloBarra {
@@ -51,6 +62,19 @@
   font-size: var(--texto-md);
   font-weight: var(--peso-fuerte);
   margin: 0;
+  color: var(--color-superficie-alta);
+}
+
+/* El botón "Volver" vive sobre la banda verde: se reversa a contorno blanco. */
+.accionBarra :global(button) {
+  color: #fff;
+  border-color: color-mix(in srgb, #fff 55%, transparent);
+  background: transparent;
+}
+
+.accionBarra :global(button):hover {
+  background: color-mix(in srgb, #fff 12%, transparent);
+  color: #fff;
 }
 
 .marco {
@@ -65,7 +89,7 @@
   width: 248px;
   overflow-y: auto;
   padding: var(--espacio-6) var(--espacio-4);
-  border-right: 1px solid var(--color-contorno);
+  border-right: 1.5px solid var(--color-contorno);
   background: var(--color-superficie-alta);
 }
 
@@ -189,7 +213,8 @@
   font-size: var(--texto-sm);
   line-height: var(--lh-normal);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-left: 3px solid var(--color-atencion);
   border-radius: var(--radio-analisis);
   padding: var(--espacio-3) var(--espacio-4);
@@ -205,7 +230,8 @@
 .tablaEnvoltura {
   overflow-x: auto;
   margin: 0 0 var(--espacio-4);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
 }
 
@@ -269,7 +295,8 @@
 
 .capa {
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
   padding: var(--espacio-3) var(--espacio-4);
 }

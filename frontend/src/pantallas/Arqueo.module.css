@@ -30,7 +30,7 @@
   gap: 16px;
   padding: 12px 24px;
   background: var(--color-superficie-alta);
-  border-bottom: 1px solid var(--color-contorno);
+  border-bottom: 1.5px solid var(--color-contorno);
 }
 
 .marcaSistema {
@@ -110,7 +110,8 @@
   font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   padding: 7px 9px;
 }
@@ -161,7 +162,8 @@
   width: 100%;
   border-collapse: collapse;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-operacion);
   font-size: 14px;
 }
@@ -228,4 +230,11 @@
   border: 1.5px solid currentColor;
   background: transparent;
   flex-shrink: 0;
+}
+
+.paginadorZona {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: flex-end;
+  padding: 0 24px var(--espacio-2);
 }

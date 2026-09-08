@@ -64,7 +64,8 @@
 
 /* Único momento de animación de la pantalla: al revelar un experimento (remount por `key`). */
 .detalle {
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
   background: var(--color-superficie-alta);
   padding: 20px 24px;

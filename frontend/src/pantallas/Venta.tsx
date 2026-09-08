@@ -465,10 +465,21 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
           {factura ? (
             <>
               {/* Vista previa en pantalla; al imprimir/guardar PDF manda la copia del
-                  documento a pantalla completa de `DocumentoImprimible`, no ésta. */}
+                  documento a pantalla completa de `DocumentoImprimible`, no ésta.
+                  Tras anular: la nota de crédito es lo que se muestra; la factura original
+                  —ya anulada— queda plegada para no leerse como "dos facturas". */}
               <div data-noprint>
-                <FacturaSimulada factura={factura} />
-                {notaCredito && <FacturaSimulada factura={notaCredito} />}
+                {notaCredito ? (
+                  <>
+                    <FacturaSimulada factura={notaCredito} />
+                    <details className={estilos.facturaOriginal}>
+                      <summary>Ver la factura original (anulada)</summary>
+                      <FacturaSimulada factura={factura} />
+                    </details>
+                  </>
+                ) : (
+                  <FacturaSimulada factura={factura} />
+                )}
               </div>
               <DocumentoImprimible factura={factura} notaCredito={notaCredito} />
             </>

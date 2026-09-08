@@ -5,7 +5,7 @@
   discrepancia por producto sin clasificarla (FR-019).
 """
 
-from fastapi import APIRouter, Depends, status
+from fastapi import APIRouter, Depends, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
@@ -37,6 +37,21 @@ class RenglonRecepcionNuevo(BaseModel):
 
 class RecepcionTraspaso(BaseModel):
     renglones: list[RenglonRecepcionNuevo] = Field(min_length=1)
+
+
+@router.get("/traspasos")
+def listar_traspasos(
+    estado: str | None = Query(default=None),
+    id_sucursal_origen: int | None = Query(default=None),
+    id_sucursal_destino: int | None = Query(default=None),
+    sesion: Session = Depends(obtener_sesion),
+) -> list[dict]:
+    return servicio_traspasos.listar_traspasos(
+        sesion,
+        estado=estado,
+        id_sucursal_origen=id_sucursal_origen,
+        id_sucursal_destino=id_sucursal_destino,
+    )
 
 
 @router.post("/traspasos", status_code=status.HTTP_201_CREATED)

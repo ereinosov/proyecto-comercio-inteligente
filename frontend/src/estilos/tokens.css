@@ -17,6 +17,14 @@
                                          Pedido explícito del propietario tras dos rondas de
                                          contraste insuficiente. */
   --color-superficie-alta: #FFFFFF;   /* planos que se levantan sobre la base. */
+  /* v2.0.0 — La Regla de los Tres Planos. Un tercer y cuarto tono de neutro para que una
+     pantalla deje de leerse como "una hoja en blanco sobre otra":
+     - `superficie-media`: zonas grandes de respiro entre bloques, el lienzo detrás de una
+       grilla de tarjetas, la cabecera de pantalla. Un punto sobre la base.
+     - `superficie-hundida`: pozos —encabezado sticky de tabla, celda deshabilitada, el canal
+       de un input numérico, el fondo de un <pre>—. Un punto BAJO la base. */
+  --color-superficie-media: #E6EBE7;
+  --color-superficie-hundida: #CDD6CE;
   --color-tinta: #1B2621;
   --color-tinta-fuerte: #10201A;   /* hover/press de un botón primario relleno de Tinta */
   --color-tinta-suave: #5A6862;
@@ -31,10 +39,14 @@
   /* Jerarquía de borde (v1.5.0). Dos niveles, ambos sin sombra (La Regla del Filo, No la
      Sombra): `borde` es el hairline de 1px que separa filas y columnas; `borde-fuerte` es la
      línea estructural que separa regiones/secciones cuando el hairline se pierde. */
-  --color-borde: #C4CFC5;         /* v1.11.0: hairline más oscuro (era #D5DCD6) — la línea
-                                     entre filas y columnas se ve sin buscarla. */
-  --color-borde-fuerte: #A6B4A8;  /* v1.11.0: estructural / contorno más presente (era
-                                     #BCC6BD) — el marco de un panel se lee como un cuadro. */
+  --color-borde: #BCC8BD;         /* v2.0.0: hairline (era #C4CFC5) — la línea entre filas y
+                                     columnas se ve sin buscarla. */
+  --color-borde-fuerte: #8E9F91;  /* v2.0.0: estructural / contorno más oscuro y presente (era
+                                     #A6B4A8) — el marco de un panel se lee como un cuadro. */
+
+  /* v2.0.0 — grosor del contorno. Pedido explícito del propietario ("aumenta grosor de
+     bordes"). El perímetro de una superficie usa 1.5px; los separadores internos siguen 1px. */
+  --borde-contorno: 1.5px solid var(--color-contorno);
 
   /* Contorno exterior de "la hoja" de cada superficie —el marco completo de un panel, una
      tabla o un bloque de Análisis—. Es el nivel ESTRUCTURAL de la jerarquía de borde (La Regla
@@ -100,6 +112,20 @@
      en otros, `outline: none` en Arqueo). */
   --foco-anillo: 2px solid var(--color-tinta);
   --foco-separacion: 2px;
+
+  /* ─── Relieve (v2.0.0 — La Regla del Relieve Medido) ─────────────────────────────────────
+     Invierte "La Regla del Filo, No la Sombra". Dos niveles, ambos con OFFSET real y BLUR
+     suave (nunca un halo de offset cero, nunca una sombra dura de bloque), tintados con el
+     matiz verde-tinta de la paleta para que la sombra pertenezca al mundo Rasero:
+     - `--sombra-1`: superficie de contenido levantada sobre la base (tabla, bloque, panel,
+       tarjeta del catálogo, nav). Muy contenida: acompaña al contorno, no lo reemplaza.
+     - `--sombra-2`: plano que FLOTA sobre el contenido (modal, panel desplegable, panel
+       flotante de identificar cliente / aplicar promoción, telón de documento). */
+  --sombra-1: 0 1px 2px rgba(16, 32, 26, 0.05), 0 3px 10px rgba(16, 32, 26, 0.06);
+  --sombra-2: 0 6px 16px rgba(16, 32, 26, 0.12), 0 18px 44px rgba(16, 32, 26, 0.14);
+
+  /* Transición única para hover/estado de superficies y controles. */
+  --transicion: 130ms ease;
 }
 
 /* Registro de Operación (punto de venta, inventario, arqueo): alta densidad, tabla como
@@ -114,6 +140,7 @@
 .registro-operacion table {
   border-radius: var(--radio-operacion);
   border-color: var(--color-contorno);
+  box-shadow: var(--sombra-1);
 }
 
 /* Registro de Análisis (márgenes, pronóstico, clientes, promociones): aire visual, radio 6px. */
@@ -126,4 +153,5 @@
 .registro-analisis .bloque {
   border-radius: var(--radio-analisis);
   border-color: var(--color-contorno);
+  box-shadow: var(--sombra-1);
 }

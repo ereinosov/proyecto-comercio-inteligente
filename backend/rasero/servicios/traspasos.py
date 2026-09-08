@@ -290,6 +290,33 @@ def renglones_de_traspaso(sesion: Session, traspaso: Traspaso) -> list[dict]:
     return renglones
 
 
+def listar_traspasos(
+    sesion: Session,
+    *,
+    estado: str | None = None,
+    id_sucursal_origen: int | None = None,
+    id_sucursal_destino: int | None = None,
+) -> list[dict]:
+    """Traspasos filtrados por estado y/o sucursal. Un traspaso `en_transito` cuya recepción
+    todavía no se confirmó reaparece por aquí en cuanto se vuelve a la pantalla de Traspasos —
+    así deja de depender de que el operador no cambie de pantalla tras despachar.
+    """
+    stmt = select(Traspaso)
+    if estado is not None:
+        stmt = stmt.where(Traspaso.estado == estado)
+    if id_sucursal_origen is not None and id_sucursal_destino is not None:
+        stmt = stmt.where(
+            (Traspaso.id_sucursal_origen == id_sucursal_origen)
+            | (Traspaso.id_sucursal_destino == id_sucursal_destino)
+        )
+    elif id_sucursal_origen is not None:
+        stmt = stmt.where(Traspaso.id_sucursal_origen == id_sucursal_origen)
+    elif id_sucursal_destino is not None:
+        stmt = stmt.where(Traspaso.id_sucursal_destino == id_sucursal_destino)
+    stmt = stmt.order_by(Traspaso.instante_despacho.desc())
+    return [traspaso_a_respuesta(sesion, t) for t in sesion.execute(stmt).scalars().all()]
+
+
 def traspaso_a_respuesta(sesion: Session, traspaso: Traspaso) -> dict:
     return {
         "id_traspaso": traspaso.id_traspaso,

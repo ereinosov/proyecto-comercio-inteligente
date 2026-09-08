@@ -17,12 +17,48 @@ from datetime import date
 
 from sqlalchemy import select
 
-from rasero.persistencia.modelos import CoberturaPago, MedioPago, Operador, Sucursal
+from rasero.errores import ErrorPagos
+from rasero.persistencia.modelos import CoberturaPago, MedioPago, Operador, Sucursal, TerminalPago
 from rasero.persistencia.sesion import SesionLocal
 from rasero.servicios.cobertura_pago import declarar_cobertura
+from rasero.servicios.terminales_pago import registrar_terminal
 
 # Apertura simulada del comercio: anterior a cualquier movimiento de las otras semillas.
 APERTURA_COMERCIO = date(2026, 1, 1)
+
+# Terminales de demostración por sucursal: una al día, una desactualizada y una expuesta a
+# clonación, contra el catálogo de `config/pagos.ULTIMA_VERSION_FIRMWARE` / `LISTA_FIRMWARE_VULNERABLE`.
+TERMINALES_DEMO = [
+    {"modelo": "Verifone V240m", "version_firmware": "3.4.1"},   # al día
+    {"modelo": "Ingenico Move 5000", "version_firmware": "5.0.0"},  # desactualizada
+    {"modelo": "PAX A920", "version_firmware": "7.9.0"},          # expuesta a clonación
+]
+
+
+def sembrar_terminales(sesion, operador: Operador, sucursales: list[Sucursal]) -> int:
+    creadas = 0
+    for sucursal in sucursales:
+        for i, plantilla in enumerate(TERMINALES_DEMO, start=1):
+            identificador = f"POS-{sucursal.id_sucursal}-{i:02d}"
+            ya = sesion.execute(
+                select(TerminalPago).where(TerminalPago.identificador == identificador)
+            ).scalar_one_or_none()
+            if ya is not None:
+                continue
+            try:
+                registrar_terminal(
+                    sesion,
+                    identificador=identificador,
+                    modelo=plantilla["modelo"],
+                    id_sucursal=sucursal.id_sucursal,
+                    version_firmware=plantilla["version_firmware"],
+                    operador=operador,
+                    fecha_ultima_actualizacion_firmware=APERTURA_COMERCIO,
+                )
+                creadas += 1
+            except ErrorPagos:
+                continue
+    return creadas
 
 
 def sembrar() -> dict:
@@ -66,15 +102,19 @@ def sembrar() -> dict:
                 )
                 creados += 1
 
+        terminales_creadas = sembrar_terminales(sesion, operador, sucursales)
+
         sesion.commit()
         print(
             f"Cobertura de pagos sembrada: {creados} tramos nuevos "
-            f"({len(sucursales)} sucursales × {len(medios)} medios, desde {APERTURA_COMERCIO})."
+            f"({len(sucursales)} sucursales × {len(medios)} medios, desde {APERTURA_COMERCIO}). "
+            f"Terminales de demostración sembradas: {terminales_creadas}."
         )
         return {
             "tramos_creados": creados,
             "sucursales": len(sucursales),
             "medios": len(medios),
+            "terminales_creadas": terminales_creadas,
         }
     finally:
         sesion.close()

@@ -32,7 +32,8 @@
   min-height: 0;
   overflow-y: auto;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
   padding: 28px 32px;
   animation: revelar 320ms ease-out;

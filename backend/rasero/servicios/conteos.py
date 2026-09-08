@@ -135,6 +135,33 @@ def resolver_conteo(
     return conteo, guardados
 
 
+def listar_conteos(
+    sesion: Session, *, id_sucursal: int | None = None, estado: str | None = None
+) -> list[dict]:
+    """Conteos de una sucursal, opcionalmente por estado. Lo usa la pantalla de Caja y fraude
+    para dejar elegir qué conteo resuelto cruzar contra el faltante de inventario.
+    """
+    stmt = select(ConteoFisico)
+    if id_sucursal is not None:
+        stmt = stmt.where(ConteoFisico.id_sucursal == id_sucursal)
+    if estado is not None:
+        stmt = stmt.where(ConteoFisico.estado == estado)
+    stmt = stmt.order_by(ConteoFisico.instante_inicio.desc())
+    return [conteo_a_respuesta(c) for c in sesion.execute(stmt).scalars().all()]
+
+
+def obtener_conteo(sesion: Session, *, id_conteo_fisico: int) -> dict:
+    conteo = sesion.get(ConteoFisico, id_conteo_fisico)
+    if conteo is None:
+        raise RecursoNoEncontrado(f"El conteo {id_conteo_fisico} no existe.")
+    renglones = list(
+        sesion.execute(
+            select(ConteoRenglon).where(ConteoRenglon.id_conteo_fisico == id_conteo_fisico)
+        ).scalars()
+    )
+    return conteo_a_respuesta(conteo, renglones)
+
+
 def conteo_a_respuesta(conteo: ConteoFisico, renglones: list[ConteoRenglon] | None = None) -> dict:
     cuerpo = {
         "id_conteo_fisico": conteo.id_conteo_fisico,
@@ -146,6 +173,7 @@ def conteo_a_respuesta(conteo: ConteoFisico, renglones: list[ConteoRenglon] | No
     if renglones is not None:
         cuerpo["renglones"] = [
             {
+                "id_conteo_renglon": r.id_conteo_renglon,
                 "id_producto": r.id_producto,
                 "id_lote": r.id_lote,
                 "cantidad_esperada": int(r.cantidad_esperada),

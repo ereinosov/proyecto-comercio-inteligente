@@ -12,20 +12,29 @@
   color: var(--color-tinta);
 }
 
-/* US5: el gráfico de margen vive sobre la lista/detalle, es un resumen — la tabla sigue siendo
-   el detalle. No scrollea con el cuerpo. */
+/* v2.0.0: el gráfico deja de ser una banda a lo ancho (mucho aire vacío) — baja a la columna
+   derecha, sobre el panel de detalle, en un cuadro contenido. Layout de dos columnas real. */
 .zonaGrafico {
   flex-shrink: 0;
-  padding: 0 32px 16px;
 }
 
 .cuerpo {
   flex: 1;
   min-height: 0;
   display: flex;
-  gap: 24px;
-  padding: 0 32px 32px;
+  gap: var(--espacio-6);
+  padding: var(--espacio-4) var(--espacio-8) var(--espacio-8);
   overflow: hidden;
+}
+
+.columnaDerecha {
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-4);
 }
 
 .instruccion,
@@ -73,7 +82,8 @@
   font-size: 16px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
   padding: 14px 16px;
   cursor: pointer;
@@ -95,13 +105,22 @@
 }
 
 .panelDetalle {
-  flex: 1;
   min-width: 0;
-  overflow-y: auto;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
   border-radius: var(--radio-analisis);
-  padding: 28px 32px;
+  padding: var(--espacio-6) var(--espacio-8);
+}
+
+/* Sin producto elegido: el hueco que enseña se centra en la columna, sin una losa blanca
+   vacía detrás (deja de leerse como "media pantalla en blanco"). */
+.detalleVacio {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 320px;
 }
 
 .nombreDetalle {

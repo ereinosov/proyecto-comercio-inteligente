@@ -51,7 +51,8 @@
   gap: 8px;
   padding: 10px;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-2);
   border-radius: var(--radio-operacion);
   min-width: 220px;
 }
@@ -79,7 +80,8 @@
   gap: 6px;
   padding: 8px;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-contorno);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-2);
   border-radius: var(--radio-operacion);
 }
 

@@ -12,12 +12,15 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import {
+  listarModelosFirmware,
   listarTerminales,
   registrarActualizacionFirmware,
   registrarTerminal,
+  type ModeloFirmware,
   type TerminalPago,
 } from "../servicios/pagos";
 import { Boton } from "../componentes/Boton";
+import { Ayuda } from "../componentes/Ayuda";
 import estilos from "./TerminalesPago.module.css";
 
 function EstadoFirmware({ t }: { t: TerminalPago }) {
@@ -40,7 +43,10 @@ function EstadoFirmware({ t }: { t: TerminalPago }) {
   }
   if (t.version_referencia_desconocida) {
     return (
-      <span className={estilos.senalDesconocida}>
+      <span
+        className={estilos.senalDesconocida}
+        title="No hay una última versión de firmware registrada para este modelo. Se resuelve registrando esa versión (variable PAGOS_ULTIMA_VERSION_FIRMWARE) o eligiendo un modelo del catálogo."
+      >
         <span className={estilos.puntoHueco} aria-hidden="true" />
         versión de referencia desconocida
       </span>
@@ -57,6 +63,7 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
   const [identificador, setIdentificador] = useState("");
   const [modelo, setModelo] = useState("");
   const [version, setVersion] = useState("");
+  const [modelos, setModelos] = useState<ModeloFirmware[]>([]);
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const [confirmado, setConfirmado] = useState<string | null>(null);
 
@@ -78,6 +85,10 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
   }
 
   useEffect(recargar, [idSucursal]);
+
+  useEffect(() => {
+    listarModelosFirmware().then(setModelos).catch(() => setModelos([]));
+  }, []);
 
   async function registrar(evento: FormEvent) {
     evento.preventDefault();
@@ -131,7 +142,13 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
   return (
     <div className={estilos.pantalla}>
       <div className={estilos.encabezado}>
-        <h2 className={estilos.titulo}>Terminales de pago</h2>
+        <h2 className={estilos.titulo}>
+          Terminales de pago{" "}
+          <Ayuda
+            etiqueta="Qué significa el estado de firmware"
+            texto="Al día: la versión coincide con la última de referencia del modelo. Desactualizada: por debajo de esa referencia. Expuesta a clonación: figura en la lista de vulnerabilidades del negocio. Versión de referencia desconocida: no hay una última versión registrada para este modelo. Ninguna señal desactiva la terminal — son consultivas."
+          />
+        </h2>
         <span className={estilos.resumen}>
           {terminales.length} terminal{terminales.length === 1 ? "" : "es"} · sucursal {idSucursal}
         </span>
@@ -151,10 +168,18 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
           Modelo
           <input
             className={estilos.entrada}
+            list="modelos-firmware"
             value={modelo}
             onChange={(e) => setModelo(e.target.value)}
             required
           />
+          <datalist id="modelos-firmware">
+            {modelos.map((m) => (
+              <option key={m.modelo} value={m.modelo}>
+                última versión conocida {m.ultima_version_referencia}
+              </option>
+            ))}
+          </datalist>
         </label>
         <label className={estilos.campo}>
           Versión de firmware

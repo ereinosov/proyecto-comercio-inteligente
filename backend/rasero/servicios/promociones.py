@@ -103,12 +103,28 @@ def _marcar_cupones_vencidos(sesion: Session) -> None:
 
 
 def generar_cupones(
-    sesion: Session, *, desde: date, hasta: date, nombre_campania: str | None = None
+    sesion: Session,
+    *,
+    desde: date,
+    hasta: date,
+    nombre_campania: str | None = None,
+    porcentaje_descuento: Decimal | str | float | None = None,
 ) -> dict:
     """FR-001 a FR-007. Crea una `campania` de tipo 'fecha_fija' y, para cada cliente que 002
     devuelve en `clientes_con_cumpleanos`, un `cupon` con su ventana de validez. Idempotente: la
     segunda corrida reporta `cupones_generados: 0`.
+
+    `porcentaje_descuento` deja fijar el valor del cupón por campaña; si es `None` se usa
+    `cfg.DESCUENTO_CUPON_CUMPLEANOS_PCT`.
     """
+    if porcentaje_descuento is None:
+        pct = cfg.DESCUENTO_CUPON_CUMPLEANOS_PCT
+    else:
+        pct = Decimal(str(porcentaje_descuento))
+        if pct <= 0 or pct > 100:
+            from rasero.errores import ValorInvalido
+
+            raise ValorInvalido("El descuento del cupón debe estar entre 0 y 100 %.")
     if hasta < desde:
         from rasero.errores import RangoFechasInvalido
 
@@ -158,7 +174,7 @@ def generar_cupones(
                 fecha_objetivo=fecha_objetivo,
                 valido_desde=valido_desde,
                 valido_hasta=valido_hasta,
-                porcentaje_descuento=cfg.DESCUENTO_CUPON_CUMPLEANOS_PCT,
+                porcentaje_descuento=pct,
                 estado="generado",
                 instante_generacion=ahora,
             )
@@ -225,6 +241,37 @@ def listar_cupones(
         else {}
     )
     return [_cupon_a_respuesta(c, nombre_cliente=nombres.get(c.id_cliente)) for c in cupones]
+
+
+def anular_cupon(sesion: Session, *, id_cupon: int) -> Cupon:
+    """Anula un cupón todavía sin redimir (arrepentimiento del encargado). Un cupón `redimido`
+    no se anula: ya afectó una venta. Un `vencido` tampoco tiene sentido anularlo.
+    """
+    cupon = sesion.get(Cupon, id_cupon)
+    if cupon is None:
+        raise RecursoNoEncontrado(f"El cupón {id_cupon} no existe.")
+    if cupon.estado != "generado":
+        raise RedencionInvalida(
+            f"El cupón {id_cupon} está '{cupon.estado}'; sólo se anula un cupón generado."
+        )
+    cupon.estado = "anulado"
+    sesion.flush()
+    return cupon
+
+
+def cancelar_oferta_recompra(sesion: Session, *, id_oferta_recompra: int) -> OfertaRecompra:
+    """Cancela una oferta de recompra pendiente. La reserva de precio deja de estar disponible."""
+    oferta = sesion.get(OfertaRecompra, id_oferta_recompra)
+    if oferta is None:
+        raise RecursoNoEncontrado(f"La oferta de recompra {id_oferta_recompra} no existe.")
+    if oferta.desenlace != "pendiente":
+        raise RedencionInvalida(
+            f"La oferta {id_oferta_recompra} ya no está pendiente ('{oferta.desenlace}')."
+        )
+    oferta.desenlace = "no_comprado"
+    oferta.estado_reserva = "vencida"
+    sesion.flush()
+    return oferta
 
 
 # ==========================================================================
@@ -557,6 +604,106 @@ def listar_ofertas_recompra(
     if desenlace is not None:
         stmt = stmt.where(OfertaRecompra.desenlace == desenlace)
     return [_oferta_a_respuesta(o) for o in sesion.execute(stmt).scalars()]
+
+
+# ==========================================================================
+# Rendimiento de campañas — "¿sirvió la promo?"
+# ==========================================================================
+
+
+def rendimiento_campanias(
+    sesion: Session, *, id_sucursal: int, desde: date, hasta: date
+) -> dict:
+    """Cierra el ciclo de la pantalla de Promociones: hoy se generan cupones y se detectan
+    ofertas, pero nunca se ve si funcionaron. Agrega, para la sucursal y la ventana:
+
+    - Cupones: emitidos / redimidos / vencidos / anulados y tasa de redención.
+    - Ofertas de recompra: propuestas / compradas / reserva vencida.
+    - Descuento total efectivamente otorgado (`SUM(redencion_promocion.descuento_aplicado)`),
+      por tipo de mecanismo, y nº de ventas influidas.
+
+    Sólo lectura. `redencion_promocion` ya trae `id_sucursal` y `periodo` denormalizados.
+    """
+    if sesion.get(Sucursal, id_sucursal) is None:
+        raise RecursoNoEncontrado(f"La sucursal {id_sucursal} no existe.")
+
+    _marcar_cupones_vencidos(sesion)
+    _marcar_reservas_vencidas(sesion)
+
+    # Cupones emitidos en la ventana (por fecha objetivo, que es cuando "cuenta" la campaña).
+    cupones = list(
+        sesion.execute(
+            select(Cupon).where(
+                Cupon.fecha_objetivo >= desde, Cupon.fecha_objetivo <= hasta
+            )
+        ).scalars()
+    )
+    por_estado: dict[str, int] = {}
+    for c in cupones:
+        por_estado[c.estado] = por_estado.get(c.estado, 0) + 1
+    emitidos = len(cupones)
+    redimidos = por_estado.get("redimido", 0)
+
+    ofertas = list(
+        sesion.execute(
+            select(OfertaRecompra).where(
+                OfertaRecompra.id_sucursal == id_sucursal,
+                OfertaRecompra.reserva_desde >= desde,
+                OfertaRecompra.reserva_desde <= hasta,
+            )
+        ).scalars()
+    )
+    ofertas_por_desenlace: dict[str, int] = {}
+    for o in ofertas:
+        ofertas_por_desenlace[o.desenlace] = ofertas_por_desenlace.get(o.desenlace, 0) + 1
+
+    # Redenciones (descuento otorgado + ventas influidas) por tipo, en la sucursal y ventana.
+    redenciones = sesion.execute(
+        select(
+            RedencionPromocion.tipo_origen,
+            RedencionPromocion.descuento_aplicado,
+            RedencionPromocion.id_venta,
+        ).where(
+            RedencionPromocion.id_sucursal == id_sucursal,
+            RedencionPromocion.periodo >= desde,
+            RedencionPromocion.periodo <= hasta,
+        )
+    ).all()
+    descuento_por_tipo: dict[str, Decimal] = {}
+    ventas_por_tipo: dict[str, set[int]] = {}
+    for tipo_origen, descuento, id_venta in redenciones:
+        if descuento is not None:
+            descuento_por_tipo[tipo_origen] = descuento_por_tipo.get(
+                tipo_origen, Decimal(0)
+            ) + Decimal(descuento)
+        ventas_por_tipo.setdefault(tipo_origen, set()).add(id_venta)
+
+    return {
+        "id_sucursal": id_sucursal,
+        "periodo": {"desde": desde.isoformat(), "hasta": hasta.isoformat()},
+        "cupones": {
+            "emitidos": emitidos,
+            "redimidos": redimidos,
+            "vencidos": por_estado.get("vencido", 0),
+            "anulados": por_estado.get("anulado", 0),
+            "tasa_redencion": (
+                f"{(Decimal(redimidos) / Decimal(emitidos)):.4f}" if emitidos else "0.0000"
+            ),
+        },
+        "ofertas_recompra": {
+            "propuestas": len(ofertas),
+            "compradas": ofertas_por_desenlace.get("comprado", 0),
+            "reserva_vencida": ofertas_por_desenlace.get("reserva_vencida", 0),
+        },
+        "por_mecanismo": [
+            {
+                "tipo_origen": tipo,
+                "descuento_otorgado": f"{descuento_por_tipo.get(tipo, Decimal(0)):.2f}",
+                "ventas_influidas": len(ventas_por_tipo.get(tipo, set())),
+            }
+            for tipo in sorted(set(descuento_por_tipo) | set(ventas_por_tipo))
+        ],
+    }
 
 
 # ==========================================================================

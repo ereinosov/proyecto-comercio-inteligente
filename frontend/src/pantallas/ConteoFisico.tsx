@@ -10,6 +10,7 @@ import { listarProductos, type Producto } from "../servicios/productos";
 import { type ConteoFisico as Conteo, iniciarConteo } from "../servicios/conteos";
 import { ResolucionConteo } from "./ResolucionConteo";
 import { Boton } from "../componentes/Boton";
+import { Buscador } from "../componentes/Buscador";
 import estilos from "./ConteoFisico.module.css";
 
 interface Props {
@@ -20,6 +21,7 @@ export function ConteoFisico({ idSucursal }: Props) {
   const [productos, setProductos] = useState<Producto[]>([]);
   const [acotar, setAcotar] = useState(false);
   const [seleccion, setSeleccion] = useState<Set<number>>(new Set());
+  const [filtro, setFiltro] = useState("");
   const [conteo, setConteo] = useState<Conteo | null>(null);
   const [iniciando, setIniciando] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -111,20 +113,51 @@ export function ConteoFisico({ idSucursal }: Props) {
         Acotar a un subconjunto de productos
       </label>
 
-      {acotar && (
-        <div className={estilos.seleccionAlcance}>
-          {productos.map((p) => (
-            <label key={p.id_producto}>
-              <input
-                type="checkbox"
-                checked={seleccion.has(p.id_producto)}
-                onChange={() => alternar(p.id_producto)}
-              />
-              {p.nombre}
-            </label>
-          ))}
-        </div>
-      )}
+      {acotar &&
+        (() => {
+          const norm = filtro.trim().toLowerCase();
+          const visibles = norm
+            ? productos.filter((p) => p.nombre.toLowerCase().includes(norm))
+            : productos;
+          return (
+            <>
+              <div className={estilos.fila}>
+                <div className={estilos.campo} style={{ flex: 1, minWidth: 200 }}>
+                  <Buscador
+                    valor={filtro}
+                    onCambiar={setFiltro}
+                    placeholder="Buscar producto por nombre…"
+                  />
+                </div>
+                <Boton
+                  variante="secundaria"
+                  onClick={() =>
+                    setSeleccion((prev) => {
+                      const s = new Set(prev);
+                      visibles.forEach((p) => s.add(p.id_producto));
+                      return s;
+                    })
+                  }
+                >
+                  Seleccionar los visibles
+                </Boton>
+              </div>
+              <p className={estilos.subtitulo}>{seleccion.size} seleccionados</p>
+              <div className={estilos.seleccionAlcance}>
+                {visibles.map((p) => (
+                  <label key={p.id_producto}>
+                    <input
+                      type="checkbox"
+                      checked={seleccion.has(p.id_producto)}
+                      onChange={() => alternar(p.id_producto)}
+                    />
+                    {p.nombre}
+                  </label>
+                ))}
+              </div>
+            </>
+          );
+        })()}
 
       {error && <p className={estilos.error}>{error}</p>}
 
