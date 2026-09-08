@@ -1,0 +1,268 @@
+openapi: 3.1.0
+info:
+  title: Rasero — 008 Reportes e Inteligencia
+  version: 0.1.0
+  description: >
+    Capa de solo lectura sobre 001–007. Todos los endpoints exigen rol `encargado`
+    (constitución v2.5.0, "Autorización de pantalla") vía el mecanismo central `exige_rol`.
+    Ningún endpoint modifica datos de 001–007; los dos únicos que escriben lo hacen sobre
+    entidades derivadas y regenerables de 008.
+
+paths:
+  /reportes/comparativo:
+    get:
+      tags: [reportes]
+      summary: Comparación entre sucursales para un período (User Story 1)
+      description: >
+        Una columna por sucursal activa (o con actividad en el período). Cada valor coincide con
+        el agregado de 001/003/006. Con una sola sucursal, `comparable` es false y no hay
+        columna de contraste. Se sirve de la caché si existe; `?actualizar=true` la recalcula.
+      parameters:
+        - { name: periodo_inicio, in: query, schema: { type: string, format: date } }
+        - { name: periodo_fin, in: query, schema: { type: string, format: date } }
+        - { name: actualizar, in: query, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Comparativo
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [periodo_inicio, periodo_fin, comparable, sucursales, indicadores, instante_calculo]
+                properties:
+                  periodo_inicio: { type: string, format: date }
+                  periodo_fin: { type: string, format: date }
+                  comparable: { type: boolean, description: 'false si hay una sola sucursal' }
+                  sucursales:
+                    type: array
+                    items:
+                      type: object
+                      required: [id_sucursal, nombre, activa]
+                      properties:
+                        id_sucursal: { type: integer }
+                        nombre: { type: string }
+                        activa: { type: boolean }
+                  indicadores:
+                    type: array
+                    description: una fila por indicador (ventas, tickets, ticket_promedio, margen_ponderado, merma_valorada, diferencia_arqueo)
+                    items:
+                      type: object
+                      required: [clave, etiqueta, celdas]
+                      properties:
+                        clave: { type: string }
+                        etiqueta: { type: string }
+                        celdas:
+                          type: array
+                          description: alineadas 1:1 con `sucursales`
+                          items:
+                            type: object
+                            required: [id_sucursal, valor, sin_datos]
+                            properties:
+                              id_sucursal: { type: integer }
+                              valor: { type: string, nullable: true, description: 'null cuando sin_datos' }
+                              sin_datos: { type: boolean }
+                              diferencia_relativa:
+                                type: string
+                                nullable: true
+                                description: 'p. ej. "-7 pp vs. Quevedo Centro"; null si es la mejor o no comparable'
+                              atencion: { type: boolean, description: 'true si la diferencia indica un peor resultado' }
+                  instante_calculo: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+        '403': { $ref: '#/components/responses/RolInsuficiente' }
+
+  /reportes/tendencia:
+    get:
+      tags: [reportes]
+      summary: Serie temporal agregada de un indicador (User Story 2)
+      parameters:
+        - name: indicador
+          in: query
+          required: true
+          schema: { type: string, enum: [ventas, unidades, margen_ponderado, merma_valorada, demanda_producto] }
+        - name: granularidad
+          in: query
+          required: true
+          schema: { type: string, enum: [semana, mes] }
+        - { name: id_sucursal, in: query, schema: { type: integer }, description: 'omitir = todas (suma por período)' }
+        - { name: id_producto, in: query, schema: { type: integer }, description: 'obligatorio si indicador=demanda_producto' }
+        - { name: periodos, in: query, schema: { type: integer }, description: 'cuántos períodos hacia atrás; default 12 (semana) / 6 (mes)' }
+        - { name: actualizar, in: query, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Serie
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [indicador, granularidad, ambito, puntos, disponible, instante_calculo]
+                properties:
+                  indicador: { type: string }
+                  granularidad: { type: string }
+                  ambito: { type: string, description: '"todas" o el nombre de la sucursal' }
+                  disponible: { type: boolean, description: 'false + razon si el módulo de origen no calcula el indicador para el rango' }
+                  razon: { type: string, nullable: true }
+                  puntos:
+                    type: array
+                    items:
+                      type: object
+                      required: [periodo, etiqueta, valor, completo]
+                      properties:
+                        periodo: { type: string, format: date, description: 'inicio local del período' }
+                        etiqueta: { type: string, description: 'p. ej. "sem. del 18 ago" o "ago 2026"' }
+                        valor: { type: string }
+                        completo: { type: boolean, description: 'false para un período parcial en un borde del rango' }
+                  instante_calculo: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+        '403': { $ref: '#/components/responses/RolInsuficiente' }
+
+  /reportes/tablero:
+    get:
+      tags: [reportes]
+      summary: Tablero de KPIs consolidados (User Story 3)
+      parameters:
+        - { name: actualizar, in: query, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Tablero
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [tarjetas, instante_calculo]
+                properties:
+                  tarjetas:
+                    type: array
+                    description: una por módulo (ventas, margenes, inventario, mermas, fraude, pagos, promociones, clientes)
+                    items:
+                      type: object
+                      required: [modulo, titulo, periodo_referencia, cifras, sin_datos]
+                      properties:
+                        modulo: { type: string }
+                        titulo: { type: string }
+                        periodo_referencia: { type: string, description: 'p. ej. "semana del 1 sep" o "a hoy"' }
+                        sin_datos: { type: boolean }
+                        razon: { type: string, nullable: true, description: 'si sin_datos' }
+                        cifras:
+                          type: array
+                          items:
+                            type: object
+                            required: [etiqueta, valor, atencion]
+                            properties:
+                              etiqueta: { type: string }
+                              valor: { type: string }
+                              atencion: { type: boolean }
+                  instante_calculo: { type: string, format: date-time }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+        '403': { $ref: '#/components/responses/RolInsuficiente' }
+
+  /reportes/segmentos:
+    get:
+      tags: [reportes]
+      summary: Resultado del último recálculo de segmentos (User Story 4)
+      description: NO recalcula. Devuelve la última corrida, o un cuerpo vacío marcado si nunca se recalculó.
+      responses:
+        '200':
+          description: Segmentos
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [calculado, grupos]
+                properties:
+                  calculado: { type: boolean, description: 'false si nunca se recalculó' }
+                  corrida: { type: string, format: date-time, nullable: true }
+                  semilla: { type: integer, nullable: true }
+                  grupos:
+                    type: array
+                    items:
+                      type: object
+                      required: [etiqueta_grupo, descripcion, n_clientes, centroide, ejemplos]
+                      properties:
+                        etiqueta_grupo: { type: string, description: 'grupo_1..grupo_4 o sin_clasificar' }
+                        descripcion: { type: string, description: 'frase derivada del centroide (FR-022)' }
+                        n_clientes: { type: integer }
+                        centroide:
+                          type: object
+                          properties:
+                            frecuencia: { type: string }
+                            margen: { type: string }
+                            recencia_dias: { type: string }
+                        ejemplos:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              id_cliente: { type: integer }
+                              nombre: { type: string, nullable: true }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+        '403': { $ref: '#/components/responses/RolInsuficiente' }
+
+  /reportes/segmentos/recalculo:
+    post:
+      tags: [reportes]
+      summary: Recalcular los segmentos por lote (User Story 4)
+      description: >
+        Ejecuta el k-means completo, reemplaza `segmento_cliente` y `asignacion_segmento`, graba
+        la nueva `corrida`. Idempotente sobre los mismos datos (misma semilla → misma partición).
+        Escribe SÓLO en entidades derivadas de 008.
+      responses:
+        '200':
+          description: Recálculo hecho — mismo cuerpo que GET /reportes/segmentos con calculado=true
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Segmentos' }
+        '409':
+          description: base insuficiente para segmentar (menos clientes clasificables que el mínimo)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+        '403': { $ref: '#/components/responses/RolInsuficiente' }
+
+  /reportes/segmentos/cliente/{id_cliente}:
+    get:
+      tags: [reportes]
+      summary: Etiqueta de segmento de un cliente, para el detalle de Clientes (002)
+      description: >
+        Lectura que 002 consume para mostrar la etiqueta en el detalle del cliente SIN que
+        `cliente` gane una columna (constitución v2.6.0, frontera "nada de 008 alimenta de vuelta").
+      parameters:
+        - { name: id_cliente, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Etiqueta (o "sin clasificar" / "sin recálculo")
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id_cliente, etiqueta_grupo, descripcion, corrida]
+                properties:
+                  id_cliente: { type: integer }
+                  etiqueta_grupo: { type: string, nullable: true, description: 'null si nunca se recalculó' }
+                  descripcion: { type: string, nullable: true }
+                  corrida: { type: string, format: date-time, nullable: true }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+        '403': { $ref: '#/components/responses/RolInsuficiente' }
+
+components:
+  schemas:
+    Segmentos:
+      type: object
+      description: mismo cuerpo que GET /reportes/segmentos
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje: { type: string }
+  responses:
+    SesionInvalida:
+      description: token de sesión de turno ausente, inválido o expirado
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }
+    RolInsuficiente:
+      description: el operador de la sesión no tiene rol `encargado`
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/Error' }

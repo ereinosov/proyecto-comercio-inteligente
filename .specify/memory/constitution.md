@@ -1,6 +1,54 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.5.0 → 2.6.0
+Tipo de cambio: MENOR — añade una entrada a la tabla de Propiedad de Datos y una
+frontera nueva. NO redefine ningún principio: el clustering de 008 encaja en el
+Principio V ("Inteligencia Explicable y Reversible") tal como está escrito.
+
+Motivo: la especificación de `008-reportes-inteligencia` introduce tres entidades
+DERIVADAS y regenerables —`agregado_reporte` (caché de una vista), `segmento_cliente`
+(definición de un grupo del clustering) y `asignacion_segmento` (cliente ↔ grupo)—.
+La Puerta de Sincronización de Enmiendas (v2.2.0) exige declararlas en la tabla de
+Propiedad de Datos ANTES de planificar 008, igual que v2.2.3–v2.2.6 hicieron para
+las entidades reales de 003–007.
+
+Contenido añadido:
+  - Entrada `008-reportes-inteligencia` en "Propiedad de Datos y Nomenclatura", con
+    las tres entidades marcadas como derivadas/regenerables.
+  - Frontera nueva: "008 es capa de solo lectura sobre 001–007; nada de 008 alimenta
+    de vuelta". La etiqueta de segmento en el detalle de `cliente` (002) es lectura
+    de `asignacion_segmento` de 008, no una columna de `cliente`.
+  - Nota de que el clustering (k-means / Lloyd, semilla fija, sin librería pesada ni
+    datos externos) satisface el Principio V sin cambiarlo.
+
+Principios modificados: ninguno.
+Secciones añadidas: entrada y frontera en "Propiedad de Datos y Nomenclatura".
+Secciones eliminadas: ninguna.
+Cambio de esquema sobre entidades de 001–007: ninguno. Las tres entidades nuevas
+son de 008 y no existen hasta que 008 se implemente.
+
+Puerta de sincronización de enmiendas (v2.2.0): la enmienda toca la tabla de
+Propiedad de Datos pero NO el texto de ningún principio. Se sincroniza esa sección
+y las citas de versión vigente de `008` (su spec/plan/data-model nacen citando
+v2.6.0). NO se barren las citas "v2.5.0"/"v2.4.0" de 001–007: su especificación no
+cambia. `DESIGN.md` NO cambia: el activo `despensa-logo-mono-800w.png` YA está
+reservado ahí para "reportes, dashboards y la marca de agua de los estados vacíos";
+008 realiza esa reserva sin añadir ni redefinir ninguna regla de diseño.
+
+Historial de versiones (resumen):
+  - 2.6.0 (2026-09-07) — esta enmienda: entrada `008-reportes-inteligencia` en la
+    tabla de Propiedad de Datos (`agregado_reporte`, `segmento_cliente`,
+    `asignacion_segmento`, las tres derivadas y regenerables) + frontera "008 sólo
+    lee de 001–007". El clustering encaja en el Principio V sin cambios. Sin cambio
+    de esquema sobre 001–007.
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.4.0 → 2.5.0
 Tipo de cambio: MENOR — ampliación material de una guía existente. Añade al
 Principio VI ("Autorización y Roles") una sub-sección nueva, "Autorización de
@@ -901,6 +949,15 @@ una enmienda la corrija.
   con tarjeta {token opaco, últimos cuatro dígitos, marca, tipo, terminal de captura, referencia de
   venta, clave de idempotencia}, nunca el PAN. No cabía en las otras cuatro entidades; ver frontera
   de "pago" más abajo.)
+- **008-reportes-inteligencia**: `agregado_reporte`, `segmento_cliente`, `asignacion_segmento`.
+  (Añadidas por la enmienda **v2.6.0**, a raíz de la especificación real de 008.) Las tres son
+  **derivadas y regenerables**: `agregado_reporte` cachea el resultado de una vista (comparativo,
+  tendencia o tablero) por tipo, ámbito de sucursal y período; `segmento_cliente` guarda la
+  definición de cada grupo del último clustering (centroide por eje, descripción derivada, semilla,
+  instante); `asignacion_segmento` es la relación cliente ↔ grupo de ese mismo recálculo. Borrar
+  las tres y ejecutar de nuevo los cálculos de 008 sobre 001–006 reproduce exactamente el mismo
+  estado. **008 no posee ningún dato de negocio** y **nada de 008 alimenta de vuelta a 001–007**;
+  ver frontera de "reportes" más abajo.
 
 Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de confundir:
 
@@ -961,6 +1018,16 @@ Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de conf
   es propiedad de 001 (columna de una entidad de 001); su uso como restricción de apertura de
   turno para `cajero`/`encargado` lo implementa el servicio de turnos de 001, y `admin` queda
   exento (abre turno en cualquier sucursal).
+
+- Los **reportes e inteligencia** de 008 son **capa de solo lectura** sobre 001–007: cruzan y
+  agregan (`agregado_reporte`) y agrupan clientes por similitud (`segmento_cliente`,
+  `asignacion_segmento`), a la escala de la semana y el mes. 008 NO escribe contra ninguna tabla
+  de 001–007 y **nada de 008 alimenta de vuelta** a esos módulos: la etiqueta de segmento que
+  aparece en el detalle de un `cliente` (002) es lectura de `asignacion_segmento` de 008, no una
+  columna de `cliente`. El clustering encaja en el **Principio V** sin redefinirlo: es explicable
+  (algoritmo de pocos pasos, sin librería pesada ni datos externos), reversible (borrar y
+  recalcular) y determinista (semilla fija, misma exigencia que el experimento de reactivación de
+  005). Las tres entidades de 008 son regenerables; borrarlas no pierde ningún dato de negocio.
 
 **Convención de nomenclatura**: identificadores de datos en español, `snake_case`, sustantivo
 en singular, sin prefijo de número de módulo. La letra "ñ" está PROHIBIDA en identificadores
@@ -1128,4 +1195,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.5.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 2.6.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-07
