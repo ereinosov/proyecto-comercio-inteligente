@@ -76,15 +76,15 @@ patrones, k > n). Sin pruebas de interfaz, maquetación ni componentes visuales.
 
 ## Fase 3 — User Story 2: Tendencias (P2)
 
-- [ ] T015 [US2] `backend/rasero/servicios/reportes_tendencia.py`:
+- [X] T015 [US2] `backend/rasero/servicios/reportes_tendencia.py`:
   `tendencia(sesion, *, indicador, granularidad, id_sucursal=None, id_producto=None, periodos)`.
   Usa `dominio/periodo_local`. Indicadores: ventas, unidades, margen ponderado, merma valorada
   (001/003/006); `demanda_producto` vía el servicio de demanda de 004 — `disponible=false` +
   `razon` si el origen no calcula el indicador para el rango (FR sin ceros falsos). Ámbito
   "todas" = **suma** por período (FR-012). Períodos de borde `completo=false` (FR-011).
-- [ ] T016 [US2] `api/reportes.py`: `GET /reportes/tendencia` conforme al contrato.
-- [ ] T017 [US2] Contrato (parte tendencia) en `test_contrato_reportes.py`.
-- [ ] T018 [US2] Integración `tests/integracion/test_reportes_tendencia.py` (Escenarios 3 y 4):
+- [X] T016 [US2] `api/reportes.py`: `GET /reportes/tendencia` conforme al contrato.
+- [X] T017 [US2] Contrato (parte tendencia) en `test_contrato_reportes.py`.
+- [X] T018 [US2] Integración `tests/integracion/test_reportes_tendencia.py` (Escenarios 3 y 4):
   venta 23:30 domingo cae en la semana correcta; suma (no promedio) en "todas"; borde parcial
   marcado; indicador no disponible → `puntos=[]` + razón.
 

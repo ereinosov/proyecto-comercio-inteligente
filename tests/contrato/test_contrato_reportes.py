@@ -42,3 +42,32 @@ def test_comparativo_con_encargado_devuelve_la_forma_del_contrato():
         assert {"clave", "etiqueta", "celdas"} <= set(fila)
         for celda in fila["celdas"]:
             assert {"id_sucursal", "valor", "sin_datos", "atencion"} <= set(celda)
+
+
+def test_tendencia_sin_token_da_401():
+    r = cliente.get("/reportes/tendencia", params={"indicador": "ventas", "granularidad": "semana"})
+    assert r.status_code == 401
+
+
+def test_tendencia_forma_del_contrato():
+    r = cliente.get(
+        "/reportes/tendencia",
+        params={"indicador": "ventas", "granularidad": "semana", "periodos": 4},
+        headers=_CAB_ENC,
+    )
+    assert r.status_code == 200
+    cuerpo = r.json()
+    for clave in ("indicador", "granularidad", "ambito", "disponible", "puntos"):
+        assert clave in cuerpo
+    for punto in cuerpo["puntos"]:
+        assert {"periodo", "etiqueta", "valor", "completo"} <= set(punto)
+
+
+def test_tendencia_indicador_desconocido_no_500():
+    r = cliente.get(
+        "/reportes/tendencia",
+        params={"indicador": "inventado", "granularidad": "semana"},
+        headers=_CAB_ENC,
+    )
+    assert r.status_code == 200
+    assert r.json()["disponible"] is False
