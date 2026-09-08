@@ -218,7 +218,7 @@ export function App() {
     for (const g of GRUPOS) {
       for (const o of g.opciones) if (autoriz.puedeVer(o.rol)) permitidas.add(o.valor);
     }
-    if (autoriz.esEncargadoOMas()) permitidas.add("administracion");
+    if (autoriz.esAdmin()) permitidas.add("administracion");
     if (!permitidas.has(pantalla)) setPantalla("venta");
   }, [rol, pantalla, autoriz]);
 
@@ -312,9 +312,10 @@ export function App() {
           );
         })}
 
-        {/* "Ocultar, no deshabilitar" (Principio VI): Administración sólo se ofrece a
-            encargado o admin; un cajero no ve el ítem en absoluto. */}
-        {autoriz.esEncargadoOMas() && (
+        {/* "Ocultar, no deshabilitar" (Principio VI): Administración es admin EN EXCLUSIVA
+            (constitución v2.5.0 tabla de autorización de pantalla + v2.7.1); un cajero o un
+            encargado no ven el ítem en absoluto. */}
+        {autoriz.esAdmin() && (
           <>
             <span className={estilos.separador} aria-hidden="true" />
             <button
@@ -378,7 +379,7 @@ export function App() {
           <Pagos idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
         )}
         {pantalla === "reportes" && autoriz.esEncargadoOMas() && <Reportes />}
-        {pantalla === "administracion" && autoriz.esEncargadoOMas() && (
+        {pantalla === "administracion" && autoriz.esAdmin() && (
           <Administracion rol={rol} />
         )}
       </div>

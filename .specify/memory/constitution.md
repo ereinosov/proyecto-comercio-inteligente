@@ -1,6 +1,44 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.7.0 → 2.7.1
+Tipo de cambio: PARCHE — corrige una contradicción interna, no redefine ninguna regla.
+
+Motivo: una auditoría end-to-end encontró que el cuerpo del Principio VI ("Tres roles…")
+decía "`encargado` añade la administración de datos maestros", mientras que la tabla de
+"Autorización de pantalla" de la enmienda v2.5.0 —posterior— ya listaba "Administración:
+gestión de operadores, alta/edición de datos maestros" bajo "`admin` (en exclusiva)". El
+frontend (`App.tsx`) y el backend (`api/administracion.py` + `servicios/administracion.py`)
+seguían la frase vieja y dejaban que un `encargado` administrara `sucursal` / `producto` /
+`categoria` / `zona_exhibicion` / `medio_pago`. Esta enmienda corrige el cuerpo para que
+coincida con la tabla y con `api/operadores.py` (que ya exige `admin`).
+
+Principios modificados: ninguno redefinido. Se reescribe una frase descriptiva del Principio
+VI, "Tres roles, jerarquía cerrada y acumulativa", para trasladar "administración de datos
+maestros" de `encargado` a `admin` (en exclusiva) — coincide con la regla que la tabla de
+v2.5.0 ya fijaba. El alta y la edición de `cliente` NO cambian (siguen sin restricción de rol).
+Secciones añadidas / eliminadas: ninguna. Cambio de esquema: ninguno.
+
+Puerta de sincronización de enmiendas (v2.2.0): toca el texto de un principio pero no cambia
+el significado de ninguna regla ya escrita (la tabla de v2.5.0 ya decía esto) ni la tabla de
+Propiedad de Datos. El artefacto materialmente afectado es `001-core-ventas-inventario` (el
+nav y `Administracion.tsx` viven ahí; los routers `api/administracion.py` y el servicio pasan
+de `exige_rol("encargado")` a `exige_rol("admin")`). Tests actualizados:
+`tests/integracion/test_administracion.py`, `test_autorizacion.py`, `test_sesion_turno.py`.
+No se barren las citas de versión de 002–009: nada de lo que especifican cambia. `DESIGN.md`
+NO cambia.
+
+Historial: 2.7.1 (2026-09-08) — esta enmienda: "administración de datos maestros" pasa de
+`encargado` a `admin` (en exclusiva) en el cuerpo del Principio VI, alineándolo con la tabla
+de Autorización de pantalla v2.5.0. `App.tsx`, `api/administracion.py` y
+`servicios/administracion.py` pasan a exigir `admin`. Sin cambio de esquema.
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.6.0 → 2.7.0
 Tipo de cambio: MENOR — añade una entrada a la tabla de Propiedad de Datos y una
 frontera nueva. NO redefine ningún principio.
@@ -822,10 +860,18 @@ identidad se deriva de un token de sesión de turno (ver "Identidad de sesión" 
 - **Tres roles, jerarquía cerrada y acumulativa.** El rol de `operador` DEBE ser uno de un
   ENUM cerrado: `cajero` < `encargado` < `admin`. Cada nivel puede todo lo del anterior más lo
   suyo. `cajero` es el nivel base (operar caja, vender, identificar cliente, registrar
-  consultas no atendidas). `encargado` añade la administración de datos maestros, las
-  terminales de pago y la cobertura de medios de pago. `admin` añade, en exclusiva, la gestión
-  de operadores —alta, edición, desactivación— y la asignación de rol y de sucursal de otros
-  operadores. Ningún `encargado` puede ascender a otro operador a `encargado` ni a `admin`.
+  consultas no atendidas). `encargado` añade la operación táctica y gerencial del día a día
+  —precios y márgenes, competencia, pronóstico, análisis de clientes, promociones, traspasos,
+  capital inmovilizado, caja y fraude— más las terminales de pago y la cobertura de medios de
+  pago. `admin` añade, **en exclusiva**, la gestión de operadores —alta, edición,
+  desactivación— y la asignación de rol y de sucursal de otros operadores, **y la
+  administración de datos maestros** (`sucursal`, `producto`, `categoria`, `zona_exhibicion`,
+  `medio_pago`): alta, edición y desactivación. *(Corrección **v2.7.1**: la frase original
+  atribuía "la administración de datos maestros" a `encargado`, en contradicción con la tabla
+  de "Autorización de pantalla" de la enmienda v2.5.0 —que ya la listaba bajo `admin` en
+  exclusiva— y con la implementación real de `api/operadores.py`. Se corrige el cuerpo para que
+  coincida con la tabla; el alta y la edición de `cliente` siguen SIN restricción de rol.)*
+  Ningún `encargado` puede ascender a otro operador a `encargado` ni a `admin`.
   Introducir un cuarto rol, o un permiso suelto fuera de esta jerarquía, DEBE justificarse en
   una enmienda.
 
@@ -1271,4 +1317,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.7.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 2.7.1 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-08

@@ -8,10 +8,12 @@
  * lista paginada (Paginador.tsx) con "+ Nuevo …" que abre el ModalAdministrable único, y cada
  * fila con editar (mismo modal precargado) y desactivar.
  *
- * Permisos (hook único `useRol`, Principio VI): crear / editar / desactivar cualquiera de estas
- * cinco entidades requiere rol encargado o admin. Si no lo tiene, la pantalla es de sólo lectura
- * y esas acciones no se ofrecen. La 6.ª pestaña "Operadores" aparece en el segmentado SÓLO si el
- * operador activo es `admin` (para un encargado, ni se muestra).
+ * Permisos (hook único `useRol`, Principio VI): toda esta pantalla es rol `admin` EN EXCLUSIVA
+ * (constitución v2.5.0, tabla de "Autorización de pantalla"; aclarado en v2.7.1). El nav ya la
+ * oculta para cajero y encargado; el gate interno `esAdministrador` es defensa en profundidad
+ * (mismo criterio que el backend, que exige `admin` en `api/administracion.py` y en
+ * `api/operadores.py`). La 6.ª pestaña "Operadores" (gestión de operadores) vive dentro de la
+ * misma pantalla admin-only.
  *
  * Listas vacías -> La Regla del Hueco que Enseña. Mientras cargan -> La Regla del Pulso.
  */
@@ -180,8 +182,8 @@ function payload(campos: Campo[], valores: ValoresForm): Record<string, unknown>
 }
 
 export function Administracion({ rol }: Props) {
-  const { esEncargadoOMas, esAdmin } = useRol(rol);
-  const esEncargado = esEncargadoOMas();
+  const { esAdmin } = useRol(rol);
+  const esAdministrador = esAdmin();
 
   const [segmento, setSegmento] = useState<Segmento>("sucursales");
   const entidad: EntidadMaestra = segmento === "operadores" ? "sucursales" : segmento;
@@ -337,7 +339,7 @@ export function Administracion({ rol }: Props) {
   // 6.ª pestaña admin-only (Principio VI): ni siquiera aparece para un encargado.
   const opcionesSegmento: { valor: Segmento; texto: string }[] = [
     ...VISTAS.map((v) => ({ valor: v.valor as Segmento, texto: v.etiqueta })),
-    ...(esAdmin() ? [{ valor: "operadores" as Segmento, texto: "Operadores" }] : []),
+    ...(esAdministrador ? [{ valor: "operadores" as Segmento, texto: "Operadores" }] : []),
   ];
 
   return (
@@ -380,13 +382,13 @@ export function Administracion({ rol }: Props) {
           />
           Mostrar desactivados
         </label>
-        {esEncargado ? (
+        {esAdministrador ? (
           <Boton variante="primaria" onClick={() => abrirModal()}>
             + {vista.nuevo}
           </Boton>
         ) : (
           <span className={estilos.soloLectura}>
-            Sólo un encargado puede crear o modificar estos datos.
+            Sólo un administrador puede crear o modificar estos datos.
           </span>
         )}
       </div>
@@ -429,7 +431,7 @@ export function Administracion({ rol }: Props) {
                   ))}
                   <td>{fila.activo ? "Activo" : "Desactivado"}</td>
                   <td className={estilos.acciones}>
-                    {esEncargado && fila.activo && (
+                    {esAdministrador && fila.activo && (
                       <>
                         <Boton variante="fantasma" tamano="sm" onClick={() => abrirModal(fila)}>
                           Editar
@@ -439,7 +441,7 @@ export function Administracion({ rol }: Props) {
                         </Boton>
                       </>
                     )}
-                    {esEncargado && !fila.activo && (
+                    {esAdministrador && !fila.activo && (
                       <Boton variante="fantasma" tamano="sm" onClick={() => reactivar(fila)}>
                         Reactivar
                       </Boton>

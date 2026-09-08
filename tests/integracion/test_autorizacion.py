@@ -70,21 +70,36 @@ def test_operador_inactivo_o_nulo_es_rechazado(sesion):
         requiere_rol(None, "cajero")
 
 
-def test_encargado_puede_administrar_maestros_pero_no_operadores(sesion):
+def test_encargado_no_administra_ni_maestros_ni_operadores(sesion):
+    """Constitución v2.7.1: la administración de datos maestros pasó de `encargado` a `admin`
+    (en exclusiva), alineándose con la tabla de "Autorización de pantalla" v2.5.0 y con
+    `api/operadores.py`. Un `encargado` recibe 403 en AMBOS.
+    """
     suc = _sucursal(sesion)
     encargado = _operador(sesion, "encargado", suc.id_sucursal)
     cab = headers_sesion(sesion, encargado)
     sesion.commit()
 
-    ok = cliente.post("/administracion/categorias",
-                      json={"nombre": f"Cat {uuid.uuid4().hex[:6]}"}, headers=cab)
-    assert ok.status_code == 201, ok.text
+    maestro = cliente.post("/administracion/categorias",
+                           json={"nombre": f"Cat {uuid.uuid4().hex[:6]}"}, headers=cab)
+    assert maestro.status_code == 403 and maestro.json()["codigo"] == "rol_insuficiente"
 
-    r = cliente.post("/operadores", json={
+    operador = cliente.post("/operadores", json={
         "nombre": "Nuevo Cajero", "rol": "cajero", "id_sucursal": suc.id_sucursal,
         "pin": "4321",
     }, headers=cab)
-    assert r.status_code == 403 and r.json()["codigo"] == "rol_insuficiente"
+    assert operador.status_code == 403 and operador.json()["codigo"] == "rol_insuficiente"
+
+
+def test_admin_si_administra_datos_maestros(sesion):
+    suc = _sucursal(sesion)
+    admin = _operador(sesion, "admin", suc.id_sucursal)
+    cab = headers_sesion(sesion, admin)
+    sesion.commit()
+
+    ok = cliente.post("/administracion/categorias",
+                      json={"nombre": f"Cat {uuid.uuid4().hex[:6]}"}, headers=cab)
+    assert ok.status_code == 201, ok.text
 
 
 def test_admin_crea_operador_y_encargado_no_puede_ascender(sesion):

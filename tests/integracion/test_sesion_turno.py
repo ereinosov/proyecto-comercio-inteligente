@@ -143,11 +143,12 @@ def test_token_de_operador_desactivado_es_401_inmediato(sesion):
 
 def test_abrir_turno_devuelve_token_y_el_token_autoriza(sesion):
     suc = _sucursal(sesion)
-    enc = _operador(sesion, "encargado", suc.id_sucursal, pin="4242")
+    # `admin`: `/administracion/categorias` es admin en exclusiva desde la constitución v2.7.1.
+    adm = _operador(sesion, "admin", suc.id_sucursal, pin="4242")
     sesion.commit()
 
     abierto = cliente.post("/turnos", json={
-        "id_operador": enc.id_operador, "id_sucursal": suc.id_sucursal,
+        "id_operador": adm.id_operador, "id_sucursal": suc.id_sucursal,
         "caja": "caja-1", "pin": "4242",
     })
     assert abierto.status_code == 201, abierto.text
@@ -155,7 +156,7 @@ def test_abrir_turno_devuelve_token_y_el_token_autoriza(sesion):
     assert isinstance(token, str) and token.count(".") == 2
 
     claims = jwt.decode(token, JWT_SECRET_KEY, algorithms=[JWT_ALGORITMO])
-    assert claims["id_operador"] == enc.id_operador
+    assert claims["id_operador"] == adm.id_operador
     assert claims["id_turno"] == abierto.json()["id_turno"]
 
     r = cliente.post(

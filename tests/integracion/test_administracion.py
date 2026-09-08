@@ -3,9 +3,10 @@ producto, categoría, zona de exhibición y medio de pago desde la API; edición
 
 Contra PostgreSQL real, puerto 5442.
 
-- crear / editar / desactivar requiere rol `encargado` o superior (mecanismo central
-  `requiere_rol`). User Story 11 (enmienda v2.4.0): la identidad del operador se deriva del token
-  de sesión de turno (`Authorization: Bearer`), no del `id_operador` del cuerpo.
+- crear / editar / desactivar requiere rol `admin` EN EXCLUSIVA (constitución v2.7.1: coincide
+  con la tabla de "Autorización de pantalla" v2.5.0; un `encargado` recibe 403 igual que un
+  `cajero`). User Story 11 (enmienda v2.4.0): la identidad del operador se deriva del token de
+  sesión de turno (`Authorization: Bearer`), no del `id_operador` del cuerpo.
 - editar un cliente NO requiere rol.
 - el borrado nunca es físico: "desactivar" pone `activo = false` y la fila sigue existiendo.
 - `contar_dependencias` informa con conteos reales y NUNCA bloquea la desactivación.
@@ -28,9 +29,9 @@ def _nombre(prefijo: str) -> str:
     return f"{prefijo} {uuid.uuid4().hex[:8]}"
 
 
-def test_alta_edicion_y_desactivacion_de_sucursal_por_encargado(sesion):
-    encargado = crear_operador(sesion, es_encargado=True)
-    cab = headers_sesion(sesion, encargado)
+def test_alta_edicion_y_desactivacion_de_sucursal_por_admin(sesion):
+    admin = crear_operador(sesion, rol="admin")
+    cab = headers_sesion(sesion, admin)
     sesion.commit()
 
     alta = cliente.post(
@@ -69,19 +70,30 @@ def test_alta_edicion_y_desactivacion_de_sucursal_por_encargado(sesion):
     assert id_suc in [s["id_sucursal"] for s in con_inactivas]
 
 
-def test_no_encargado_no_puede_administrar_maestros(sesion):
+def test_solo_admin_administra_datos_maestros(sesion):
+    """Regresión de la auditoría (constitución v2.7.1): la administración de datos maestros es
+    `admin` EN EXCLUSIVA. Un `cajero` y un `encargado` reciben 403 `rol_insuficiente`; sólo el
+    `admin` crea.
+    """
     cajero = crear_operador(sesion, es_encargado=False)
-    cab = headers_sesion(sesion, cajero)
+    encargado = crear_operador(sesion, rol="encargado")
+    admin = crear_operador(sesion, rol="admin")
+    cab_cajero = headers_sesion(sesion, cajero)
+    cab_encargado = headers_sesion(sesion, encargado)
+    cab_admin = headers_sesion(sesion, admin)
     sesion.commit()
 
-    r = cliente.post(
-        "/administracion/categorias",
-        json={"nombre": _nombre("Cat")},
-        headers=cab,
+    for cab in (cab_cajero, cab_encargado):
+        r = cliente.post(
+            "/administracion/categorias", json={"nombre": _nombre("Cat")}, headers=cab
+        )
+        assert r.status_code == 403
+        assert r.json()["codigo"] == "rol_insuficiente"
+
+    ok = cliente.post(
+        "/administracion/categorias", json={"nombre": _nombre("Cat")}, headers=cab_admin
     )
-    # Enmienda v2.3.0: la verificación pasa por `requiere_rol` -> 403 `rol_insuficiente`.
-    assert r.status_code == 403
-    assert r.json()["codigo"] == "rol_insuficiente"
+    assert ok.status_code == 201, ok.text
 
 
 def test_administracion_sin_token_es_rechazada(sesion):
@@ -92,8 +104,8 @@ def test_administracion_sin_token_es_rechazada(sesion):
 
 
 def test_desactivar_categoria_con_productos_informa_pero_no_bloquea(sesion):
-    encargado = crear_operador(sesion, es_encargado=True)
-    cab = headers_sesion(sesion, encargado)
+    admin = crear_operador(sesion, rol="admin")
+    cab = headers_sesion(sesion, admin)
     categoria = Categoria(nombre=_nombre("Cat"), dias_umbral_inmovilizado=30)
     sesion.add(categoria)
     sesion.flush()
@@ -123,8 +135,8 @@ def test_desactivar_categoria_con_productos_informa_pero_no_bloquea(sesion):
 
 
 def test_crear_producto_nuevo_desde_administracion(sesion):
-    encargado = crear_operador(sesion, es_encargado=True)
-    cab = headers_sesion(sesion, encargado)
+    admin = crear_operador(sesion, rol="admin")
+    cab = headers_sesion(sesion, admin)
     categoria = Categoria(nombre=_nombre("Cat"))
     sesion.add(categoria)
     sesion.commit()
@@ -148,8 +160,8 @@ def test_crear_producto_nuevo_desde_administracion(sesion):
 def test_crear_y_editar_producto_persiste_url_imagen(sesion):
     """US12: la URL externa de imagen es opcional; si se envía, se persiste y se devuelve en el
     alta, en la edición y en el catálogo (GET /productos)."""
-    encargado = crear_operador(sesion, es_encargado=True)
-    cab = headers_sesion(sesion, encargado)
+    admin = crear_operador(sesion, rol="admin")
+    cab = headers_sesion(sesion, admin)
     categoria = Categoria(nombre=_nombre("Cat"))
     sesion.add(categoria)
     sesion.commit()
@@ -194,8 +206,8 @@ def test_crear_y_editar_producto_persiste_url_imagen(sesion):
 
 
 def test_crear_producto_con_url_imagen_malformada_es_rechazado(sesion):
-    encargado = crear_operador(sesion, es_encargado=True)
-    cab = headers_sesion(sesion, encargado)
+    admin = crear_operador(sesion, rol="admin")
+    cab = headers_sesion(sesion, admin)
     categoria = Categoria(nombre=_nombre("Cat"))
     sesion.add(categoria)
     sesion.commit()
@@ -239,8 +251,8 @@ def test_editar_cliente_no_requiere_encargado(sesion):
 
 
 def test_listado_paginado_devuelve_items_y_total_en_el_body(sesion):
-    encargado = crear_operador(sesion, es_encargado=True)
-    cab = headers_sesion(sesion, encargado)
+    admin = crear_operador(sesion, rol="admin")
+    cab = headers_sesion(sesion, admin)
     sesion.commit()
     for _ in range(3):
         r = cliente.post(
@@ -256,8 +268,8 @@ def test_listado_paginado_devuelve_items_y_total_en_el_body(sesion):
 
 
 def test_listado_admite_busqueda_por_nombre_combinada_con_paginacion(sesion):
-    encargado = crear_operador(sesion, es_encargado=True)
-    cab = headers_sesion(sesion, encargado)
+    admin = crear_operador(sesion, rol="admin")
+    cab = headers_sesion(sesion, admin)
     sesion.commit()
     marca = uuid.uuid4().hex[:8]
     cliente.post(
@@ -276,7 +288,7 @@ def test_listado_admite_busqueda_por_nombre_combinada_con_paginacion(sesion):
 
 def test_ultimo_turno_de_sucursal_para_la_pantalla_de_apertura(sesion):
     sucursal = crear_sucursal(sesion)
-    encargado = crear_operador(sesion, es_encargado=True)
+    admin = crear_operador(sesion, rol="admin")
     sesion.commit()
 
     # Sin turnos: null, nunca un placeholder.
@@ -285,7 +297,7 @@ def test_ultimo_turno_de_sucursal_para_la_pantalla_de_apertura(sesion):
     assert vacio.json() is None
 
     crear_turno(
-        sesion, id_operador=encargado.id_operador, id_sucursal=sucursal.id_sucursal
+        sesion, id_operador=admin.id_operador, id_sucursal=sucursal.id_sucursal
     )
     sesion.commit()
 
