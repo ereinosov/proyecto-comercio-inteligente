@@ -181,6 +181,9 @@ export function App() {
   // Superficie de DEMOSTRACIÓN (no operativa): documentación del sistema, accesible sólo desde
   // la pantalla de apertura de turno. No entra en el nav ni en la autorización por rol.
   const [verDocumentacion, setVerDocumentacion] = useState(false);
+  // Hallazgo #2 de la auditoría: el arqueo es paso OBLIGATORIO de "Cerrar turno". Al cerrar, el
+  // turno recién cerrado queda aquí y se muestra su arqueo antes de dejar abrir uno nuevo.
+  const [turnoPorArquear, setTurnoPorArquear] = useState<Turno | null>(null);
   // User Story 11 (Principio VI, "Identidad de sesión"): el token JWT de la sesión de turno
   // vive junto al turno, en memoria. `setTurno` lo sincroniza con el cliente HTTP.
   const [avisoSesion, setAvisoSesion] = useState<string | null>(null);
@@ -242,6 +245,15 @@ export function App() {
   }, [turno]);
 
   if (!turno) {
+    if (turnoPorArquear) {
+      return (
+        <Arqueo
+          turno={turnoPorArquear}
+          modoCierre
+          onListo={() => setTurnoPorArquear(null)}
+        />
+      );
+    }
     if (verDocumentacion) {
       return <Documentacion onVolver={() => setVerDocumentacion(false)} />;
     }
@@ -256,10 +268,13 @@ export function App() {
 
   async function manejarCierre() {
     if (!turno) return;
+    const cerrado = turno;
     await cerrarTurno(turno.id_turno).catch(() => {
       // El turno se cierra en el servidor de todos modos si la petición llegó;
       // un fallo de red no debe dejar la caja bloqueada en esta pantalla (Principio II).
     });
+    // Hallazgo #2: no se vuelve directo a la apertura de turno — primero el arqueo de ESE turno.
+    setTurnoPorArquear(cerrado);
     setTurno(null);
   }
 
