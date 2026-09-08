@@ -227,6 +227,33 @@ def test_crear_producto_con_url_imagen_malformada_es_rechazado(sesion):
     assert r.status_code >= 400 and r.status_code != 201, r.text
 
 
+def test_precio_cero_o_negativo_es_rechazado_con_el_mismo_codigo(sesion):
+    """Hallazgo #4 de la auditoría: `_valida_precio` usaba `< 0`, así que un producto activo a
+    $0.00 quedaba vendible sin advertencia. Ahora `<= 0` -> mismo código `admin_precio_invalido`
+    para el 0 y para un negativo.
+    """
+    admin = crear_operador(sesion, rol="admin")
+    cab = headers_sesion(sesion, admin)
+    categoria = Categoria(nombre=_nombre("Cat"))
+    sesion.add(categoria)
+    sesion.commit()
+
+    for precio in ("0.0000", "-1.5000"):
+        r = cliente.post(
+            "/administracion/productos",
+            json={
+                "nombre": _nombre("Prod"),
+                "id_categoria": categoria.id_categoria,
+                "es_granel": False,
+                "precio_vigente": precio,
+                "lleva_caducidad": False,
+            },
+            headers=cab,
+        )
+        assert r.status_code >= 400 and r.status_code != 201, r.text
+        assert r.json()["codigo"] == "admin_precio_invalido", (precio, r.text)
+
+
 def test_editar_cliente_no_requiere_encargado(sesion):
     cajero = crear_operador(sesion, es_encargado=False)
     sesion.commit()

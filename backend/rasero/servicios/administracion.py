@@ -270,9 +270,13 @@ def _valida_categoria(sesion: Session, id_categoria: int | None) -> None:
 
 
 def _valida_precio(precio: Decimal) -> None:
-    if precio is None or Decimal(precio) < 0:
+    # `<= 0`, no `< 0`: ningún spec del sistema contempla un precio de venta de 0 (un producto
+    # activo a $0.00 quedaría vendible en Venta sin ninguna advertencia — hallazgo #4 de la
+    # auditoría). Si algún día hace falta un precio 0 (promocional/regalo declarado) se hará con
+    # una confirmación explícita, no relajando esta validación.
+    if precio is None or Decimal(precio) <= 0:
         raise ErrorAdministracion(
-            "admin_precio_invalido", "El precio de venta no puede ser negativo."
+            "admin_precio_invalido", "El precio de venta debe ser mayor a cero."
         )
 
 
