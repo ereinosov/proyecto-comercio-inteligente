@@ -13,6 +13,7 @@ from sqlalchemy import (
     Date,
     DateTime,
     ForeignKey,
+    ForeignKeyConstraint,
     Integer,
     Numeric,
     SmallInteger,
@@ -1399,5 +1400,96 @@ class TokenPago(Base):
         ),
         CheckConstraint(
             "tipo IN ('debito','credito','desconocido')", name="ck_token_pago_tipo"
+        ),
+    )
+
+
+# --------------------------------------------------------------------------
+# 008-reportes-inteligencia — entidades DERIVADAS y regenerables (constitución v2.6.0).
+# Ninguna es fuente de verdad: se reconstruyen ejecutando los cálculos de 008 sobre 001–006.
+# --------------------------------------------------------------------------
+
+
+class AgregadoReporte(Base):
+    """Caché del resultado ya calculado de una vista (comparativo / tendencia / tablero) para un
+    ámbito y período. Se puebla a demanda; el encargado la invalida con "Actualizar".
+    """
+
+    __tablename__ = "agregado_reporte"
+
+    id_agregado_reporte: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    tipo: Mapped[str] = mapped_column(String, nullable=False)
+    ambito_sucursal: Mapped[int | None] = mapped_column(
+        ForeignKey("sucursal.id_sucursal"), nullable=True
+    )
+    periodo_inicio: Mapped[date] = mapped_column(Date, nullable=False)
+    periodo_fin: Mapped[date] = mapped_column(Date, nullable=False)
+    granularidad: Mapped[str] = mapped_column(String, nullable=False)
+    contenido: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    instante_calculo: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint(
+            "tipo IN ('comparativo','tendencia','tablero')", name="ck_agregado_reporte_tipo"
+        ),
+        CheckConstraint(
+            "granularidad IN ('total','semana','mes')", name="ck_agregado_reporte_gran"
+        ),
+        UniqueConstraint(
+            "tipo",
+            "ambito_sucursal",
+            "periodo_inicio",
+            "periodo_fin",
+            "granularidad",
+            name="uq_agregado_reporte_clave",
+        ),
+    )
+
+
+class SegmentoCliente(Base):
+    """Definición de un grupo del ÚLTIMO recálculo de clustering (FR-018, FR-022). Se reemplaza
+    entera en cada recálculo; sólo se conserva la última corrida.
+    """
+
+    __tablename__ = "segmento_cliente"
+
+    id_segmento_cliente: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    corrida: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    etiqueta_grupo: Mapped[str] = mapped_column(String, nullable=False)
+    centroide_frecuencia: Mapped[Decimal] = mapped_column(Numeric(10, 4), nullable=False)
+    centroide_margen: Mapped[Decimal] = mapped_column(Numeric(6, 4), nullable=False)
+    centroide_recencia_dias: Mapped[Decimal] = mapped_column(Numeric(8, 2), nullable=False)
+    n_clientes: Mapped[int] = mapped_column(Integer, nullable=False)
+    descripcion: Mapped[str] = mapped_column(String, nullable=False)
+    semilla: Mapped[int] = mapped_column(BigInteger, nullable=False)
+
+    __table_args__ = (
+        UniqueConstraint("corrida", "etiqueta_grupo", name="uq_segmento_cliente_corrida_grupo"),
+    )
+
+
+class AsignacionSegmento(Base):
+    """Relación cliente ↔ grupo del último recálculo. Una fila por cliente (FR-023). 008 NO
+    escribe en `cliente`; el detalle de 002 que muestra la etiqueta la lee de aquí.
+    """
+
+    __tablename__ = "asignacion_segmento"
+
+    id_cliente: Mapped[int] = mapped_column(
+        ForeignKey("cliente.id_cliente", ondelete="CASCADE"), primary_key=True
+    )
+    corrida: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
+    etiqueta_grupo: Mapped[str] = mapped_column(String, nullable=False)
+    distancia_al_centroide: Mapped[Decimal | None] = mapped_column(
+        Numeric(10, 4), nullable=True
+    )
+
+    __table_args__ = (
+        ForeignKeyConstraint(
+            ["corrida", "etiqueta_grupo"],
+            ["segmento_cliente.corrida", "segmento_cliente.etiqueta_grupo"],
+            name="fk_asignacion_segmento_grupo",
         ),
     )
