@@ -1,0 +1,167 @@
+openapi: 3.1.0
+info:
+  title: Rasero — 009 Facturación Electrónica (Simulada)
+  version: 0.1.0
+  description: >
+    Documento con la FORMA de una factura electrónica ecuatoriana, SIMULADO (sin SRI, sin firma,
+    sin XML regulatorio). 009 consume `venta`/`renglon_venta` de 001 y `cliente` de 002; no los
+    modifica. La generación ocurre DESPUÉS de un cobro confirmado y NUNCA lo bloquea (Principio
+    II). Rol: `cajero` o superior (sesión de turno válida). Toda respuesta que contiene una
+    factura incluye `aviso_simulacion`.
+
+paths:
+  /facturas:
+    post:
+      tags: [facturas]
+      summary: Generar la factura simulada de una venta (User Stories 1 y 2)
+      description: >
+        Idempotente por `id_venta`: si la venta ya tiene factura, devuelve la existente (200) sin
+        crear otra. Si la venta tiene total 0, responde 422. Esta llamada es INDEPENDIENTE de
+        `POST /ventas` de 001; el frontend la hace después del cobro, sin bloquear su resultado.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [id_venta]
+              properties:
+                id_venta: { type: integer }
+      responses:
+        '201':
+          description: Factura creada
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Factura' }
+        '200':
+          description: La venta ya tenía factura — se devuelve la existente
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Factura' }
+        '404':
+          description: la venta no existe
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '422':
+          description: la venta tiene total 0 — no se genera factura (FR-010)
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+
+  /facturas/venta/{id_venta}:
+    get:
+      tags: [facturas]
+      summary: Obtener la(s) factura(s) simulada(s) de una venta
+      parameters:
+        - { name: id_venta, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Documentos de esa venta (0, 1 factura, o factura + nota de crédito)
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id_venta, factura, nota_credito]
+                properties:
+                  id_venta: { type: integer }
+                  factura: { $ref: '#/components/schemas/Factura', nullable: true }
+                  nota_credito: { $ref: '#/components/schemas/Factura', nullable: true }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+
+  /facturas/nota-credito/{id_venta}:
+    post:
+      tags: [facturas]
+      summary: Emitir la nota de crédito simulada de una venta anulada (User Story 3)
+      description: >
+        Se llama DESPUÉS de anular la venta por el flujo de 001 (el frontend orquesta). Si la
+        venta está anulada en 001 y tiene una factura `emitida`, la marca `anulada` y crea una
+        `nota_credito` que la referencia y revierte sus totales. Si no hay factura, no hace nada
+        (204). Idempotente: si la nota ya existe, la devuelve (200).
+      parameters:
+        - { name: id_venta, in: path, required: true, schema: { type: integer } }
+      responses:
+        '201':
+          description: Nota de crédito creada; la factura queda anulada
+          content: { application/json: { schema: { $ref: '#/components/schemas/Factura' } } }
+        '200':
+          description: la nota de crédito ya existía
+          content: { application/json: { schema: { $ref: '#/components/schemas/Factura' } } }
+        '204':
+          description: la venta no tenía factura — no se genera nota de crédito (FR-016)
+        '409':
+          description: la venta no está anulada en 001
+          content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+
+  /facturas/{id_factura_simulada}/documento:
+    get:
+      tags: [facturas]
+      summary: Datos para la vista imprimible del documento (FR-014)
+      description: >
+        Devuelve el mismo cuerpo `Factura` (el frontend lo renderiza en una vista imprimible con
+        `window.print()`). NO genera un PDF en el servidor ni lo envía por ningún canal.
+      parameters:
+        - { name: id_factura_simulada, in: path, required: true, schema: { type: integer } }
+      responses:
+        '200':
+          description: Documento
+          content: { application/json: { schema: { $ref: '#/components/schemas/Factura' } } }
+        '404': { description: no existe, content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } } }
+        '401': { $ref: '#/components/responses/SesionInvalida' }
+
+components:
+  schemas:
+    Factura:
+      type: object
+      required:
+        [id_factura_simulada, id_venta, tipo, secuencial, fecha_emision, emisor, comprador,
+         renglones, subtotal, tarifa_iva, monto_iva, total, estado, aviso_simulacion]
+      properties:
+        id_factura_simulada: { type: integer }
+        id_venta: { type: integer }
+        tipo: { type: string, enum: [factura, nota_credito] }
+        id_factura_referida: { type: integer, nullable: true, description: 'sólo nota_credito' }
+        secuencial: { type: string, description: 'EEE-PPP-NNNNNNNNN' }
+        fecha_emision: { type: string, format: date }
+        emisor:
+          type: object
+          properties:
+            razon_social: { type: string }
+            ruc: { type: string }
+            direccion: { type: string, nullable: true }
+        comprador:
+          type: object
+          description: '{nombre, identificador?} o {tipo: "consumidor_final"}'
+          properties:
+            tipo: { type: string, enum: [identificado, consumidor_final] }
+            nombre: { type: string, nullable: true }
+            identificador: { type: string, nullable: true }
+        renglones:
+          type: array
+          items:
+            type: object
+            properties:
+              descripcion: { type: string }
+              cantidad: { type: string }
+              precio_unitario: { type: string }
+              importe: { type: string }
+        subtotal: { type: string }
+        tarifa_iva: { type: string, description: 'p. ej. "0.15"' }
+        monto_iva: { type: string }
+        total: { type: string, description: '== venta.total de 001 (IVA incluido en el precio)' }
+        medio_pago: { type: string, nullable: true, description: 'etiqueta; nunca datos de tarjeta' }
+        estado: { type: string, enum: [emitida, anulada] }
+        instante_generacion: { type: string, format: date-time }
+        aviso_simulacion:
+          type: string
+          description: >
+            texto fijo, siempre presente, que declara que es un comprobante de demostración
+            sin validez tributaria (FR-001, FR-019).
+    Error:
+      type: object
+      required: [codigo, mensaje]
+      properties:
+        codigo: { type: string }
+        mensaje: { type: string }
+  responses:
+    SesionInvalida:
+      description: token de sesión de turno ausente, inválido o expirado
+      content: { application/json: { schema: { $ref: '#/components/schemas/Error' } } }

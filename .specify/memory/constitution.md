@@ -1,6 +1,57 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.6.0 → 2.7.0
+Tipo de cambio: MENOR — añade una entrada a la tabla de Propiedad de Datos y una
+frontera nueva. NO redefine ningún principio.
+
+Motivo: la especificación de `009-facturacion-electronica` introduce una entidad
+propia, `factura_simulada` —el documento con la FORMA de una factura electrónica
+ecuatoriana (RUC del comercio, razón social, secuencial `establecimiento-punto-
+correlativo`, subtotal, IVA, total, datos del comprador o "Consumidor Final"),
+SIN conexión real al SRI, sin firma electrónica y sin XML válido para el ente
+regulador—. La Puerta de Sincronización de Enmiendas (v2.2.0) exige declararla en
+la tabla de Propiedad de Datos ANTES de planificar 009, igual que v2.2.3–v2.2.6.
+
+Contenido añadido:
+  - Entrada `009-facturacion-electronica` en "Propiedad de Datos y Nomenclatura":
+    `factura_simulada`, propiedad de 009.
+  - Frontera nueva: 009 es CONSUMIDOR de 001 (`venta`, `renglon_venta`) y de 002
+    (datos de `cliente` si se identificó), nunca dueño; no modifica ninguna tabla
+    de 001–002. La factura se genera DESPUÉS de que la venta ya está confirmada y
+    NUNCA bloquea el cobro (Principio II), mismo patrón que `redencion_promocion`
+    (005) y `visita` (002).
+  - Nota de alcance: la simulación es una limitación honesta, no un intento fallido
+    de integración real — mismo criterio que 007 usó para "sin pasarela real".
+
+Principios modificados: ninguno. El PAN/CVV/datos de tarjeta siguen sin
+almacenarse en ningún módulo (Principio IV, Restricciones Técnicas): una factura
+simulada NO contiene datos de pago, sólo el medio ("efectivo", "tarjeta") como
+etiqueta.
+Secciones añadidas: entrada y frontera en "Propiedad de Datos y Nomenclatura".
+Secciones eliminadas: ninguna.
+Cambio de esquema sobre entidades de 001–008: ninguno.
+
+Puerta de sincronización de enmiendas (v2.2.0): toca la tabla de Propiedad de
+Datos, no el texto de ningún principio. Se sincroniza esa sección y las citas de
+`009` (nacen citando v2.7.0). NO se barren las citas de 001–008. `DESIGN.md`
+gana, si acaso, una regla nueva para la presentación del documento de factura —
+se decide en el plan de 009, no aquí (una factura es una superficie de lectura
+formal que hoy el sistema no tiene).
+
+Historial de versiones (resumen):
+  - 2.7.0 (2026-09-07) — esta enmienda: entrada `009-facturacion-electronica`
+    (`factura_simulada`) en Propiedad de Datos + frontera "009 consume 001/002,
+    nunca los modifica; la factura se genera tras el cobro y nunca lo bloquea".
+    Factura SIMULADA — sin SRI, sin firma, sin XML válido. Sin cambio de esquema
+    sobre 001–008.
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.5.0 → 2.6.0
 Tipo de cambio: MENOR — añade una entrada a la tabla de Propiedad de Datos y una
 frontera nueva. NO redefine ningún principio: el clustering de 008 encaja en el
@@ -949,7 +1000,14 @@ una enmienda la corrija.
   con tarjeta {token opaco, últimos cuatro dígitos, marca, tipo, terminal de captura, referencia de
   venta, clave de idempotencia}, nunca el PAN. No cabía en las otras cuatro entidades; ver frontera
   de "pago" más abajo.)
-- **008-reportes-inteligencia**: `agregado_reporte`, `segmento_cliente`, `asignacion_segmento`.
+- **009-facturacion-electronica**: `factura_simulada`. (Añadida por la enmienda **v2.7.0**, a raíz
+  de la especificación real de 009.) Es el documento con la **forma** de una factura electrónica
+  ecuatoriana —RUC del comercio y razón social (de configuración, nunca literal de código, mismo
+  patrón que `VITE_LOGO_COMERCIO`), secuencial `establecimiento-punto-correlativo`, subtotal, IVA,
+  total, datos del comprador o "Consumidor Final"— generado **DESPUÉS** de una `venta` ya
+  confirmada de 001. **SIMULADA**: sin conexión al SRI, sin firma electrónica, sin XML válido para
+  el ente regulador — limitación de alcance honesta, no una integración fallida (mismo criterio
+  que 007 para "sin pasarela real"). Ver frontera de "factura" más abajo.
   (Añadidas por la enmienda **v2.6.0**, a raíz de la especificación real de 008.) Las tres son
   **derivadas y regenerables**: `agregado_reporte` cachea el resultado de una vista (comparativo,
   tendencia o tablero) por tipo, ámbito de sucursal y período; `segmento_cliente` guarda la
@@ -1019,6 +1077,17 @@ Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de conf
   turno para `cajero`/`encargado` lo implementa el servicio de turnos de 001, y `admin` queda
   exento (abre turno en cualquier sucursal).
 
+- La **factura** de 009 (`factura_simulada`) es un documento **derivado de una `venta` ya
+  confirmada** de 001: 009 **consulta** `venta` y `renglon_venta` de 001 y los datos de `cliente`
+  de 002 (nombre e identificador, si la venta se identificó), **sin poseer ninguno de los dos**.
+  009 NO escribe contra ninguna tabla de 001–002. La factura se genera en el mismo punto del
+  flujo donde 002 registra la `visita` y 005 la `redencion_promocion` —después del cobro, nunca
+  como camino crítico de él (Principio II)—: si la generación falla, la venta queda intacta y
+  sólo se pierde la factura de ese cobro, que puede regenerarse. El **IVA** y la **razón social /
+  RUC** son configuración del despliegue, no literales de código (mismo patrón que
+  `VITE_LOGO_COMERCIO`). Una `factura_simulada` NO contiene datos de pago (PAN, CVV, banda): a lo
+  sumo el medio como etiqueta ("efectivo", "tarjeta"). **Simulada** = sin SRI, sin firma, sin XML
+  regulatorio; el sistema no afirma en ninguna parte que la factura tenga validez tributaria.
 - Los **reportes e inteligencia** de 008 son **capa de solo lectura** sobre 001–007: cruzan y
   agregan (`agregado_reporte`) y agrupan clientes por similitud (`segmento_cliente`,
   `asignacion_segmento`), a la escala de la semana y el mes. 008 NO escribe contra ninguna tabla
@@ -1195,4 +1264,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.6.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 2.7.0 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-07
