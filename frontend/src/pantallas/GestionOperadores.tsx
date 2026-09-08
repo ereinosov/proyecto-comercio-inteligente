@@ -45,11 +45,14 @@ export function GestionOperadores() {
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [incluirInactivos, setIncluirInactivos] = useState(false);
 
   const [modal, setModal] = useState<{ operador?: Operador } | null>(null);
   const [form, setForm] = useState<Form>(FORM_VACIO);
   const [guardando, setGuardando] = useState(false);
   const [errorModal, setErrorModal] = useState<string | null>(null);
+  const [aDesactivar, setADesactivar] = useState<Operador | null>(null);
+  const [desactivando, setDesactivando] = useState(false);
 
   const nombreSucursal = useCallback(
     (id: number) => sucursales.find((s) => s.id_sucursal === id)?.nombre ?? `Sucursal ${id}`,
@@ -59,13 +62,13 @@ export function GestionOperadores() {
   const recargar = useCallback(() => {
     setCargando(true);
     setError(null);
-    listarOperadores()
+    listarOperadores(incluirInactivos)
       .then(setOperadores)
       .catch((e) =>
         setError(e instanceof ErrorApi ? e.message : "No se pudo cargar la lista de operadores."),
       )
       .finally(() => setCargando(false));
-  }, []);
+  }, [incluirInactivos]);
 
   useEffect(recargar, [recargar]);
   useEffect(() => {
@@ -116,18 +119,30 @@ export function GestionOperadores() {
   }
 
   async function fijarActivo(operador: Operador, activo: boolean) {
+    setDesactivando(true);
     try {
       await fijarActivoOperador(operador.id_operador, { activo });
+      setADesactivar(null);
       recargar();
     } catch (e) {
       setError(e instanceof ErrorApi ? e.message : "No se pudo cambiar el estado del operador.");
+      setADesactivar(null);
+    } finally {
+      setDesactivando(false);
     }
   }
 
   return (
     <>
       <div className={estilos.barra}>
-        <span />
+        <label className={estilos.filtroInactivos}>
+          <input
+            type="checkbox"
+            checked={incluirInactivos}
+            onChange={(e) => setIncluirInactivos(e.target.checked)}
+          />
+          Mostrar desactivados
+        </label>
         <Boton variante="primaria" onClick={() => abrir()}>
           + Nuevo operador
         </Boton>
@@ -171,7 +186,7 @@ export function GestionOperadores() {
                         Reactivar
                       </Boton>
                     ) : (
-                      <Boton variante="fantasma" tamano="sm" onClick={() => fijarActivo(o, false)}>
+                      <Boton variante="fantasma" tamano="sm" onClick={() => setADesactivar(o)}>
                         Desactivar
                       </Boton>
                     )}
@@ -191,6 +206,13 @@ export function GestionOperadores() {
           guardando={guardando}
           error={errorModal}
           primariaHabilitada={formValido}
+          aviso={
+            formValido
+              ? undefined
+              : modal.operador
+                ? "El nombre y la sucursal son obligatorios."
+                : "Completa nombre, sucursal y un PIN de 4 dígitos para poder guardar."
+          }
         >
           <label className={estilos.campo}>
             <span className={estilos.campoEtiqueta}>
@@ -259,6 +281,23 @@ export function GestionOperadores() {
               onChange={(e) => setForm((f) => ({ ...f, pin: e.target.value.replace(/\D/g, "") }))}
             />
           </label>
+        </ModalAdministrable>
+      )}
+
+      {aDesactivar && (
+        <ModalAdministrable
+          titulo={`Desactivar a ${aDesactivar.nombre}`}
+          onCerrar={() => setADesactivar(null)}
+          onGuardar={() => fijarActivo(aDesactivar, false)}
+          guardando={desactivando}
+          etiquetaPrimaria="Desactivar operador"
+          primariaHabilitada
+        >
+          <p className={estilos.textoModal}>
+            El operador ya no podrá abrir turno ni aparecerá en la lista de la apertura. Si tiene
+            un turno abierto, su sesión se rechaza en la siguiente petición. Nada se borra: se
+            puede reactivar más tarde con «Mostrar desactivados».
+          </p>
         </ModalAdministrable>
       )}
     </>

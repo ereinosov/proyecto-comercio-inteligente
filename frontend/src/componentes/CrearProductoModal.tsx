@@ -63,6 +63,11 @@ export function CrearProductoModal({ onCerrar, onCreado }: Props) {
       guardando={guardando}
       error={error}
       primariaHabilitada={nombre.trim() !== "" && precio.trim() !== ""}
+      aviso={
+        nombre.trim() !== "" && precio.trim() !== ""
+          ? undefined
+          : "El nombre y el precio son obligatorios."
+      }
     >
       <label className={estilos.campo}>
         <span className={estilos.campoEtiqueta}>Nombre <Obligatorio /></span>

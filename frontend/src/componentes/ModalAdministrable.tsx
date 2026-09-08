@@ -21,6 +21,8 @@ interface Props {
   etiquetaPrimaria?: string;
   primariaHabilitada?: boolean;
   error?: string | null;
+  /** Guía en Tinta Suave (no error) — p. ej. qué falta para poder guardar. */
+  aviso?: string | null;
   children: ReactNode;
 }
 
@@ -32,6 +34,7 @@ export function ModalAdministrable({
   etiquetaPrimaria = "Guardar",
   primariaHabilitada = true,
   error,
+  aviso,
   children,
 }: Props) {
   useEffect(() => {
@@ -80,6 +83,7 @@ export function ModalAdministrable({
         >
           {children}
           {error && <p className={estilos.error}>{error}</p>}
+          {!error && aviso && <p className={estilos.aviso}>{aviso}</p>}
 
           <footer className={estilos.footer}>
             <button type="button" className={estilos.cancelar} onClick={onCerrar}>

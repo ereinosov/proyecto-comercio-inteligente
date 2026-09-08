@@ -277,6 +277,29 @@ def test_editar_cliente_no_requiere_encargado(sesion):
     assert edit.json()["contacto"] == "0999999999"
 
 
+def test_listar_operadores_puede_incluir_desactivados(sesion):
+    """Hallazgo #9 de la auditoría: sin `incluir_inactivos` no había forma de ver ni reactivar
+    un operador desactivado (a diferencia de sucursales y productos). Por defecto siguen ocultos
+    —es la lista de la apertura de turno—.
+    """
+    admin = crear_operador(sesion, rol="admin")
+    cajero = crear_operador(sesion, es_encargado=False, id_sucursal=admin.id_sucursal)
+    cab = headers_sesion(sesion, admin)
+    sesion.commit()
+
+    baja = cliente.post(
+        f"/operadores/{cajero.id_operador}/activo", json={"activo": False}, headers=cab
+    )
+    assert baja.status_code == 200, baja.text
+
+    activos = [o["id_operador"] for o in cliente.get("/operadores").json()]
+    con_inactivos = [
+        o["id_operador"] for o in cliente.get("/operadores?incluir_inactivos=true").json()
+    ]
+    assert cajero.id_operador not in activos
+    assert cajero.id_operador in con_inactivos
+
+
 def test_listado_paginado_devuelve_items_y_total_en_el_body(sesion):
     admin = crear_operador(sesion, rol="admin")
     cab = headers_sesion(sesion, admin)

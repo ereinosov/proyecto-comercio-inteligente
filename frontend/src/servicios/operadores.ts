@@ -28,8 +28,10 @@ export interface OperadorNuevo {
   pin?: string;
 }
 
-export function listarOperadores(): Promise<Operador[]> {
-  return clienteHttp.get<Operador[]>("/operadores");
+export function listarOperadores(incluirInactivos = false): Promise<Operador[]> {
+  return clienteHttp.get<Operador[]>(
+    `/operadores${incluirInactivos ? "?incluir_inactivos=true" : ""}`,
+  );
 }
 
 export function crearOperador(datos: OperadorNuevo): Promise<Operador> {

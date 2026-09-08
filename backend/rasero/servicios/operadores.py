@@ -18,10 +18,21 @@ from rasero.persistencia.modelos import Operador, Sucursal
 from rasero.seguridad import ROLES, hashear_pin, requiere_rol
 
 
+def listar_operadores(sesion: Session, *, incluir_inactivos: bool = False) -> list[Operador]:
+    """Por defecto sólo operadores activos (la lista de la apertura de turno). Con
+    `incluir_inactivos` también los desactivados, para la gestión admin —hallazgo #9 de la
+    auditoría: sin esto no había forma de ver ni reactivar una cuenta desactivada, a diferencia
+    de sucursales y productos.
+    """
+    consulta = select(Operador)
+    if not incluir_inactivos:
+        consulta = consulta.where(Operador.activo.is_(True))
+    return list(sesion.execute(consulta.order_by(Operador.id_operador)).scalars().all())
+
+
+# Alias histórico (usado por código previo a la enmienda del hallazgo #9).
 def listar_operadores_activos(sesion: Session) -> list[Operador]:
-    return list(
-        sesion.execute(select(Operador).where(Operador.activo.is_(True))).scalars().all()
-    )
+    return listar_operadores(sesion, incluir_inactivos=False)
 
 
 def _valida_rol(rol: str) -> str:

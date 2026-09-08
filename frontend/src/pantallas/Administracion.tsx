@@ -466,6 +466,11 @@ export function Administracion({ rol }: Props) {
           guardando={guardando}
           error={errorModal}
           primariaHabilitada={obligatoriosLlenos}
+          aviso={
+            obligatoriosLlenos
+              ? undefined
+              : "Completa los campos obligatorios (marcados con *) para poder guardar."
+          }
         >
           {vista.campos.map((c) => (
             <label key={c.clave} className={estilos.campo}>

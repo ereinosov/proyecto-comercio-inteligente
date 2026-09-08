@@ -38,8 +38,12 @@ class ActivoCuerpo(BaseModel):
 
 
 @router.get("/operadores")
-def listar_operadores(sesion: Session = Depends(obtener_sesion)) -> list[dict]:
-    operadores = servicio_operadores.listar_operadores_activos(sesion)
+def listar_operadores(
+    incluir_inactivos: bool = False, sesion: Session = Depends(obtener_sesion)
+) -> list[dict]:
+    operadores = servicio_operadores.listar_operadores(
+        sesion, incluir_inactivos=incluir_inactivos
+    )
     return [servicio_operadores.a_dict(o) for o in operadores]
 
 

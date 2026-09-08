@@ -110,6 +110,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   const [ventaConfirmada, setVentaConfirmada] = useState<VentaConfirmada | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [anulando, setAnulando] = useState(false);
+  const [confirmarAnular, setConfirmarAnular] = useState(false);
   const [clienteIdentificado, setClienteIdentificado] = useState<ClienteSeleccionado | null>(null);
   const [promocionAplicada, setPromocionAplicada] = useState<PromocionSeleccionada | null>(null);
   const [consultando, setConsultando] = useState(false);
@@ -175,6 +176,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   // formulario de fila expansible (buscador `SelectorProducto`) y el catálogo en grid (US12).
   // Un mismo producto, cantidad y cálculo de importe, no importa por dónde se agregó.
   function agregarRenglon(producto: Producto, cantidad: { unidades: number } | { gramos: number }) {
+    setError(null); // #11: cambiar el ticket invalida un error de cobro anterior.
     setRenglones((prev) => {
       // Un producto por unidad que ya está en el ticket suma a la cantidad de esa fila, no
       // crea una segunda. A granel siempre es fila aparte: cada pesada es distinta.
@@ -253,6 +255,9 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   // del renglón y el total se recalculan al vuelo. Un valor no válido deja el renglón en 0
   // (no lo elimina: eso lo decide el cajero) — igual que US1 trata una cantidad no válida.
   function editarCantidadRenglon(idLocal: string, valorCrudo: string) {
+    // #11: un error de "existencia insuficiente" (409) deja de aplicar en cuanto el cajero
+    // corrige la cantidad — no debe quedar colgado hasta el próximo intento de cobro.
+    setError(null);
     setRenglones((prev) =>
       prev.map((r) => {
         if (r.idLocal !== idLocal) return r;
@@ -356,6 +361,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
 
   function nuevaVenta() {
     setVentaConfirmada(null);
+    setConfirmarAnular(false);
     setRenglones([]);
     setClaveIdempotencia(generarClaveIdempotencia());
     setClienteIdentificado(null);
@@ -375,7 +381,13 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
       // 009: si la venta tenía factura, se emite la nota de crédito que la revierte. No bloquea
       // la anulación (Principio II): si falla, la venta ya quedó anulada en 001.
       emitirNotaCredito(ventaConfirmada.id_venta)
-        .then((nc) => nc && setNotaCredito(nc))
+        .then((nc) => {
+          if (!nc) return;
+          setNotaCredito(nc);
+          // #8: la factura original queda ANULADA — reflejarlo en el documento a la vista, no
+          // sólo en la nota de crédito.
+          setFactura((f) => (f ? { ...f, estado: "anulada" } : f));
+        })
         .catch(() => undefined);
     } catch (e) {
       setError(e instanceof ErrorApi ? e.message : "No se pudo anular la venta.");
@@ -404,11 +416,25 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
             <Boton variante="primaria" onClick={nuevaVenta}>
               Nueva venta
             </Boton>
-            {!ventaConfirmada.anulada && (
-              <Boton variante="neutra" onClick={anular} disabled={anulando}>
-                {anulando ? "Anulando…" : "Anular esta venta"}
-              </Boton>
-            )}
+            {!ventaConfirmada.anulada &&
+              (confirmarAnular ? (
+                <>
+                  <Boton variante="neutra" onClick={anular} disabled={anulando}>
+                    {anulando ? "Anulando…" : "Sí, anular la venta"}
+                  </Boton>
+                  <Boton
+                    variante="secundaria"
+                    onClick={() => setConfirmarAnular(false)}
+                    disabled={anulando}
+                  >
+                    No, volver
+                  </Boton>
+                </>
+              ) : (
+                <Boton variante="neutra" onClick={() => setConfirmarAnular(true)}>
+                  Anular esta venta
+                </Boton>
+              ))}
           </div>
         </div>
 

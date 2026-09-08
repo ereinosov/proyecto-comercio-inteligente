@@ -166,6 +166,7 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
           guardando={guardando}
           error={errorAlta}
           primariaHabilitada={form.nombre.trim() !== ""}
+          aviso={form.nombre.trim() !== "" ? undefined : "El nombre es obligatorio."}
         >
           <label className={estilos.campoModal}>
             <span>

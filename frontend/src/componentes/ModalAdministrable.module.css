@@ -78,6 +78,13 @@
   color: var(--color-critico);
 }
 
+/* Guía, no error: qué falta para poder guardar. Tinta Suave, nunca crítico. */
+.aviso {
+  margin: 0;
+  font-size: 13px;
+  color: var(--color-tinta-suave);
+}
+
 .footer {
   display: flex;
   justify-content: flex-end;
