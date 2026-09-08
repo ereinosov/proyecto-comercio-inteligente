@@ -264,6 +264,40 @@ def test_get_clientes_expone_estado_fuga_consistente_con_el_detalle():
         _limpiar(ids)
 
 
+def test_busqueda_de_nivel_base_no_expone_estado_fuga():
+    """Corrección 2026-09-07: `GET /clientes/busqueda` queda en nivel base (lo usa
+    `IdentificarCliente` de Venta), pero su respuesta NO incluye `estado_fuga` — dato de
+    `encargado` (constitución v2.5.0), igual que `GET /clientes` y `GET /clientes/{id}`, que sí
+    están gateados y sí lo devuelven. La búsqueda sólo lleva `valor` (FR-011a).
+    """
+    from fastapi.testclient import TestClient as _TC
+
+    anonimo = _TC(app)  # sin header de sesión: la búsqueda es de nivel base
+    marca = uuid.uuid4().hex[:8]
+    sesion = SesionLocal()
+    ids: list[int] = []
+    try:
+        # Un cliente con señal de fuga 'activa': si `estado_fuga` fuera a filtrarse mal, aquí se
+        # notaría.
+        ids.append(_crear_cliente_con_fuga(sesion, f"Buscable {marca}", "calculado", "activa"))
+        sesion.commit()
+    finally:
+        sesion.close()
+
+    try:
+        respuesta = anonimo.get("/clientes/busqueda", params={"q": f"Buscable {marca}"})
+        assert respuesta.status_code == 200, "la búsqueda de nivel base no debe requerir sesión"
+        filas = respuesta.json()
+        assert filas, "la búsqueda no encontró el cliente sembrado"
+        for fila in filas:
+            assert "estado_fuga" not in fila, (
+                "`estado_fuga` no debe viajar en GET /clientes/busqueda (dato de encargado)"
+            )
+            assert "valor" in fila, "la búsqueda sí debe seguir llevando `valor` (FR-011a)"
+    finally:
+        _limpiar(ids)
+
+
 def test_listar_valor_clientes_no_escala_queries_con_el_numero_de_clientes():
     """El `estado_fuga` del listado se resuelve con una única query adicional por página, nunca
     una por cliente: el conteo de SELECTs no debe crecer al duplicar la población.

@@ -314,19 +314,23 @@ def _resumen_cliente(
     cliente: Cliente,
     valores: dict[int, ValorCliente],
     montos: dict[int, Decimal],
-    estados_fuga: dict[int, str],
+    estados_fuga: dict[int, str] | None = None,
 ) -> dict:
     valor = valores.get(cliente.id_cliente)
-    return {
+    fila = {
         "id_cliente": cliente.id_cliente,
         "nombre": cliente.nombre,
         "valor": valor.compuesto if valor else None,
         "monto_total": montos.get(cliente.id_cliente, Decimal("0")),
-        # Campo aditivo (mismo patrón que `nombre_cliente` en cupones): un consumidor que lo
-        # ignora no se rompe. Permite el tint de fuga por fila en Clientes.tsx sin pedir el
-        # detalle de cada cliente (evita N+1).
-        "estado_fuga": estados_fuga.get(cliente.id_cliente, "datos_insuficientes"),
     }
+    # `estado_fuga` sólo se incluye para el LISTADO (`GET /clientes`, rol `encargado`), donde
+    # `Clientes.tsx` lo usa para el tint de fuga por fila sin pedir el detalle de cada cliente.
+    # La búsqueda de nivel base (`GET /clientes/busqueda`, que usa `IdentificarCliente` de Venta)
+    # NO lo lleva: la señal de fuga es dato de `encargado` (constitución v2.5.0), y el flujo de
+    # cajero sólo necesita `valor` (FR-011a). `estados_fuga=None` = no incluirlo.
+    if estados_fuga is not None:
+        fila["estado_fuga"] = estados_fuga.get(cliente.id_cliente, "datos_insuficientes")
+    return fila
 
 
 def listar_valor_clientes(
@@ -362,8 +366,9 @@ def buscar_clientes_con_valor(sesion: Session, *, q: str, limite: int = 20) -> l
     clientes = buscar_clientes(sesion, q=q, limite=limite)
     valores = obtener_valor_clientes(sesion)
     montos = _montos_por_cliente(sesion)
-    estados_fuga = _estado_fuga_por_cliente(sesion, [c.id_cliente for c in clientes])
-    return [_resumen_cliente(c, valores, montos, estados_fuga) for c in clientes]
+    # Sin `estados_fuga`: la búsqueda de nivel base no expone la señal de fuga (dato de
+    # `encargado`); además así se evita la query extra de `_estado_fuga_por_cliente`.
+    return [_resumen_cliente(c, valores, montos) for c in clientes]
 
 
 def _fuga_a_respuesta(intervalo: IntervaloCompra | None, senal: SenalFuga | None) -> dict:

@@ -133,7 +133,13 @@ FR-016 exige conservar.
   ratios ni una suma de `margen_relativo` (que al ser una fracción, sumarla sin ponderar no tendría
   significado) — contra esa misma población. La puntuación compuesta es el promedio simple de los
   tres percentiles.
-  - **Resumen** (registro de Operación, FR-011a): solo la puntuación compuesta.
+  - **Resumen** (registro de Operación, FR-011a): solo la puntuación compuesta. En concreto,
+    `GET /clientes/busqueda` —el resumen que consume `IdentificarCliente` durante el cobro—
+    lleva `valor` y **nada más analítico**: NO `estado_fuga` (dato de `encargado`,
+    constitución v2.5.0 "Autorización de pantalla"). El `estado_fuga` por fila sí viaja en
+    `GET /clientes` (listado gateado a `encargado`, para el tint de fuga de `Clientes.tsx`).
+    *Corrección 2026-09-07: durante un tiempo `estado_fuga` se coló también en el resumen de
+    búsqueda; se retiró.*
   - **Desglose** (registro de Análisis, FR-011b): los tres percentiles por separado.
   - Un cliente en `datos_insuficientes` no tiene puntuación ni percentil: se muestra como tal, no
     como cero (FR-007, SC-004).

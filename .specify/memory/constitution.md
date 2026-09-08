@@ -860,9 +860,16 @@ principio. El rol MÍNIMO por pantalla es:
 - **Alta y edición de `cliente`.** La "Excepción explícita" de arriba NO cambia: el alta y la
   edición de un `cliente` siguen SIN restricción de rol (un `cajero` las hace desde
   `IdentificarCliente` en Venta). Lo que es de rol `encargado` es la PANTALLA de análisis de
-  clientes (puntuación de valor, señal de fuga, gráfico de segmentos) y sus lecturas agregadas
-  (`/clientes/fuga/resumen`, listado ordenado por valor). La lectura puntual de un cliente y su
-  búsqueda por nombre —que `IdentificarCliente` de Venta usa— quedan en el nivel base.
+  clientes (puntuación de valor, señal de fuga, gráfico de segmentos) y sus lecturas: el listado
+  ordenado por valor (`GET /clientes`), el detalle (`GET /clientes/{id}`, con el desglose de
+  valor y el estado de fuga), `GET /clientes/fuga/resumen` y `GET /clientes/cumpleanos`. En nivel
+  base queda sólo la **búsqueda por nombre** (`GET /clientes/busqueda`), que `IdentificarCliente`
+  de Venta necesita para identificar a un cliente durante el cobro.
+- **`estado_fuga` no viaja en `/clientes/busqueda`.** Aunque la ruta queda en nivel base (la usa
+  `IdentificarCliente` de Venta), su respuesta NO incluye `estado_fuga` — sólo `valor` (FR-011a,
+  uso ya legítimo desde antes de esta enmienda). `estado_fuga` sigue siendo de `encargado`,
+  igual que en `GET /clientes` y `GET /clientes/{id}`. Corrección 2026-09-07 (la memoria de
+  proyecto lo tenía pendiente desde antes de esta enmienda).
 - **Sólo-lectura que el cajero necesita.** Los endpoints de lectura que consume un flujo de
   `cajero` —cupones y ofertas de recompra que `AplicarPromocionVenta` evalúa en la venta,
   sucursales y productos para poblar selectores, existencias— NO se cierran: pertenecen al

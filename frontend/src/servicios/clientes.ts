@@ -1,7 +1,9 @@
 /**
- * Cliente HTTP de 002-clientes-fidelizacion (T013, T020, T021, T036). El desglose de valor y
- * el estado de fuga solo llegan en `obtenerCliente` (detalle), nunca en los listados/búsqueda
- * — esos solo llevan la puntuación compuesta (FR-011).
+ * Cliente HTTP de 002-clientes-fidelizacion (T013, T020, T021, T036). El desglose de valor solo
+ * llega en `obtenerCliente` (detalle). `estado_fuga` llega en `obtenerCliente` y en el LISTADO
+ * (`GET /clientes`, rol `encargado`, para el tint de fuga por fila), pero NO en
+ * `GET /clientes/busqueda` (nivel base): la señal de fuga es dato de `encargado` (constitución
+ * v2.5.0) y el flujo de cajero de Venta solo necesita `valor` (FR-011a).
  */
 
 import { clienteHttp } from "./clienteHttp";
@@ -13,9 +15,10 @@ export interface ClienteResumen {
   nombre: string | null;
   valor: number | null;
   monto_total: string;
-  /** Aditivo: mismo valor que `Fuga.estado` del detalle, para el tint de fuga por fila en el
-   * listado sin pedir el detalle de cada cliente (evita N+1). */
-  estado_fuga: EstadoFuga;
+  /** Sólo en el listado `GET /clientes` (rol `encargado`), para el tint de fuga por fila sin
+   * pedir el detalle de cada cliente. Ausente en `GET /clientes/busqueda` (nivel base): dato de
+   * `encargado` (constitución v2.5.0). */
+  estado_fuga?: EstadoFuga;
 }
 
 export interface Cliente {

@@ -81,15 +81,20 @@ def _visita_a_respuesta(visita: Visita) -> dict:
 
 
 def _resumen_a_respuesta(resumen: dict) -> dict:
-    return {
+    respuesta = {
         "id_cliente": resumen["id_cliente"],
         "nombre": resumen["nombre"],
         "valor": resumen["valor"],
         "monto_total": f"{resumen['monto_total']:.2f}",
-        # Aditivo: mismo valor que `fuga.estado` del detalle (GET /clientes/{id}), para el tint
-        # de fuga por fila en el listado sin un N+1 de detalles.
-        "estado_fuga": resumen["estado_fuga"],
     }
+    # `estado_fuga` sólo viaja en el LISTADO (`GET /clientes`, rol `encargado`), donde
+    # `Clientes.tsx` lo usa para el tint de fuga por fila. NO viaja en `GET /clientes/busqueda`
+    # (nivel base, `IdentificarCliente` de Venta): la señal de fuga es dato de `encargado`
+    # (constitución v2.5.0, "Autorización de pantalla"); el flujo de cajero sólo necesita
+    # `valor` (FR-011a). El servicio omite la clave cuando se sirve desde la búsqueda.
+    if "estado_fuga" in resumen:
+        respuesta["estado_fuga"] = resumen["estado_fuga"]
+    return respuesta
 
 
 @router.post("/clientes", status_code=status.HTTP_201_CREATED)
