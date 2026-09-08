@@ -14,6 +14,10 @@
  *  - `fantasma`   Sin borde ni fondo, subrayado en hover. Acciones de fila de baja jerarquía.
  *
  * El radio y la familia salen del registro; el foco, del token `--foco-anillo`.
+ *
+ * `conFlecha` (v3.0.0, del Panel de Bienvenida): añade la misma flecha SVG de línea que ya usa
+ * "Abrir turno →". Reservada a la acción que **cierra** un flujo — el cobro de Venta, el guardado
+ * de `ModalAdministrable` — nunca a un botón secundario ni a uno de una fila de lista.
  */
 
 import type { ButtonHTMLAttributes } from "react";
@@ -27,14 +31,31 @@ interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variante?: Variante;
   registro?: Registro;
   tamano?: Tamano;
+  conFlecha?: boolean;
+}
+
+function IconoFlecha() {
+  return (
+    <svg width="15" height="15" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+      <path
+        d="M2.5 7.5h9M8 3.8l3.7 3.7L8 11.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
 }
 
 export function Boton({
   variante = "neutra",
   registro = "operacion",
   tamano = "md",
+  conFlecha = false,
   className = "",
   type = "button",
+  children,
   ...resto
 }: Props) {
   const clases = [
@@ -46,5 +67,10 @@ export function Boton({
   ]
     .filter(Boolean)
     .join(" ");
-  return <button type={type} className={clases} {...resto} />;
+  return (
+    <button type={type} className={clases} {...resto}>
+      {children}
+      {conFlecha && <IconoFlecha />}
+    </button>
+  );
 }

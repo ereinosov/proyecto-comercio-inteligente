@@ -114,6 +114,9 @@
 }
 
 .primaria {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--espacio-2);
   font-family: var(--tipografia-analisis);
   font-size: 14px;
   color: var(--color-superficie-alta);

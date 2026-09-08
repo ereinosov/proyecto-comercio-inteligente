@@ -740,6 +740,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
         <Boton
           variante="cobro"
           tamano="lg"
+          conFlecha={!cobrando && !confirmado}
           className={`${estilos.botonCobrar} ${confirmado ? estilos.confirmado : ""}`}
           onClick={cobrar}
           disabled={cobrando || confirmado || !hayRenglonValido}

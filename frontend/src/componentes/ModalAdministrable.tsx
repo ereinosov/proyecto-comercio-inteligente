@@ -13,6 +13,20 @@
 import { useEffect, type ReactNode } from "react";
 import estilos from "./ModalAdministrable.module.css";
 
+function IconoFlecha() {
+  return (
+    <svg width="14" height="14" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+      <path
+        d="M2.5 7.5h9M8 3.8l3.7 3.7L8 11.2"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 interface Props {
   titulo: string;
   onCerrar: () => void;
@@ -95,6 +109,7 @@ export function ModalAdministrable({
               disabled={guardando || !primariaHabilitada}
             >
               {guardando ? "Guardando…" : etiquetaPrimaria}
+              {!guardando && <IconoFlecha />}
             </button>
           </footer>
         </form>
