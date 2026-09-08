@@ -86,3 +86,29 @@ def test_tablero_forma_del_contrato():
         assert {"modulo", "titulo", "periodo_referencia", "cifras", "sin_datos"} <= set(t)
         for c in t["cifras"]:
             assert {"etiqueta", "valor", "atencion"} <= set(c)
+
+
+def test_segmentos_sin_token_da_401():
+    assert cliente.get("/reportes/segmentos").status_code == 401
+    assert cliente.post("/reportes/segmentos/recalculo").status_code == 401
+
+
+def test_segmentos_get_forma_del_contrato():
+    r = cliente.get("/reportes/segmentos", headers=_CAB_ENC)
+    assert r.status_code == 200
+    cuerpo = r.json()
+    assert "calculado" in cuerpo and "grupos" in cuerpo
+
+
+def test_segmento_de_cliente_no_toca_el_detalle_de_002(sesion):
+    from rasero.servicios.clientes import registrar_cliente
+
+    c = registrar_cliente(sesion, nombre="Segmentable", fecha_nacimiento=None)
+    cab_enc = headers_encargado(sesion)  # crea encargado + turno + commitea
+
+    r = cliente.get(f"/reportes/segmentos/cliente/{c.id_cliente}", headers=cab_enc)
+    assert r.status_code == 200
+    assert {"id_cliente", "etiqueta_grupo", "descripcion", "corrida"} <= set(r.json())
+
+    detalle = cliente.get(f"/clientes/{c.id_cliente}", headers=cab_enc).json()
+    assert "segmento" not in detalle and "etiqueta_grupo" not in detalle

@@ -101,19 +101,19 @@ patrones, k > n). Sin pruebas de interfaz, maquetación ni componentes visuales.
 
 ## Fase 5 — User Story 4: Segmentos de clientes (P3)
 
-- [ ] T022 [US4] `backend/rasero/servicios/segmentacion_clientes.py`:
+- [X] T022 [US4] `backend/rasero/servicios/segmentacion_clientes.py`:
   `extraer_features(sesion) -> list[(id_cliente, frecuencia, margen, recencia_dias)]` para
   clientes con ≥ `MIN_VISITAS_CLASIFICABLE` visitas (de `visita` / `intervalo_compra`, 002).
-- [ ] T023 [US4] `segmentacion_clientes.recalcular(sesion) -> dict`: estandariza features, corre
+- [X] T023 [US4] `segmentacion_clientes.recalcular(sesion) -> dict`: estandariza features, corre
   `dominio/kmeans.agrupar` con `SEMILLA_SEGMENTOS`, elige k (3 vs 4), reemplaza
   `segmento_cliente` + `asignacion_segmento` de la corrida anterior, graba `corrida`/`semilla`,
   `sin_clasificar` para los de < N visitas (FR-021). `409` si menos clasificables que el mínimo
   (FR-024). Determinista (FR-019).
-- [ ] T024 [US4] `segmentacion_clientes.leer(sesion)` y `etiqueta_de_cliente(sesion, id_cliente)`
+- [X] T024 [US4] `segmentacion_clientes.leer(sesion)` y `etiqueta_de_cliente(sesion, id_cliente)`
   — sólo lectura de la última corrida; `calculado=false` si nunca corrió.
-- [ ] T025 [US4] `api/reportes.py`: `GET /reportes/segmentos`, `POST /reportes/segmentos/recalculo`,
+- [X] T025 [US4] `api/reportes.py`: `GET /reportes/segmentos`, `POST /reportes/segmentos/recalculo`,
   `GET /reportes/segmentos/cliente/{id_cliente}` conforme al contrato.
-- [ ] T026 [US4] **Prueba obligatoria** `tests/integracion/test_segmentacion_clientes.py`
+- [X] T026 [US4] **Prueba obligatoria** `tests/integracion/test_segmentacion_clientes.py`
   (Escenarios 7, 8, 9): 3 patrones separados caen juntos ≥ 80 %; clientes de 1 visita en
   `sin_clasificar`; dos recálculos → asignación idéntica; base insuficiente → 409;
   `GET .../cliente/{id}` devuelve la etiqueta, `GET /clientes/{id}` de 002 sin campos nuevos.

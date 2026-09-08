@@ -13,7 +13,12 @@ from sqlalchemy.orm import Session
 
 from rasero.persistencia.sesion import obtener_sesion
 from rasero.seguridad import exige_rol
-from rasero.servicios import reportes_comparativo, reportes_tablero, reportes_tendencia
+from rasero.servicios import (
+    reportes_comparativo,
+    reportes_tablero,
+    reportes_tendencia,
+    segmentacion_clientes,
+)
 
 router = APIRouter(
     tags=["reportes"],
@@ -70,3 +75,23 @@ def tablero(
     sesion: Session = Depends(obtener_sesion),
 ) -> dict:
     return reportes_tablero.tablero(sesion, actualizar=actualizar)
+
+
+@router.get("/segmentos")
+def segmentos(sesion: Session = Depends(obtener_sesion)) -> dict:
+    """Última corrida de clustering. NO recalcula."""
+    return segmentacion_clientes.leer(sesion)
+
+
+@router.post("/segmentos/recalculo")
+def recalcular_segmentos(sesion: Session = Depends(obtener_sesion)) -> dict:
+    """Recalcula por lote (k-means, semilla fija). Escribe sólo en entidades derivadas de 008."""
+    return segmentacion_clientes.recalcular(sesion)
+
+
+@router.get("/segmentos/cliente/{id_cliente}")
+def segmento_de_cliente(id_cliente: int, sesion: Session = Depends(obtener_sesion)) -> dict:
+    """Etiqueta de segmento de un cliente, para el detalle de Clientes (002) — 002 no gana
+    ningún campo por esto (constitución v2.6.0).
+    """
+    return segmentacion_clientes.etiqueta_de_cliente(sesion, id_cliente=id_cliente)

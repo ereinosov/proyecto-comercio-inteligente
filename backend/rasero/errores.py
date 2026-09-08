@@ -87,6 +87,21 @@ class ValorInvalido(ErrorDominio):
     status_code = 422
 
 
+class SinBaseParaSegmentar(ErrorDominio):
+    """008 User Story 4: no hay ningún cliente con historial suficiente (≥ N visitas) para
+    correr el clustering. No se fuerza una partición sobre nada.
+    """
+
+    codigo = "sin_base_para_segmentar"
+    status_code = 409
+
+    def __init__(self):
+        super().__init__(
+            "No hay clientes con suficiente historial de compra para agruparlos todavía. "
+            "Aparecerán aquí cuando acumulen al menos tres visitas."
+        )
+
+
 class ExistenciaInsuficiente(ErrorDominio):
     """Una venta o un traspaso pidió más de lo que hay en existencia disponible. Bloqueo duro,
     sin excepción ni autorización de encargado (spec 001, Corrección 2026-09-07): vender o
