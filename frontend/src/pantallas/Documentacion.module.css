@@ -349,6 +349,28 @@
   padding: 0 4px;
 }
 
+/* Bloque de comandos de despliegue: mismo tratamiento de superficie que `.tablaEnvoltura` y
+   `.capa` (contorno + sombra-1), pero monoespaciado y con scroll horizontal propio para una
+   línea larga de export/flags. */
+.bloqueComandos {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  line-height: var(--lh-normal);
+  color: var(--color-tinta);
+  background: var(--color-superficie-hundida);
+  border: 1.5px solid var(--color-contorno);
+  box-shadow: var(--sombra-1);
+  border-radius: var(--radio-analisis);
+  padding: var(--espacio-4);
+  margin: 0 0 var(--espacio-4);
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.bloqueComandos .comentario {
+  color: var(--color-tinta-suave);
+}
+
 @media (max-width: 860px) {
   .indice {
     display: none;

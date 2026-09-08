@@ -35,7 +35,12 @@ const SECCIONES: { id: string; titulo: string }[] = [
   { id: "speckit", titulo: "11 · Aplicación de Spec Kit" },
   { id: "glosario", titulo: "12 · Glosario" },
   { id: "creditos", titulo: "13 · Créditos académicos" },
+  { id: "despliegue", titulo: "14 · Puesta en marcha" },
 ];
+
+function Comando({ children }: { children: ReactNode }) {
+  return <pre className={estilos.bloqueComandos}>{children}</pre>;
+}
 
 function P({ children }: { children: ReactNode }) {
   return <p className={estilos.p}>{children}</p>;
@@ -1818,6 +1823,65 @@ export function Documentacion({ onVolver }: Props) {
                 ["Estudiante", "Eduardo Reinoso Vélez"],
               ]}
             />
+          </section>
+
+          {/* ─── 14 · Puesta en marcha ────────────────────────────────────────────────────── */}
+          <section id="despliegue" className={estilos.seccion}>
+            <h2 className={estilos.h2}>14 · Puesta en marcha</h2>
+            <P>
+              Requisitos: Python <F>3.12+</F>, Node <F>20+</F>, PostgreSQL <F>16+</F> escuchando
+              en el puerto <C>5442</C> (no 5432, para no chocar con otros proyectos), con una base
+              y un rol llamados <C>rasero</C>. Cuatro momentos distintos, que no se repiten en
+              cada arranque: <F>instalar</F> (una vez), <F>sembrar datos</F> (una vez, o cuando se
+              quiera reiniciar la demo), <F>levantar</F> (cada vez que se trabaja) y{" "}
+              <F>probar</F> (cuando se quiere validar un cambio).
+            </P>
+
+            <H3>1 · Instalación (sólo la primera vez)</H3>
+            <P>Clona el repositorio, crea el entorno virtual del backend e instala ambas partes.</P>
+            <Comando>{`cd backend
+python -m venv .venv
+.venv/Scripts/activate            # Windows · source .venv/bin/activate en Linux/macOS
+pip install -e .
+
+export DATABASE_URL="postgresql+psycopg://rasero@localhost:5442/rasero"
+python -m alembic -c migraciones/alembic.ini upgrade head    # crea las 50 tablas`}</Comando>
+            <Comando>{`cd frontend
+npm install`}</Comando>
+
+            <H3>2 · Semillas de datos de demostración (sólo la primera vez, o para reiniciar la demo)</H3>
+            <P>
+              Cada semilla es independiente y se puede volver a correr sola; en orden, así se
+              arma el escenario completo de demostración:
+            </P>
+            <Comando>{`python -m rasero.semilla                # operadores + sucursales + catálogo base
+python -m rasero.semilla_catalogo        # catálogo de demostración
+python -m rasero.semilla_movimientos     # ventas e inventario de ejemplo
+python -m rasero.semilla_clientes        # clientes con historial
+python -m rasero.semilla_reactivacion    # escenario de fuga y reactivación
+python -m rasero.semilla_pagos           # medios de pago, cobertura y terminales`}</Comando>
+            <P>
+              El acceso de demostración lo imprime <C>python -m rasero.semilla</C>: por defecto,
+              Ana Cajera (rol <C>cajero</C>, PIN <C>1234</C>), Luis Encargado (
+              <C>encargado</C>, PIN <C>9999</C>) y Marta Administradora (<C>admin</C>, PIN{" "}
+              <C>0000</C>).
+            </P>
+
+            <H3>3 · Levantar el sistema (cada vez que se trabaja)</H3>
+            <P>Con todo ya instalado y sembrado, sólo hacen falta estos dos comandos, cada uno en su propia terminal:</P>
+            <Comando>{`cd backend
+.venv/Scripts/activate            # Windows · source .venv/bin/activate en Linux/macOS
+python -m uvicorn rasero.api.aplicacion:app --port 8000`}</Comando>
+            <Comando>{`cd frontend
+npm run dev          # http://localhost:5173  (espera el backend en http://localhost:8000)`}</Comando>
+
+            <H3>4 · Pruebas</H3>
+            <P>
+              La suite corre con <F>pytest</F>, contra un PostgreSQL real (nunca SQLite), desde la
+              raíz del repositorio y con el intérprete del entorno virtual del backend:
+            </P>
+            <Comando>{`backend/.venv/Scripts/python.exe -m pytest -q      # Windows
+backend/.venv/bin/python -m pytest -q              # Linux/macOS`}</Comando>
           </section>
         </div>
       </div>

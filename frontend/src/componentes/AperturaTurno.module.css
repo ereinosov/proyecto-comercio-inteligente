@@ -1,82 +1,177 @@
 /* Apertura de turno — la puerta del sistema. Registro de Operación (radio 2px, IBM Plex Sans).
-   v2.0.1: el wordmark de Rasero + la tesis del producto viven FUERA de la tarjeta, arriba de
-   ella — la herramienta detrás de la marca del comercio, nunca dentro de su tarjeta de
-   identidad (La Regla de la Identidad del Comercio). La marca del COMERCIO sigue sobre blanco,
-   dentro de la tarjeta. Dos detalles de fondo muy tenues en esquinas opuestas —la marca de agua
-   del logo mono del comercio y el trazo de graduación del rasero— dan profundidad sin degradado
-   ni fondo oscuro (Do's and Don'ts). */
+   v3.0.0 — "El Panel de Bienvenida": de una tarjeta única centrada a una composición de dos (o
+   tres, en pantallas anchas) paneles — bienvenida / formulario / beneficios — aprobada por el
+   propietario sobre una referencia visual concreta. El panel de bienvenida usa un tinte de marca
+   MUY suave (excepción puntual y documentada a "sin degradados": `linear-gradient` de dos tonos
+   claros de la propia paleta, nunca oscuro) — ver DESIGN.md v3.0.0. */
 
 .contenedor {
-  position: relative;
   min-height: 100vh;
+  display: grid;
+  grid-template-columns: minmax(420px, 1fr) minmax(500px, 620px) minmax(0, 340px);
+  background: var(--color-superficie-media);
+  font-family: var(--tipografia-operacion);
+}
+
+/* ─── Panel de bienvenida ──────────────────────────────────────────────────────────────────── */
+
+.panelBienvenida {
+  position: relative;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: var(--espacio-4);
-  padding: var(--espacio-8) var(--espacio-4);
-  background: var(--color-superficie-media);
-  font-family: var(--tipografia-operacion);
-  overflow: hidden;
+  text-align: center;
+  justify-content: space-between;
+  gap: var(--espacio-8);
+  padding: var(--espacio-12) var(--espacio-8);
+  border-right: 1.5px solid var(--color-contorno);
+  background: linear-gradient(
+    155deg,
+    var(--color-superficie-alta) 0%,
+    color-mix(in srgb, var(--color-marca) 16%, var(--color-superficie-alta)) 100%
+  );
 }
 
-/* Marca de agua del logo mono del comercio: grande, muy tenue, anclada a una esquina para dar
-   profundidad a un fondo que si no se leería como "una hoja y ya". */
 .aguaMarca {
   position: absolute;
-  right: -8%;
-  bottom: -12%;
-  width: min(60vw, 640px);
-  opacity: 0.05;
+  right: -10%;
+  bottom: -10%;
+  width: min(60vw, 520px);
+  opacity: 0.06;
   pointer-events: none;
   user-select: none;
 }
 
-/* Segundo detalle de fondo, esquina opuesta: las líneas de graduación de un rasero. Motivo
-   propio de marca (nunca un patrón genérico), en Verde Rasero muy tenue — uno de los tres usos
-   permitidos del verde es el wordmark; este trazo vive junto al wordmark de la marca de
-   sistema, no como una cuarta aparición suelta. Sin degradados (Do's and Don'ts). */
 .trazoFondo {
   position: absolute;
   left: -2%;
   top: -4%;
-  width: min(46vw, 420px);
+  width: min(40vw, 360px);
   height: auto;
   color: var(--color-marca);
-  opacity: 0.07;
+  opacity: 0.1;
   pointer-events: none;
   user-select: none;
 }
 
-/* Marca de sistema: fuera de la tarjeta, arriba de ella — Rasero es la herramienta detrás de la
-   marca del comercio (La Regla de la Identidad del Comercio), no un elemento de su tarjeta. */
-.marcaSistemaFuera {
+/* Silueta de ola en Verde Rasero al pie del panel — el eco visual del "filo" que nivela,
+   llevado a la esquina en vez de a un borde de tarjeta. Muy tenue: nunca compite con el texto. */
+.olaFondo {
+  position: absolute;
+  left: -20%;
+  bottom: -22%;
+  width: 140%;
+  height: 42%;
+  background: var(--color-marca);
+  opacity: 0.14;
+  transform: rotate(-5deg);
+  border-radius: 40% 60% 0 0 / 100% 100% 0 0;
+  pointer-events: none;
+}
+
+.marcaSistemaTop {
   position: relative;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--espacio-1);
+  gap: 2px;
 }
 
-.marcaSistemaFuera img {
-  height: 22px;
+.marcaSistemaTop img {
+  height: 32px;
   width: auto;
-  opacity: 0.85;
 }
 
-.marcaSistemaFuera span {
-  font-family: var(--tipografia-operacion);
-  font-size: var(--texto-xs);
+.marcaSistemaTop span {
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
   letter-spacing: 0.01em;
+}
+
+.contenidoBienvenida {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  max-width: 480px;
+}
+
+.logoComercio {
+  display: block;
+  margin: 0 auto;
+  width: 320px;
+  max-width: 100%;
+  height: auto;
+}
+
+.ubicacion {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  margin: var(--espacio-6) 0 0;
+  font-size: var(--texto-base);
   color: var(--color-tinta-suave);
 }
 
-.panel {
+.pillCaja {
+  display: inline-block;
+  margin-left: var(--espacio-1);
+  padding: 3px var(--espacio-3);
+  border: 1px solid var(--color-borde-fuerte);
+  border-radius: 999px;
+  font-size: var(--texto-sm);
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+}
+
+.saludo {
+  margin: var(--espacio-6) 0 0;
+  font-size: var(--texto-display);
+  font-weight: var(--peso-fuerte);
+  line-height: var(--lh-ajustado);
+  color: var(--color-tinta);
+}
+
+.subSaludo {
+  margin: var(--espacio-3) 0 0;
+  font-size: var(--texto-lg);
+  color: var(--color-tinta-suave);
+  max-width: 38ch;
+  line-height: var(--lh-normal);
+}
+
+.ultimaApertura {
   position: relative;
   z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  margin: 0;
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Panel del formulario ─────────────────────────────────────────────────────────────────── */
+
+.panelFormulario {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-6);
+  padding: var(--espacio-8);
+}
+
+.tarjeta {
   width: 100%;
-  max-width: 400px;
+  max-width: 480px;
   background: var(--color-superficie-alta);
   border: 1.5px solid var(--color-contorno);
   box-shadow: var(--sombra-2);
@@ -84,60 +179,199 @@
   overflow: hidden;
 }
 
-/* Filo de Rasero: acento verde de 5px en el borde superior. */
-.filo {
-  height: 5px;
+.encabezadoTarjeta {
+  display: flex;
+  gap: var(--espacio-4);
+  align-items: flex-start;
+  padding: var(--espacio-8) var(--espacio-8) var(--espacio-4);
+}
+
+.acentoVertical {
+  flex-shrink: 0;
+  align-self: stretch;
+  min-height: 40px;
+  width: 5px;
+  border-radius: 2px;
   background: var(--color-marca);
 }
 
-/* Cabecera de marca del comercio: fondo blanco (el logo a color no está pensado para fondo
-   oscuro), logo centrado como elemento principal (La Regla de la Identidad del Comercio). */
-.cabecera {
-  background: var(--color-superficie-alta);
-  border-bottom: 1.5px solid var(--color-contorno);
-  padding: var(--espacio-8) var(--espacio-6) var(--espacio-6);
-  text-align: center;
+.tituloTarjeta {
+  margin: 0;
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--color-tinta);
 }
 
-.logoComercio {
-  display: block;
-  width: 220px;
-  max-width: 72%;
-  height: auto;
-  margin: 0 auto;
+.descripcionTarjeta {
+  margin: var(--espacio-2) 0 0;
+  font-size: var(--texto-base);
+  color: var(--color-tinta-suave);
+  line-height: var(--lh-normal);
 }
 
-.contexto {
-  margin: var(--espacio-4) 0 0;
+.divisor {
+  height: 1px;
+  background: var(--color-borde);
+  margin: 0 var(--espacio-8);
+}
+
+.campos {
+  padding: var(--espacio-8) var(--espacio-8) var(--espacio-1);
+}
+
+.campo {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  margin-bottom: var(--espacio-8);
+}
+
+.campo:last-child {
+  margin-bottom: 0;
+}
+
+.etiqueta {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
   font-size: var(--texto-sm);
+  font-weight: var(--peso-medio);
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
   color: var(--color-tinta-suave);
 }
 
-.ultimaApertura {
-  margin: var(--espacio-1) 0 0;
-  font-size: var(--texto-xs);
-  color: var(--color-tinta-suave);
+.etiqueta svg {
+  flex-shrink: 0;
+}
+
+/* La Regla del PIN de Casillas (v3.0.0): 4 casillas independientes en vez de un input único
+   enmascarado. `type="password"` deja que el navegador dibuje el punto de cada dígito; el foco
+   avanza solo, Backspace en una casilla vacía retrocede, y se admite pegar el PIN completo. */
+.casillasPin {
+  display: flex;
+  gap: var(--espacio-3);
+}
+
+.casilla {
+  flex: 1;
+  min-width: 0;
+  height: 68px;
+  font-family: var(--tipografia-operacion);
+  font-size: 28px;
   font-variant-numeric: tabular-nums;
+  color: var(--color-tinta);
+  background: var(--color-superficie-hundida);
+  border: 1.5px solid var(--color-borde-fuerte);
+  border-radius: var(--radio-operacion);
+  text-align: center;
+  padding: 0;
+}
+
+.casilla:focus-visible {
+  outline: var(--foco-anillo);
+  outline-offset: var(--foco-separacion);
+  background: var(--color-superficie-alta);
+  border-color: var(--color-marca);
+}
+
+/* Edge inyecta un ícono nativo de "mostrar contraseña" (`::-ms-reveal`) dentro de todo
+   `<input type="password">`; sobre una casilla de un solo carácter queda encimado con el punto.
+   Se oculta —la casilla ya comunica "PIN" con la etiqueta y el candado, no necesita revelarse. */
+.casilla::-ms-reveal,
+.casilla::-ms-clear {
+  display: none;
+}
+
+/* Botón primario de la puerta del sistema: Verde Rasero — cuarto uso permitido de La Regla de
+   la Sola Voz (v3.0.0), exclusivo de esta acción fuera de los registros Operación/Análisis. */
+.boton {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--espacio-2);
+  width: calc(100% - 2 * var(--espacio-8));
+  margin: var(--espacio-3) var(--espacio-8) 0;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-fuerte);
+  color: var(--color-superficie-alta);
+  background: var(--color-marca);
+  border: 1.5px solid var(--color-marca);
+  border-radius: var(--radio-operacion);
+  padding: var(--espacio-4);
+  cursor: pointer;
+  transition: background var(--transicion), border-color var(--transicion);
+}
+
+.boton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.boton:not(:disabled):hover {
+  background: var(--color-marca-fuerte);
+  border-color: var(--color-marca-fuerte);
+}
+
+/* Franja de estado: color + forma (punto lleno/hueco) + texto explícito — nunca solo color,
+   mismo criterio que el resto del sistema (Regla de los Tres Portadores). */
+.estado {
+  display: flex;
+  align-items: center;
+  gap: var(--espacio-2);
+  margin: var(--espacio-4) var(--espacio-8) var(--espacio-8);
+  font-size: var(--texto-base);
+  color: var(--color-tinta-suave);
+}
+
+.punto {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.puntoOk {
+  background: var(--color-tinta-suave);
+}
+
+.puntoNeutro {
+  background: transparent;
+  border: 1.5px solid var(--color-borde-fuerte);
+}
+
+.puntoAtencion {
+  background: var(--color-atencion);
+}
+
+.puntoCritico {
+  background: var(--color-critico);
+}
+
+.pie {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-2);
 }
 
 .pieComercio {
-  position: relative;
-  z-index: 1;
   margin: 0;
-  font-size: var(--texto-xs);
+  font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
 }
 
 .enlaceDoc {
-  position: relative;
-  z-index: 1;
   font-family: var(--tipografia-operacion);
-  font-size: var(--texto-sm);
+  font-size: var(--texto-base);
   color: var(--color-acento-secundario);
   background: transparent;
   border: 1.5px solid var(--color-acento-secundario);
   border-radius: var(--radio-operacion);
-  padding: var(--espacio-2) var(--espacio-4);
+  padding: var(--espacio-3) var(--espacio-4);
   cursor: pointer;
   transition: background var(--transicion), color var(--transicion);
 }
@@ -147,71 +381,79 @@
   color: var(--color-superficie-alta);
 }
 
-.campos {
-  padding: var(--espacio-6) var(--espacio-6) var(--espacio-1);
-}
+/* ─── Panel de beneficios ──────────────────────────────────────────────────────────────────── */
 
-.campo {
+.panelBeneficios {
   display: flex;
   flex-direction: column;
-  gap: var(--espacio-2);
-  margin-bottom: var(--espacio-6);
+  justify-content: center;
+  gap: var(--espacio-12);
+  padding: var(--espacio-8) var(--espacio-8);
 }
 
-.campo:last-child {
-  margin-bottom: 0;
+.beneficio {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--espacio-3);
 }
 
-.etiqueta {
+.iconoBeneficio {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--color-superficie-alta);
+  border: 1.5px solid var(--color-contorno);
+  color: var(--color-marca-fuerte);
+}
+
+.tituloBeneficio {
+  margin: 0;
+  font-size: var(--texto-base);
+  font-weight: var(--peso-fuerte);
+  color: var(--color-tinta);
+}
+
+.textoBeneficio {
+  margin: var(--espacio-1) 0 0;
   font-size: var(--texto-sm);
   color: var(--color-tinta-suave);
+  line-height: var(--lh-normal);
+  max-width: 24ch;
 }
 
-.input {
-  font-family: var(--tipografia-operacion);
-  font-size: 22px;
-  font-variant-numeric: tabular-nums;
-  color: var(--color-tinta);
-  background: var(--color-superficie-hundida);
-  border: 1.5px solid var(--color-borde-fuerte);
-  border-radius: var(--radio-operacion);
-  padding: var(--espacio-3);
-  letter-spacing: 0.5em;
-  text-align: center;
+/* ─── Responsive ───────────────────────────────────────────────────────────────────────────── */
+
+@media (max-width: 1320px) {
+  .contenedor {
+    grid-template-columns: minmax(420px, 1fr) minmax(500px, 620px);
+  }
+
+  .panelBeneficios {
+    display: none;
+  }
 }
 
-.input:focus-visible {
-  outline: var(--foco-anillo);
-  outline-offset: var(--foco-separacion);
-  background: var(--color-superficie-alta);
-}
+@media (max-width: 900px) {
+  .contenedor {
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
 
-.error {
-  font-size: var(--texto-sm);
-  color: var(--color-critico);
-  margin: var(--espacio-3) var(--espacio-6) 0;
-}
+  .panelBienvenida {
+    min-height: 280px;
+    border-right: none;
+    border-bottom: 1.5px solid var(--color-contorno);
+  }
 
-.boton {
-  width: calc(100% - 2 * var(--espacio-6));
-  margin: var(--espacio-6);
-  font-family: var(--tipografia-operacion);
-  font-size: var(--texto-md);
-  font-weight: var(--peso-fuerte);
-  color: var(--color-superficie-alta);
-  background: var(--color-tinta);
-  border: 1.5px solid var(--color-tinta);
-  border-radius: var(--radio-operacion);
-  padding: var(--espacio-3);
-  cursor: pointer;
-  transition: background var(--transicion);
-}
+  .contenidoBienvenida {
+    max-width: none;
+  }
 
-.boton:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.boton:not(:disabled):hover {
-  background: var(--color-tinta-fuerte);
+  .ubicacion {
+    justify-content: center;
+  }
 }

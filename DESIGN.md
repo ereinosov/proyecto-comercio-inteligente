@@ -480,6 +480,13 @@ apareciendo una sola vez—. Nunca en fondos grandes, nunca en dos elementos del
 vez, nunca decorativo. **La Regla del Registro Sin Dinero sigue intacta**: una pantalla sin
 acción de dinero tiene cero verde en su contenido; el acento del nav activo es del armazón.
 
+*Cuarto uso (v3.0.0, aditivo).* El botón primario de **abrir turno**, en el Panel de Bienvenida,
+usa Verde Rasero. No contradice "una acción que compromete dinero": esta pantalla vive **fuera**
+de los registros Operación/Análisis y de su propia sesión —es la puerta antes de que exista un
+turno—, así que no compite con ningún botón de cobro real (nunca están en pantalla a la vez) y
+sigue habiendo una sola aparición de contenido por pantalla. El resto de la regla no cambia: sigue
+sin aparecer un segundo verde en ninguna pantalla ya autenticada.
+
 **La Regla del Ícono.** Todo ícono de la interfaz es un SVG —propio, o de una única librería
 coherente con el resto del sistema— y **nunca** un emoji. Un emoji no respeta el sistema tipográfico
 (no se compone en IBM Plex Sans ni en Source Serif 4); no respeta el sistema cromático (trae su
@@ -969,26 +976,55 @@ dinero no usa el Verde Rasero ni una sola vez. "Una vez por pantalla" es un máx
 que cada pantalla deba alcanzar — Clientes.tsx es la primera superficie del sistema en quedar
 en cero apariciones, y es el comportamiento correcto, no una omisión.
 
-**La Regla de la Identidad del Comercio.** La pantalla de apertura de turno invierte la jerarquía
-habitual de un login. La tarjeta abre con una **cabecera de marca del comercio**: fondo blanco
-(Superficie Alta —el logo a color del comercio no está diseñado para fondo oscuro; un bloque
-Tinta lo apaga) y el **logo a color del comercio, centrado, como elemento principal**
-(ancho ≈ 240–280px). El logo se toma de `VITE_LOGO_COMERCIO`; si no está definida, del asset de
+**La Regla de la Identidad del Comercio (reescrita v3.0.0).** La pantalla de apertura de turno
+invierte la jerarquía habitual de un login. Desde v3.0.0 es una composición de paneles —el
+**Panel de Bienvenida**, ver más abajo— en vez de una única tarjeta: el logo del comercio vive en
+el panel de bienvenida, sobre el tinte de marca **claro** de ese panel (nunca sobre un tramo
+oscuro de él: el logo a color no está diseñado para fondo oscuro), como su elemento visual más
+grande (ancho ≈ 240px). El logo se toma de `VITE_LOGO_COMERCIO`; si no está definida, del asset de
 demostración incluido (`despensa-logo-color-800w.png`) —nunca de una tabla ni de una regla de
-negocio codificada. El wordmark de Rasero **no** preside la tarjeta: baja a marca de sistema
-pequeña y discreta **encima** de la tarjeta, fuera de ella. Debajo del logo, con al menos 12px de
-aire, va el contexto real, más pequeño y en Tinta Suave: `{sucursal.nombre} · {caja}` —dato real
-de `sucursal.nombre`, nunca un literal en JSX—. Si existe un turno anterior en esa sucursal, una
+negocio codificada. El wordmark de Rasero **no** preside el panel: vive pequeño y discreto **arriba**
+de él, en su propia línea, junto a la tesis del producto. Debajo del logo, con aire, va el
+contexto real: `{sucursal.nombre}` junto a una píldora con `{caja}` —dato real de
+`sucursal.nombre`, nunca un literal en JSX—. Si existe un turno anterior en esa sucursal, una
 línea más —"Última apertura: [fecha/hora relativa, p. ej. 'hoy, 07:58' o 'ayer, 18:20']" leída del
-`instante_apertura` del turno más reciente de esa sucursal— también en Tinta Suave; si no hay
-ninguno, esa línea se omite por completo, nunca un placeholder falso. Esta regla **no** crea
-ninguna entidad `Negocio` ni `Empresa`. Cualquier texto de marca del comercio que aparezca en el
-frontend (p. ej. "Despensa Los Ríos" como pie de datos de demostración) DEBE venir de una variable
-de entorno del frontend, nunca de un literal en JSX ni de una tabla. **Razón**: quien abre turno
-no necesita que le recuerden qué software usa —lo abre veinte veces por semana—; el logo del
-comercio ancla la pantalla en "esta es tu tienda" y, debajo, el nombre de sucursal y caja le
-confirman de un vistazo *en qué sucursal y caja está entrando*, que es el dato que ata todas sus
-ventas del turno.
+`instante_apertura` del turno más reciente de esa sucursal— en Tinta Suave; si no hay ninguno, esa
+línea se omite por completo, nunca un placeholder falso. Esta regla **no** crea ninguna entidad
+`Negocio` ni `Empresa`. Cualquier texto de marca del comercio que aparezca en el frontend (p. ej.
+"Despensa Los Ríos" como pie de datos de demostración) DEBE venir de una variable de entorno del
+frontend, nunca de un literal en JSX ni de una tabla. **Razón**: quien abre turno no necesita que
+le recuerden qué software usa —lo abre veinte veces por semana—; el logo del comercio ancla la
+pantalla en "esta es tu tienda" y, debajo, el nombre de sucursal y caja le confirman de un vistazo
+*en qué sucursal y caja está entrando*, que es el dato que ata todas sus ventas del turno.
+
+**El Panel de Bienvenida (v3.0.0, nueva).** La puerta del sistema deja de ser una tarjeta única
+centrada sobre un fondo vacío y pasa a una composición de hasta tres paneles en una sola fila:
+(1) el **panel de bienvenida** —identidad del comercio, saludo y última apertura, sobre un tinte
+de marca muy suave—; (2) el **panel del formulario** —la tarjeta de "Apertura de turno" con sus
+campos, centrada—; (3), sólo desde ~1200px de ancho, un **panel de beneficios** angosto con 2–3
+proposiciones de valor breves (ícono en círculo + título + una frase), puramente informativo, sin
+ninguna acción. Por debajo de ~860px los paneles se apilan verticalmente y el de beneficios
+desaparece del todo —nunca se aprieta—. **Excepción puntual a "sin degradados":** el panel de
+bienvenida tinta su fondo con un `linear-gradient` de dos tonos **claros** de la propia paleta
+(Superficie Alta → una mezcla suave con Verde Rasero, nunca más oscura que la Superficie Media),
+más una silueta y un trazo de marca en Verde Rasero a muy baja opacidad (≤ 0.14) anclados a una
+esquina — la misma función que la marca de agua de La Regla del Hueco que Enseña, con el mismo
+criterio de "nunca compite con el contenido". Es la única superficie del sistema con esta
+excepción: ningún otro panel, tabla, tarjeta o modal usa `linear-gradient` ni un fondo que no sea
+un tono plano de `tokens.css`. **Razón**: el propietario aportó una referencia visual concreta de
+una pantalla de acceso con panel ilustrado + tarjeta, pidiendo ese tratamiento explícitamente para
+la puerta del sistema; se acota a esta única pantalla porque es la que menos compite con datos
+reales (ninguna cifra, ninguna tabla) y la más beneficiada de sentirse "más profesional y
+atractiva" a primera vista.
+
+**La Regla del PIN de Casillas (v3.0.0, nueva).** El PIN de 4 dígitos se captura con **4 casillas
+independientes** (`<input type="password" maxlength="1">` cada una) en vez de un único campo
+enmascarado. El foco avanza solo a la siguiente casilla al escribir un dígito; Backspace en una
+casilla vacía retrocede a la anterior; pegar un PIN completo lo reparte entre las casillas. Cada
+casilla es cuadrada, con el mismo tratamiento de borde/foco que cualquier control del sistema
+(`--color-borde-fuerte`, foco en `--foco-anillo`). **Razón**: cuatro casillas dan una referencia
+visual inmediata de "cuántos dígitos faltan" que un campo único con `letter-spacing` sólo sugiere;
+es el patrón que ya conoce cualquiera que haya desbloqueado un teléfono.
 
 **La Regla de la Marca Persistente (reescrita v1.7.0).** Fuera de la apertura de turno —el
 momento ceremonial de La Regla de la Identidad del Comercio—, la marca del comercio no
@@ -1281,4 +1317,19 @@ una aclaración sin cambio de significado.
   "Registro de seguridad" (más "Cobros por venta", vista nueva). Aprobado explícitamente por el
   propietario. Sincronización con la constitución **pendiente** (junto con v1.4.0–v1.11.0).
 
-**Versión**: 2.0.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-08
+- **3.0.0** (2026-09-08) — MAYOR (segunda enmienda mayor): **"El Panel de Bienvenida"**. La puerta
+  del sistema (apertura de turno) deja de ser una tarjeta única centrada y pasa a una composición
+  de paneles —bienvenida / formulario / beneficios (los dos primeros siempre, el tercero desde
+  ~1320px)— sobre una referencia visual concreta que aportó el propietario. Introduce **La Regla
+  del PIN de Casillas** (4 `<input>` independientes con avance de foco automático, en vez de un
+  campo único enmascarado) y reescribe **La Regla de la Identidad del Comercio** para el nuevo
+  layout (el logo del comercio vive en el panel de bienvenida, sobre su tinte claro, nunca sobre
+  el tramo oscuro). Amplía **La Regla de la Sola Voz** con un cuarto uso, aditivo: el botón
+  primario de "Abrir turno" usa Verde Rasero, exclusivo de esta pantalla fuera de sesión (nunca
+  coincide en pantalla con el botón de cobro). Abre una única excepción puntual, documentada y
+  acotada a esta pantalla, a "sin degradados": el panel de bienvenida tinta su fondo con un
+  `linear-gradient` de dos tonos **claros** de la propia paleta. No elimina ni invierte ninguna
+  otra regla. Aprobado explícitamente por el propietario sobre una imagen de referencia.
+  Sincronización con la constitución **pendiente** (junto con v1.4.0–v2.0.0).
+
+**Versión**: 3.0.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-08

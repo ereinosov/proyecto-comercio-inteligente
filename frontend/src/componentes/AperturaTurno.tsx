@@ -1,20 +1,21 @@
 /**
  * Apertura de turno: selector de sucursal + operador + PIN de 4 dígitos (FR-005).
  *
- * La Regla de la Identidad del Comercio (DESIGN.md v1.3.0): cabecera de marca del comercio con
- * fondo blanco y el logo a color centrado como elemento principal; debajo, con aire, el nombre
- * de la sucursal elegida y la caja en Tinta Suave, y "Última apertura: …" si existe un turno
- * previo en esa sucursal (si no, la línea se omite — nunca un placeholder falso). El wordmark de
- * Rasero es marca de sistema pequeña ARRIBA de la tarjeta, fuera de ella. El logo del comercio
- * de demostración se puede sobreescribir por `VITE_LOGO_COMERCIO` en un despliegue real.
+ * "El Panel de Bienvenida" (DESIGN.md v3.0.0): la puerta del sistema pasa de una tarjeta única
+ * centrada a dos paneles — un panel de bienvenida con la identidad del comercio (izquierda) y la
+ * tarjeta del formulario (centro). Sobre ~1200px se suma una franja angosta de beneficios
+ * (derecha); por debajo se oculta, nunca se aprieta. El wordmark de Rasero vive arriba del panel
+ * de bienvenida, fuera de la tarjeta (La Regla de la Identidad del Comercio se mantiene: el logo
+ * del comercio nunca sobre un fondo oscuro). El PIN se captura con 4 casillas individuales (La
+ * Regla del PIN de Casillas) en vez de un solo input enmascarado. El botón primario usa Verde
+ * Rasero — cuarto uso permitido por la enmienda v3.0.0 de La Regla de la Sola Voz, exclusivo de
+ * la acción de apertura de esta puerta (fuera de los registros Operación/Análisis).
  *
  * Sólo cambia la presentación: el estado, la validación del PIN, las llamadas a la API y el
  * comportamiento al enviar no se tocan.
- *
- * Verde Rasero no aparece aquí — reservado a la acción de cobro (La Regla de la Sola Voz).
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState, type ClipboardEvent, type FormEvent, type KeyboardEvent } from "react";
 import { ErrorApi } from "../servicios/clienteHttp";
 import { clienteHttp } from "../servicios/clienteHttp";
 import { type Turno, abrirTurno } from "../servicios/turnos";
@@ -29,6 +30,7 @@ import estilos from "./AperturaTurno.module.css";
 const LOGO_COMERCIO: string = import.meta.env.VITE_LOGO_COMERCIO ?? logoComercioPorDefecto;
 const NOMBRE_COMERCIO: string | undefined = import.meta.env.VITE_NOMBRE_COMERCIO;
 const CAJA = "caja-1";
+const CASILLAS_PIN = 4;
 
 function ultimaAperturaTexto(iso: string): string {
   const fecha = new Date(iso);
@@ -45,6 +47,111 @@ function ultimaAperturaTexto(iso: string): string {
   return `${fecha.toLocaleDateString()}, ${hhmm}`;
 }
 
+function IconoPersona() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+      <circle cx="7.5" cy="4.6" r="2.6" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M2.2 13c0-2.9 2.4-4.6 5.3-4.6s5.3 1.7 5.3 4.6" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconoTienda() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+      <path d="M2 3.5h11L12.3 7H2.7L2 3.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M3 7v4.3c0 .4.3.7.7.7h7.6c.4 0 .7-.3.7-.7V7" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M6 12v-2.3c0-.4.3-.7.7-.7h1.6c.4 0 .7.3.7.7V12" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
+function IconoCandado() {
+  return (
+    <svg width="18" height="18" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+      <rect x="3" y="6.6" width="9" height="6" rx="1.2" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M5 6.6V4.8a2.5 2.5 0 0 1 5 0v1.8" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconoReloj() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <circle cx="7" cy="7" r="5.6" stroke="currentColor" strokeWidth="1.3" />
+      <path d="M7 4v3.2l2.2 1.3" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconoUbicacion() {
+  return (
+    <svg width="16" height="16" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+      <path
+        d="M7 12.6s4.2-3.7 4.2-7A4.2 4.2 0 1 0 2.8 5.6c0 3.3 4.2 7 4.2 7Z"
+        stroke="currentColor"
+        strokeWidth="1.3"
+        strokeLinejoin="round"
+      />
+      <circle cx="7" cy="5.6" r="1.5" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
+function IconoFlecha() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 15 15" fill="none" aria-hidden="true">
+      <path d="M2.5 7.5h9M8 3.8l3.7 3.7L8 11.2" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconoEscudo() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path d="M9 2.4 14.8 4.5v4.1c0 3.7-2.5 6.1-5.8 7-3.3-.9-5.8-3.3-5.8-7V4.5L9 2.4Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M6.4 9.1l1.8 1.8 3.4-3.7" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+function IconoGrafico() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path d="M3 14.6V3.4M3 14.6h12" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" />
+      <path d="M5.4 12.2V9.4M9 12.2V6.4M12.6 12.2V8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function IconoNegocio() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 18 18" fill="none" aria-hidden="true">
+      <path d="M3 7.5h12v6.3a.8.8 0 0 1-.8.8H3.8a.8.8 0 0 1-.8-.8V7.5Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M2 4.3h14l-1 3.2H3l-1-3.2Z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round" />
+      <path d="M7.4 14.6v-3c0-.4.3-.8.8-.8h1.6c.4 0 .8.4.8.8v3" stroke="currentColor" strokeWidth="1.3" />
+    </svg>
+  );
+}
+
+const BENEFICIOS = [
+  {
+    icono: IconoEscudo,
+    titulo: "Control",
+    texto: "Mayor seguridad en cada operación.",
+  },
+  {
+    icono: IconoGrafico,
+    titulo: "Gestión",
+    texto: "Información en tiempo real para mejores decisiones.",
+  },
+  {
+    icono: IconoNegocio,
+    titulo: "Tu negocio",
+    texto: "Más eficiente, siempre.",
+  },
+];
+
 interface Props {
   onTurnoAbierto: (turno: Turno) => void;
   // User Story 11: mensaje cuando se vuelve aquí porque la sesión de turno expiró o se cerró.
@@ -59,7 +166,11 @@ export function AperturaTurno({ onTurnoAbierto, avisoSesion, onVerDocumentacion 
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [idOperador, setIdOperador] = useState<number | "">("");
   const [idSucursal, setIdSucursal] = useState<number | "">("");
-  const [pin, setPin] = useState("");
+  // El PIN se captura en 4 casillas independientes (La Regla del PIN de Casillas); `pin` sigue
+  // siendo la cadena de 4 dígitos que consume `abrirTurno`, derivada de las casillas.
+  const [casillas, setCasillas] = useState<string[]>(Array(CASILLAS_PIN).fill(""));
+  const pin = casillas.join("");
+  const refsCasillas = useRef<(HTMLInputElement | null)[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [enviando, setEnviando] = useState(false);
   const [ultimaApertura, setUltimaApertura] = useState<string | null>(null);
@@ -98,9 +209,42 @@ export function AperturaTurno({ onTurnoAbierto, avisoSesion, onVerDocumentacion 
       .catch(() => setUltimaApertura(null));
   }, [idSucursal]);
 
-  async function confirmar(evento: React.FormEvent) {
+  function limpiarCasillas() {
+    setCasillas(Array(CASILLAS_PIN).fill(""));
+    refsCasillas.current[0]?.focus();
+  }
+
+  function cambiarCasilla(indice: number, valor: string) {
+    const digito = valor.replace(/\D/g, "").slice(-1);
+    setCasillas((anterior) => {
+      const copia = [...anterior];
+      copia[indice] = digito;
+      return copia;
+    });
+    if (digito && indice < CASILLAS_PIN - 1) refsCasillas.current[indice + 1]?.focus();
+  }
+
+  function teclaCasilla(indice: number, evento: KeyboardEvent<HTMLInputElement>) {
+    if (evento.key === "Backspace" && !casillas[indice] && indice > 0) {
+      refsCasillas.current[indice - 1]?.focus();
+    }
+  }
+
+  function pegarCasillas(indice: number, evento: ClipboardEvent<HTMLInputElement>) {
+    const digitos = evento.clipboardData.getData("text").replace(/\D/g, "").slice(0, CASILLAS_PIN);
+    if (!digitos) return;
     evento.preventDefault();
-    if (idOperador === "" || idSucursal === "" || pin.length !== 4) return;
+    setCasillas((anterior) => {
+      const copia = [...anterior];
+      for (let i = 0; i < digitos.length && indice + i < CASILLAS_PIN; i++) copia[indice + i] = digitos[i];
+      return copia;
+    });
+    refsCasillas.current[Math.min(indice + digitos.length, CASILLAS_PIN - 1)]?.focus();
+  }
+
+  async function confirmar(evento: FormEvent) {
+    evento.preventDefault();
+    if (idOperador === "" || idSucursal === "" || pin.length !== CASILLAS_PIN) return;
     setEnviando(true);
     setError(null);
     try {
@@ -108,128 +252,198 @@ export function AperturaTurno({ onTurnoAbierto, avisoSesion, onVerDocumentacion 
       onTurnoAbierto(turno);
     } catch (e) {
       setError(e instanceof ErrorApi ? e.message : "No se pudo abrir el turno.");
-      setPin("");
+      limpiarCasillas();
     } finally {
       setEnviando(false);
     }
   }
 
+  const pinCompleto = pin.length === CASILLAS_PIN;
+
   return (
     <div className={estilos.contenedor}>
-      {/* Detalle de fondo: las líneas de graduación de un rasero (la tablilla que nivela el
-          grano al ras) — motivo propio de la marca, no decoración genérica. Muy tenue, nunca
-          compite con la tarjeta (La Regla del Hueco que Enseña, extendida). */}
-      <svg className={estilos.trazoFondo} viewBox="0 0 420 420" aria-hidden="true">
-        <g stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-          <line x1="0" y1="48" x2="150" y2="48" />
-          <line x1="0" y1="78" x2="110" y2="78" />
-          <line x1="0" y1="108" x2="190" y2="108" />
-          <line x1="0" y1="138" x2="90" y2="138" />
-          <line x1="0" y1="168" x2="160" y2="168" />
-        </g>
-      </svg>
-      <img className={estilos.aguaMarca} src={marcaMono} alt="" aria-hidden="true" />
+      <section className={estilos.panelBienvenida}>
+        {/* Detalle de fondo: las líneas de graduación de un rasero (la tablilla que nivela el
+            grano al ras) y la marca de agua del logo mono — motivo propio, muy tenue, nunca
+            compite con el contenido (La Regla del Hueco que Enseña, extendida). */}
+        <svg className={estilos.trazoFondo} viewBox="0 0 420 420" aria-hidden="true">
+          <g stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+            <line x1="0" y1="48" x2="150" y2="48" />
+            <line x1="0" y1="78" x2="110" y2="78" />
+            <line x1="0" y1="108" x2="190" y2="108" />
+            <line x1="0" y1="138" x2="90" y2="138" />
+            <line x1="0" y1="168" x2="160" y2="168" />
+          </g>
+        </svg>
+        <img className={estilos.aguaMarca} src={marcaMono} alt="" aria-hidden="true" />
+        <div className={estilos.olaFondo} aria-hidden="true" />
 
-      {/* Marca de sistema: FUERA de la tarjeta, arriba — Rasero es la herramienta detrás de la
-          marca del comercio, no parte de su tarjeta de identidad (La Regla de la Identidad del
-          Comercio). */}
-      <div className={estilos.marcaSistemaFuera}>
-        <img src={marcaSistema} alt="Rasero" width={88} height={22} />
-        <span>Nivela el dato. Decide con criterio.</span>
-      </div>
+        <div className={estilos.marcaSistemaTop}>
+          <img src={marcaSistema} alt="Rasero" width={128} height={32} />
+          <span>Nivela el dato. Decide con criterio.</span>
+        </div>
 
-      <form className={estilos.panel} onSubmit={confirmar}>
-        {/* Filo de Rasero: acento verde estructural en el borde superior de la tarjeta — la
-            tabla que nivela. El verde es identidad de armazón (La Regla de la Sola Voz,
-            formalización v1.5.0), no una acción. */}
-        <div className={estilos.filo} aria-hidden="true" />
-        <header className={estilos.cabecera}>
+        <div className={estilos.contenidoBienvenida}>
           <img className={estilos.logoComercio} src={LOGO_COMERCIO} alt={NOMBRE_COMERCIO ?? "Comercio"} />
-          <p className={estilos.contexto}>
-            {sucursalElegida ? sucursalElegida.nombre : "Elige una sucursal"}
-            {" · "}
-            {CAJA}
-          </p>
-          {ultimaApertura && (
-            <p className={estilos.ultimaApertura}>
-              Última apertura: {ultimaAperturaTexto(ultimaApertura)}
-            </p>
-          )}
-        </header>
 
-        <div className={estilos.campos}>
-          <div className={estilos.campo}>
-            <label className={estilos.etiqueta} htmlFor="operador">
-              Operador
-            </label>
-            <Selector
-              id="operador"
-              value={idOperador}
-              onChange={(e) => setIdOperador(Number(e.target.value))}
-            >
-              {operadores.map((op) => (
-                <option key={op.id_operador} value={op.id_operador}>
-                  {op.nombre}
-                </option>
-              ))}
-            </Selector>
+          <p className={estilos.ubicacion}>
+            <IconoUbicacion />
+            {sucursalElegida ? sucursalElegida.nombre : "Elige una sucursal"}
+            <span className={estilos.pillCaja}>{CAJA}</span>
+          </p>
+
+          <h2 className={estilos.saludo}>¡Bienvenido!</h2>
+          <p className={estilos.subSaludo}>Prepárate para iniciar tu turno en la caja.</p>
+        </div>
+
+        {ultimaApertura && (
+          <p className={estilos.ultimaApertura}>
+            <IconoReloj />
+            Última apertura: {ultimaAperturaTexto(ultimaApertura)}
+          </p>
+        )}
+      </section>
+
+      <section className={estilos.panelFormulario}>
+        <form className={estilos.tarjeta} onSubmit={confirmar}>
+          <div className={estilos.encabezadoTarjeta}>
+            <span className={estilos.acentoVertical} aria-hidden="true" />
+            <div>
+              <h1 className={estilos.tituloTarjeta}>Apertura de turno</h1>
+              <p className={estilos.descripcionTarjeta}>
+                Identifica al operador y confirma tu PIN para comenzar la jornada de caja.
+              </p>
+            </div>
           </div>
 
-          {/* Selector de sucursal SÓLO para el admin; cajero/encargado abren turno en su
-              sucursal fija, ya mostrada en la cabecera de contexto (Principio VI). */}
-          {!sucursalFija && (
+          <div className={estilos.divisor} />
+
+          <div className={estilos.campos}>
             <div className={estilos.campo}>
-              <label className={estilos.etiqueta} htmlFor="sucursal">
-                Sucursal
+              <label className={estilos.etiqueta} htmlFor="operador">
+                <IconoPersona />
+                Operador
               </label>
               <Selector
-                id="sucursal"
-                value={idSucursal}
-                onChange={(e) => setIdSucursal(Number(e.target.value))}
+                id="operador"
+                value={idOperador}
+                onChange={(e) => setIdOperador(Number(e.target.value))}
               >
-                {sucursales.map((s) => (
-                  <option key={s.id_sucursal} value={s.id_sucursal}>
-                    {s.nombre}
+                {operadores.map((op) => (
+                  <option key={op.id_operador} value={op.id_operador}>
+                    {op.nombre}
                   </option>
                 ))}
               </Selector>
             </div>
-          )}
 
-          <div className={estilos.campo}>
-            <label className={estilos.etiqueta} htmlFor="pin">
-              PIN (4 dígitos)
-            </label>
-            <input
-              id="pin"
-              className={estilos.input}
-              type="password"
-              inputMode="numeric"
-              maxLength={4}
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-              autoFocus
-            />
+            {/* Selector de sucursal SÓLO para el admin; cajero/encargado abren turno en su
+                sucursal fija, ya mostrada en el panel de bienvenida (Principio VI). */}
+            {!sucursalFija && (
+              <div className={estilos.campo}>
+                <label className={estilos.etiqueta} htmlFor="sucursal">
+                  <IconoTienda />
+                  Sucursal
+                </label>
+                <Selector
+                  id="sucursal"
+                  value={idSucursal}
+                  onChange={(e) => setIdSucursal(Number(e.target.value))}
+                >
+                  {sucursales.map((s) => (
+                    <option key={s.id_sucursal} value={s.id_sucursal}>
+                      {s.nombre}
+                    </option>
+                  ))}
+                </Selector>
+              </div>
+            )}
+
+            <div className={estilos.campo}>
+              <label className={estilos.etiqueta} id="etiqueta-pin">
+                <IconoCandado />
+                PIN de acceso
+              </label>
+              <div className={estilos.casillasPin} role="group" aria-labelledby="etiqueta-pin">
+                {casillas.map((valor, indice) => (
+                  <input
+                    key={indice}
+                    ref={(el) => {
+                      refsCasillas.current[indice] = el;
+                    }}
+                    className={estilos.casilla}
+                    type="password"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={valor}
+                    onChange={(e) => cambiarCasilla(indice, e.target.value)}
+                    onKeyDown={(e) => teclaCasilla(indice, e)}
+                    onPaste={(e) => pegarCasillas(indice, e)}
+                    autoFocus={indice === 0}
+                    aria-label={`Dígito ${indice + 1} del PIN`}
+                  />
+                ))}
+              </div>
+            </div>
           </div>
+
+          <button
+            className={estilos.boton}
+            type="submit"
+            disabled={enviando || !pinCompleto || idSucursal === ""}
+          >
+            {enviando ? "Verificando…" : "Abrir turno"}
+            {!enviando && <IconoFlecha />}
+          </button>
+
+          {/* Franja de estado: siempre color + forma + texto explícito (nunca solo el color), el
+              mismo criterio que el resto del sistema para comunicar un estado sin ambigüedad. */}
+          {error ? (
+            <p className={estilos.estado}>
+              <span className={`${estilos.punto} ${estilos.puntoCritico}`} aria-hidden="true" />
+              {error}
+            </p>
+          ) : avisoSesion ? (
+            <p className={estilos.estado}>
+              <span className={`${estilos.punto} ${estilos.puntoAtencion}`} aria-hidden="true" />
+              {avisoSesion}
+            </p>
+          ) : pinCompleto ? (
+            <p className={estilos.estado}>
+              <span className={`${estilos.punto} ${estilos.puntoOk}`} aria-hidden="true" />
+              Caja lista para abrir
+            </p>
+          ) : (
+            <p className={estilos.estado}>
+              <span className={`${estilos.punto} ${estilos.puntoNeutro}`} aria-hidden="true" />
+              Completa el PIN para continuar
+            </p>
+          )}
+        </form>
+
+        <div className={estilos.pie}>
+          {NOMBRE_COMERCIO && <p className={estilos.pieComercio}>{NOMBRE_COMERCIO}</p>}
+          {onVerDocumentacion && (
+            <button type="button" className={estilos.enlaceDoc} onClick={onVerDocumentacion}>
+              Documentación del sistema
+            </button>
+          )}
         </div>
+      </section>
 
-        {!error && avisoSesion && <p className={estilos.error}>{avisoSesion}</p>}
-        {error && <p className={estilos.error}>{error}</p>}
-
-        <button
-          className={estilos.boton}
-          type="submit"
-          disabled={enviando || pin.length !== 4 || idSucursal === ""}
-        >
-          {enviando ? "Verificando…" : "Abrir turno"}
-        </button>
-      </form>
-      {NOMBRE_COMERCIO && <p className={estilos.pieComercio}>{NOMBRE_COMERCIO}</p>}
-      {onVerDocumentacion && (
-        <button type="button" className={estilos.enlaceDoc} onClick={onVerDocumentacion}>
-          Documentación del sistema
-        </button>
-      )}
+      <aside className={estilos.panelBeneficios} aria-label="Por qué Rasero">
+        {BENEFICIOS.map(({ icono: Icono, titulo, texto }) => (
+          <div className={estilos.beneficio} key={titulo}>
+            <span className={estilos.iconoBeneficio}>
+              <Icono />
+            </span>
+            <div>
+              <p className={estilos.tituloBeneficio}>{titulo}</p>
+              <p className={estilos.textoBeneficio}>{texto}</p>
+            </div>
+          </div>
+        ))}
+      </aside>
     </div>
   );
 }
