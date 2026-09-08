@@ -61,16 +61,16 @@ de IVA y del formateo del secuencial. Sin pruebas de interfaz.
   `subtotal + iva == total`; "Consumidor Final" sin cliente; identificado con cédula; idempotencia
   (una fila); correlativo sin huecos por sucursal (Escenario 4); `venta`/`renglon_venta` sin
   cambios (SC-005).
-- [ ] T012 [US1] `frontend/src/servicios/facturas.ts`: `generarFactura(idVenta)`,
+- [X] T012 [US1] `frontend/src/servicios/facturas.ts`: `generarFactura(idVenta)`,
   `obtenerFacturasDeVenta(idVenta)`.
-- [ ] T013 [US1] `frontend/src/componentes/FacturaSimulada.tsx`: render del documento (emisor,
+- [X] T013 [US1] `frontend/src/componentes/FacturaSimulada.tsx`: render del documento (emisor,
   secuencial, comprador, tabla de renglones, subtotal/IVA/total, `medio_pago`) con el **aviso de
   simulación destacado** (FR-019), registro de Operación, sin Verde Rasero.
-- [ ] T014 [US1] `frontend/src/pantallas/Venta.tsx`: en `cobrar()`, tras `registrarVenta`, llamar
+- [X] T014 [US1] `frontend/src/pantallas/Venta.tsx`: en `cobrar()`, tras `registrarVenta`, llamar
   `generarFactura(venta.id_venta).catch(...)` **sin bloquear** (mismo patrón que
   `registrarVisita`/`registrarRedencion`). En la vista de "venta registrada": mostrar
   `<FacturaSimulada>` si se generó, o un botón "Generar factura" si falló (Escenario 5).
-- [ ] T015 [US1] `DESIGN.md`: enmienda MENOR — regla "Presentación de documento formal" (bloque de
+- [X] T015 [US1] `DESIGN.md`: enmienda MENOR — regla "Presentación de documento formal" (bloque de
   documento con tratamiento propio + aviso de simulación destacado). No es enmienda
   constitucional (aditiva a DESIGN.md, misma clase que las specs anteriores).
 
@@ -78,42 +78,42 @@ de IVA y del formateo del secuencial. Sin pruebas de interfaz.
 
 ## Fase 3 — User Story 2: Ver / regenerar (P2)
 
-- [ ] T016 [US2] `frontend/src/componentes/DocumentoImprimible.tsx`: envuelve `<FacturaSimulada>`
+- [X] T016 [US2] `frontend/src/componentes/DocumentoImprimible.tsx`: envuelve `<FacturaSimulada>`
   en una vista con `window.print()` ("Ver como documento", FR-014). Sin PDF de servidor.
-- [ ] T017 [US2] `Venta.tsx` / vista de venta consultada: botón "Ver como documento" y, si no hay
+- [X] T017 [US2] `Venta.tsx` / vista de venta consultada: botón "Ver como documento" y, si no hay
   factura, "Generar factura" (reusa T012).
-- [ ] T018 [US2] Integración (Escenario 6 de quickstart): regenerar la factura de una venta
+- [X] T018 [US2] Integración (Escenario 6 de quickstart): regenerar la factura de una venta
   antigua; segunda llamada devuelve la misma; una factura emitida no cambia al releerla (FR-013).
 
 ## Fase 4 — User Story 3: Anulación → nota de crédito (P3)
 
-- [ ] T019 [US3] `servicios/facturacion.py`: `emitir_nota_credito(sesion, *, id_venta)`. Exige
+- [X] T019 [US3] `servicios/facturacion.py`: `emitir_nota_credito(sesion, *, id_venta)`. Exige
   que la `venta` esté anulada en 001 (409 si no). Si tiene factura `emitida`: la marca `anulada`,
   crea `nota_credito` con `id_factura_referida`, correlativo propio de `nota_credito`, totales que
   revierten. Si no hay factura: no hace nada (204, FR-016). Idempotente (FR-017).
-- [ ] T020 [US3] `api/facturas.py`: `POST /facturas/nota-credito/{id_venta}` (201/200/204/409).
-- [ ] T021 [US3] `Venta.tsx`: al anular (tras `anularVenta` de 001), llamar
+- [X] T020 [US3] `api/facturas.py`: `POST /facturas/nota-credito/{id_venta}` (201/200/204/409).
+- [X] T021 [US3] `Venta.tsx`: al anular (tras `anularVenta` de 001), llamar
   `emitirNotaCredito(venta.id_venta)` sin bloquear; mostrar la factura anulada + la nota de
   crédito en la vista de venta anulada.
-- [ ] T022 [US3] Integración (Escenarios 8, 9 de quickstart): anular con factura → nota de
+- [X] T022 [US3] Integración (Escenarios 8, 9 de quickstart): anular con factura → nota de
   crédito que la referencia + factura `anulada`; anular sin factura → 204; `venta`/
   `anulacion_venta` de 001 sin cambios.
 
 ## Fase 5 — Verificación y cierre
 
-- [ ] T023 Auditoría de solo lectura (SC-005): `grep` sobre `servicios/facturacion.py` — cero
+- [X] T023 Auditoría de solo lectura (SC-005): `grep` sobre `servicios/facturacion.py` — cero
   `INSERT`/`UPDATE`/`DELETE` sobre `venta`, `renglon_venta`, `cliente`, `visita`; sólo `SELECT`.
-- [ ] T024 Auditoría de datos de pago (FR-020): ninguna factura contiene PAN, "últimos 4", ni
+- [X] T024 Auditoría de datos de pago (FR-020): ninguna factura contiene PAN, "últimos 4", ni
   ningún dato de instrumento — sólo `medio_pago` como etiqueta.
-- [ ] T025 Auditoría de literales (FR-021): "Despensa Los Ríos", el RUC real y los nombres de
+- [X] T025 Auditoría de literales (FR-021): "Despensa Los Ríos", el RUC real y los nombres de
   sucursales no aparecen en código, config ni identificador — sólo como valor de fila / valor de
   variable de entorno de un despliegue.
-- [ ] T026 Auditoría de aviso de simulación (SC-006): toda respuesta `Factura` y toda superficie
+- [X] T026 Auditoría de aviso de simulación (SC-006): toda respuesta `Factura` y toda superficie
   del frontend que muestra un documento incluye `aviso_simulacion` visible.
-- [ ] T027 Suite completa `pytest tests` en verde (contrato + integración del flujo + unidad de
+- [X] T027 Suite completa `pytest tests` en verde (contrato + integración del flujo + unidad de
   dominio). Frontend `tsc -b` + `eslint .` + `vite build` en verde.
-- [ ] T028 Ejecutar los 13 escenarios de `quickstart.md` de extremo a extremo.
-- [ ] T029 Registrar la enmienda v2.7.0 en el historial de la constitución (ya hecha) y anotar
+- [X] T028 Ejecutar los 13 escenarios de `quickstart.md` de extremo a extremo.
+- [X] T029 Registrar la enmienda v2.7.0 en el historial de la constitución (ya hecha) y anotar
   009 en el conteo de entidades por módulo. Registrar la enmienda MENOR de DESIGN.md (regla de
   documento formal).
 

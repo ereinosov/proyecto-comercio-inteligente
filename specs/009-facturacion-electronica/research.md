@@ -123,3 +123,25 @@ definido para no perderse.
 **Decisión**: `0013` crea la tabla vacía. Las ventas ya cobradas antes de 009 no tienen factura;
 se puede generar bajo demanda (`POST /facturas {id_venta}`) para cualquiera de ellas. `downgrade`
 elimina la tabla — no se pierde ningún dato de negocio (la factura es derivada de la venta).
+
+## 9. `medio_pago`: etiqueta derivada de la venta, nunca un dato de instrumento (análisis BAJO #1)
+
+**Decisión**: `medio_pago` se deriva de `venta.referencia_terminal_pago` con una heurística
+binaria: **referencia nula → `"efectivo"`; referencia no nula → `"tarjeta"`**. Es una **etiqueta
+de categoría**, nunca un dato del instrumento (ni PAN, ni "últimos 4", ni token — FR-020,
+Principio IV). Se calcula en `facturacion._medio_pago(venta)` en el momento de generar la
+factura y se congela como snapshot en la fila.
+
+**Razón**: 001 no tiene hoy un campo explícito de "método de pago" en `venta`; lo único que
+distingue una venta con datáfono de una en efectivo es la presencia de
+`referencia_terminal_pago` (que 007 usa para su bitácora). La factura ecuatoriana lista un medio
+de pago, así que 009 necesita *algún* valor; esta heurística es la inferencia más conservadora
+con lo que 001 ya guarda, y su error máximo (una venta con datáfono sin referencia capturada
+saldría como "efectivo") no afecta ningún total ni ningún flujo — es un rótulo informativo en un
+documento declarado de demostración. No se añade ningún campo a `venta` (sería un cambio de
+esquema de otro módulo, fuera de alcance y contra Propiedad de Datos).
+
+**Alternativa descartada**: dejar `medio_pago` en `null` cuando no hay certeza. Se descartó
+porque la factura siempre muestra la fila y un "—" permanente comunica menos que la mejor
+inferencia disponible; el `null` queda reservado para notas de crédito heredando el valor de su
+factura de origen.
