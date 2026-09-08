@@ -13,7 +13,7 @@ from sqlalchemy.orm import Session
 
 from rasero.persistencia.sesion import obtener_sesion
 from rasero.seguridad import exige_rol
-from rasero.servicios import reportes_comparativo, reportes_tendencia
+from rasero.servicios import reportes_comparativo, reportes_tablero, reportes_tendencia
 
 router = APIRouter(
     tags=["reportes"],
@@ -62,3 +62,11 @@ def tendencia(
         periodos=periodos,
         actualizar=actualizar,
     )
+
+
+@router.get("/tablero")
+def tablero(
+    actualizar: bool = False,
+    sesion: Session = Depends(obtener_sesion),
+) -> dict:
+    return reportes_tablero.tablero(sesion, actualizar=actualizar)

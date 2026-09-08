@@ -134,6 +134,15 @@ funcionalidad" (Assumption).
 arbitrario recalcularía sin que nada haya cambiado o serviría datos viejos sin avisar; el botón
 explícito es honesto.
 
+**Detalle de la tendencia**: el `UNIQUE` de `agregado_reporte` es `(tipo, ambito_sucursal,
+periodo_inicio, periodo_fin, granularidad)` — no distingue el *indicador* ni el *producto* de una
+tendencia. En vez de ampliar el esquema con dos columnas más (o de plegar el indicador en
+`tipo`, que rompería el `CHECK`), el indicador+producto viajan dentro de
+`contenido["_clave"]`; al leer, si `_clave` no coincide con lo pedido se trata como fallo de
+caché y se sobrescribe (last-writer-wins por clave de período). Aceptable: cada gráfico de la
+pantalla pide un indicador a la vez, así que el trasiego real es mínimo. El comparativo y el
+tablero no tienen este matiz (una sola forma por clave de período).
+
 ## 8. Recálculo de segmentos: por lote, disparado por persona, idempotente
 
 **Decisión**: `POST /reportes/segmentos/recalculo` ejecuta el clustering completo, reemplaza

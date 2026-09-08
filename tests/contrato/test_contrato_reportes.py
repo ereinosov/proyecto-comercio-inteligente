@@ -71,3 +71,18 @@ def test_tendencia_indicador_desconocido_no_500():
     )
     assert r.status_code == 200
     assert r.json()["disponible"] is False
+
+
+def test_tablero_sin_token_da_401():
+    assert cliente.get("/reportes/tablero").status_code == 401
+
+
+def test_tablero_forma_del_contrato():
+    r = cliente.get("/reportes/tablero", headers=_CAB_ENC)
+    assert r.status_code == 200
+    cuerpo = r.json()
+    assert "tarjetas" in cuerpo and "instante_calculo" in cuerpo
+    for t in cuerpo["tarjetas"]:
+        assert {"modulo", "titulo", "periodo_referencia", "cifras", "sin_datos"} <= set(t)
+        for c in t["cifras"]:
+            assert {"etiqueta", "valor", "atencion"} <= set(c)

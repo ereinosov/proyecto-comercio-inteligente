@@ -90,12 +90,12 @@ patrones, k > n). Sin pruebas de interfaz, maquetación ni componentes visuales.
 
 ## Fase 4 — User Story 3: Tablero de KPIs (P2)
 
-- [ ] T019 [US3] `backend/rasero/servicios/reportes_tablero.py`: `tablero(sesion) -> dict`. Una
+- [X] T019 [US3] `backend/rasero/servicios/reportes_tablero.py`: `tablero(sesion) -> dict`. Una
   tarjeta por módulo, cada una con su `periodo_referencia` propio (FR-014); cifras de los
   servicios de origen (001/002/003/005/006/007); `atencion` según umbrales de
   `config/reportes.py` (FR-017); `sin_datos` + razón donde no hay base (FR-016).
-- [ ] T020 [US3] `api/reportes.py`: `GET /reportes/tablero` conforme al contrato.
-- [ ] T021 [US3] Contrato (parte tablero) + integración `tests/integracion/test_reportes_tablero.py`
+- [X] T020 [US3] `api/reportes.py`: `GET /reportes/tablero` conforme al contrato.
+- [X] T021 [US3] Contrato (parte tablero) + integración `tests/integracion/test_reportes_tablero.py`
   (Escenarios 5 y 6): cada cifra == lo que reporta su módulo; períodos por tarjeta; datos
   insuficientes → razón, nunca "0".
 
