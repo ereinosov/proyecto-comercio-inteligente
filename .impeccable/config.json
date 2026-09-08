@@ -37,7 +37,7 @@
           "frontend/src/pantallas/Documentacion.module.css"
         ],
         "createdAt": "2026-09-08T05:07:51.119Z",
-        "reason": "demo-only doc surface: .nota reuses the sanctioned FacturaSimulada 'aviso de simulación' pattern (atención left border for scope-limitation notes); .cita is a standard blockquote bar in neutral --color-borde for the verbatim professor quote"
+        "reason": "pre-existing design system: .cita (cita textual del enunciado) and .nota (aviso, mismo criterio que FacturaSimulada) predate this change; documented in the file header. Not introduced by the DB-model/scope edit."
       }
     ]
   }
