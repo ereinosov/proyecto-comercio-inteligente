@@ -1762,6 +1762,174 @@ export function Documentacion({ onVolver }: Props) {
               (dos registros «Operación» / «Análisis», paleta de comercio físico, cero sombras,
               tres portadores de incertidumbre) como reglas con nombre.
             </P>
+
+            <H3>Cómo se creó cada spec, módulo por módulo</H3>
+            <P>
+              El ciclo de arriba no se corrió una vez para todo el sistema: se corrió{" "}
+              <F>una vez completa por módulo</F>, en orden (001 primero, 009 al final), porque
+              cada módulo declara sus propias entidades y los siguientes solo las <F>consultan</F>{" "}
+              (tabla de propiedad de datos de la constitución). Para un módulo dado, el paso a
+              paso real fue:
+            </P>
+            <ol className={estilos.lista}>
+              <li>
+                <F>/speckit-specify «descripción del módulo en lenguaje natural»</F> — a partir de
+                un fragmento del enunciado ofuscado del docente (ver sección 3), la IA redacta{" "}
+                <C>specs/00X-módulo/spec.md</C>: las user stories priorizadas (P1 = mínimo
+                entregable) con sus escenarios Given/When/Then y los requisitos funcionales
+                numerados (<C>FR-001</C>, <C>FR-002</C>…).
+              </li>
+              <li>
+                <F>/speckit-clarify</F> — la IA relee ese spec buscando ambigüedad real (nunca más
+                de 5 preguntas) y las respuestas del propietario del producto quedan grabadas,
+                textuales, en la sección «Clarifications» del propio <C>spec.md</C> — nunca en un
+                chat que se pierde.
+              </li>
+              <li>
+                <F>/speckit-plan</F> — con el spec ya cerrado, la IA propone <C>plan.md</C> (
+                arquitectura y decisiones técnicas), <C>data-model.md</C> (las tablas nuevas de ese
+                módulo) y <C>research.md</C> (una entrada por cada duda técnica, con la alternativa
+                descartada y por qué). Cada decisión pasa un «Constitution Check» explícito.
+              </li>
+              <li>
+                <F>/speckit-tasks</F> — la IA descompone el plan en <C>tasks.md</C>: una lista
+                ordenada por dependencias, agrupada por user story, con las tareas paralelizables
+                marcadas — para poder implementar P1 completo y ya tener algo entregable antes de
+                tocar P2.
+              </li>
+              <li>
+                <F>/speckit-implement</F> — la IA escribe el código seguido de <C>tasks.md</C>,
+                tarea por tarea (dominio → persistencia → servicios → API → frontend), y las
+                pruebas que exige el Principio III antes de dar una tarea por cerrada.
+              </li>
+              <li>
+                <F>/speckit-analyze</F> y <F>/speckit-converge</F> — al terminar, la IA audita que{" "}
+                <C>spec.md</C>, <C>plan.md</C>, <C>tasks.md</C> y el código sigan siendo el mismo
+                sistema (nada se implementó sin spec, nada del spec quedó sin implementar) y cierra
+                cualquier brecha real contra el código.
+              </li>
+            </ol>
+            <P>
+              La evidencia de cada paso queda en el repositorio, no solo en esta pantalla:{" "}
+              <C>specs/00X-módulo/</C> tiene siempre <C>spec.md</C>, <C>plan.md</C>,{" "}
+              <C>research.md</C>, <C>data-model.md</C>, <C>tasks.md</C> y un <C>quickstart.md</C>{" "}
+              (cómo probar manualmente esa historia de usuario ya implementada).
+            </P>
+
+            <H3>Qué se especificó en cada módulo</H3>
+            <P>
+              Lo que sigue son las user stories reales de cada <C>spec.md</C>, en su orden de
+              prioridad (P1 = la que por sí sola ya seria un entregable útil) — no un resumen
+              inventado después, sino lo que la IA redactó y el propietario aprobó antes de que se
+              escribiera una sola línea de código de ese módulo.
+            </P>
+            <Tabla
+              cabeceras={["Módulo", "User stories especificadas (orden de prioridad)", "FR"]}
+              filas={[
+                [
+                  "001 · Core",
+                  <ul className={estilos.lista}>
+                    <li>Registrar una venta en caja</li>
+                    <li>Recibir mercancía del proveedor en lotes</li>
+                    <li>Registrar una consulta no atendida</li>
+                    <li>Comparar el precio propio contra la competencia</li>
+                    <li>Cuadrar el inventario con un conteo físico</li>
+                    <li>Traspasar mercancía entre las dos sucursales</li>
+                    <li>Ver el capital inmovilizado</li>
+                    <li>Sincronizar lo trabajado sin conexión</li>
+                    <li>Corregir el carrito antes de cobrar</li>
+                    <li>Roles de operador, sucursal fija y autorización centralizada</li>
+                  </ul>,
+                  "83",
+                ],
+                [
+                  "002 · Clientes",
+                  <ul className={estilos.lista}>
+                    <li>Mantener el catálogo de clientes y su historial de visitas</li>
+                    <li>Medir el valor real de cada cliente</li>
+                    <li>Detectar señales de fuga silenciosa por cliente</li>
+                    <li>Identificar cliente por cédula o RUC para evitar duplicados</li>
+                    <li>Visualizar la curva de fuga por segmento</li>
+                  </ul>,
+                  "20",
+                ],
+                [
+                  "003 · Precios",
+                  <ul className={estilos.lista}>
+                    <li>Calcular el margen real de un producto</li>
+                    <li>Clasificar el rol comercial de un producto</li>
+                    <li>Sugerir precio de venta usando margen, rol y competencia</li>
+                    <li>Sugerir colocación en zona de exhibición</li>
+                    <li>Visualizar el margen real por producto</li>
+                  </ul>,
+                  "25",
+                ],
+                [
+                  "004 · Pronóstico",
+                  <ul className={estilos.lista}>
+                    <li>Descensurar la demanda por quiebre de stock</li>
+                    <li>Validar la descensura contra datos sintéticos con demanda latente conocida</li>
+                    <li>Generar el pronóstico de demanda a partir de la serie corregida</li>
+                    <li>Corregir la serie por el precio vigente en cada período histórico</li>
+                    <li>Neutralizar los períodos con promoción activa</li>
+                    <li>Declarar sustitutos y señalar demanda inflada por quiebre de un sustituto</li>
+                    <li>Visualizar la demanda pronosticada vs. la histórica censurada</li>
+                  </ul>,
+                  "43",
+                ],
+                [
+                  "005 · Promociones",
+                  <ul className={estilos.lista}>
+                    <li>Generar el cupón por fecha fija (cumpleaños)</li>
+                    <li>Empujar la recompra con reserva de precio a un cliente en su intervalo esperado</li>
+                    <li>Medir la reactivación de clientes inactivos contra un grupo de control</li>
+                    <li>Exponer la marca de «promoción activa» para el pronóstico de demanda</li>
+                    <li>Visualizar el resultado del experimento de reactivación</li>
+                  </ul>,
+                  "42",
+                ],
+                [
+                  "006 · Caja y fraude",
+                  <ul className={estilos.lista}>
+                    <li>Arquear la caja al cierre de cada turno</li>
+                    <li>Clasificar la causa de una diferencia de conteo físico como merma</li>
+                    <li>Detectar el sub-registro cruzando inventario contra ventas por operador</li>
+                    <li>Gestionar las anomalías de caja sin explicación</li>
+                    <li>Visualizar las mermas por causa en el tiempo</li>
+                  </ul>,
+                  "45",
+                ],
+                [
+                  "007 · Pagos",
+                  <ul className={estilos.lista}>
+                    <li>Conocer y mantener la cobertura de medios de pago por sucursal</li>
+                    <li>Registrar las terminales de pago y vigilar su firmware y su exposición a clonación</li>
+                    <li>Tokenizar los datos de pago de cada cobro con tarjeta</li>
+                    <li>Auditar la actividad de pagos en una bitácora consultable</li>
+                  </ul>,
+                  "37",
+                ],
+                [
+                  "008 · Reportes",
+                  <ul className={estilos.lista}>
+                    <li>Comparar las dos sucursales en un vistazo</li>
+                    <li>Ver la tendencia de un indicador por semana o por mes</li>
+                    <li>Leer el tablero de KPIs consolidados</li>
+                    <li>Segmentar los clientes por similitud</li>
+                  </ul>,
+                  "31",
+                ],
+                [
+                  "009 · Facturación",
+                  <ul className={estilos.lista}>
+                    <li>Recibir la factura simulada al terminar una venta</li>
+                    <li>Volver a ver o regenerar la factura de una venta</li>
+                    <li>Anular la factura cuando se anula la venta</li>
+                  </ul>,
+                  "21",
+                ],
+              ]}
+            />
           </section>
 
           {/* ─── 12 · Glosario ────────────────────────────────────────────────────────────── */}
