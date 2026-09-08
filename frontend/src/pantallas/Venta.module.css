@@ -346,6 +346,36 @@
   gap: var(--espacio-3);
 }
 
+/* Medio de pago (enmienda v2.7.2): entre el total y Cobrar, se empuja a la derecha para quedar
+   junto al botón — es lo último que confirma el cajero antes de cobrar. `margin-left: auto`
+   toma el hueco que dejaría `justify-content: space-between`. */
+.medioPago {
+  margin-left: auto;
+  display: inline-flex;
+  flex-direction: column;
+  gap: var(--espacio-1);
+}
+
+.medioPagoEtiqueta {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-xs);
+  color: var(--color-tinta-suave);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.selectMedio {
+  min-height: var(--alto-control-sm);
+  box-sizing: border-box;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-base);
+  color: var(--color-tinta);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 0 var(--espacio-3);
+}
+
 /* Cifra focal de la pantalla — escala `--texto-display`: la cifra que domina la vista. */
 .total {
   font-size: var(--texto-display);

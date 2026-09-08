@@ -43,12 +43,16 @@ const ETIQUETA_MEDIO_PAGO: Record<string, string> = {
   transferencia: "Transferencia bancaria",
   cheque: "Cheque",
   billetera_digital: "Billetera digital",
+  billetera_movil: "Billetera móvil",
   credito_tienda: "Crédito de la tienda",
 };
 
 export function etiquetaMedioPago(valorEnum: string | null | undefined): string {
   if (!valorEnum) return "—";
-  return ETIQUETA_MEDIO_PAGO[valorEnum] ?? valorEnum.replace(/_/g, " ");
+  const clave = valorEnum.toLowerCase();
+  if (ETIQUETA_MEDIO_PAGO[clave]) return ETIQUETA_MEDIO_PAGO[clave];
+  const texto = valorEnum.replace(/_/g, " ").toLowerCase();
+  return texto.charAt(0).toUpperCase() + texto.slice(1);
 }
 
 /** "caja-1" → "Caja 1"; "caja-1" ya humano se deja pasar. */

@@ -36,6 +36,9 @@ export interface Venta {
   id_operador: number;
   id_sucursal: number;
   referencia_terminal_pago: string | null;
+  /** Enmienda v2.7.2: medio de pago elegido por el cliente en el POS (`null` si no se declaró). */
+  id_medio_pago: number | null;
+  medio_pago: string | null;
   instante: string;
   total: string;
   moneda: string;
@@ -52,6 +55,7 @@ export function registrarVenta(datos: {
   clave_idempotencia: string;
   id_turno: number;
   referencia_terminal_pago?: string | null;
+  id_medio_pago?: number | null;
   renglones: RenglonVentaNuevo[];
 }): Promise<Venta> {
   return clienteHttp.post<Venta>("/ventas", datos);

@@ -1,6 +1,50 @@
 <!--
 INFORME DE IMPACTO DE SINCRONIZACIÓN
 ====================================
+Cambio de versión: 2.7.1 → 2.7.2
+Tipo de cambio: MENOR — cambio de esquema ADITIVO PURO sobre `venta` (001) + actualización
+de la frontera de "factura" (009). NO redefine ningún principio.
+
+Motivo: una auditoría end-to-end del POS encontró que el sistema no registraba con qué
+pagaba el cliente. La `venta` sólo llevaba `referencia_terminal_pago` (una cadena opaca que
+el frontend nunca poblaba) y la factura simulada de 009 deducía el medio con una heurística
+de dos valores. El enunciado del docente no PIDE registrar el medio por transacción (la
+Lectura Crítica n.º 4 lo trata como métrica de cobertura por sucursal), pero la factura ya
+mostraba el campo: se decide capturarlo de verdad en el POS.
+
+Contenido añadido:
+  - `venta` gana `id_medio_pago` (FK → `medio_pago` de 007, NULL-able, sin default). Es la
+    CATEGORÍA del pago que el cliente elige en la pantalla de Venta, nunca un dato de
+    instrumento (PAN/CVV/banda siguen fuera de todo módulo, Principio IV).
+  - Migración `0014_venta_medio_pago`, aditiva y reversible. `NULL` en toda venta anterior.
+  - La factura de 009 usa el nombre del medio declarado y cae a su heurística previa cuando
+    la venta no lo trae. 009 no cambia su esquema.
+
+Principios modificados: ninguno. `venta` es de 001; el cambio de esquema se hace en su módulo
+propietario (regla de Propiedad de Datos). El catálogo `medio_pago` es de 007 y sólo se
+consulta.
+Secciones añadidas / eliminadas: ninguna. Se actualiza la entrada de 001 en "Propiedad de
+Datos y Nomenclatura" (nota de cambio de esquema, igual que v2.3.0) y la frontera de
+"factura".
+
+Puerta de sincronización de enmiendas (v2.2.0): toca la nota de esquema de una entrada de la
+tabla de Propiedad de Datos y una frontera, no el texto de ningún principio. Artefactos
+afectados: `001-core-ventas-inventario` (modelo `Venta`, `api/ventas.py`, `servicios/ventas.py`,
+`frontend` pantalla de Venta) y `009-facturacion-electronica` (`servicios/facturacion.py`).
+Tests: `tests/integracion/test_facturacion_flujo.py`. No se barren las citas de 002–008.
+`DESIGN.md` NO cambia (el selector de medio reutiliza el patrón de `<select>` ya presente en
+Venta).
+
+Historial: 2.7.2 (2026-09-08) — esta enmienda: `venta` gana `id_medio_pago` (FK NULL-able →
+`medio_pago` de 007) para registrar el medio de pago que elige el cliente en el POS. Migración
+0014, aditiva y reversible. La factura de 009 lo usa cuando existe. Sin redefinir principios.
+
+TODOs pendientes: ninguno.
+-->
+
+<!--
+INFORME DE IMPACTO DE SINCRONIZACIÓN
+====================================
 Cambio de versión: 2.7.0 → 2.7.1
 Tipo de cambio: PARCHE — corrige una contradicción interna, no redefine ninguna regla.
 
@@ -1030,7 +1074,13 @@ una enmienda la corrija.
   sobre una entidad ya certificada de 001: la migración de Alembic convierte los datos
   existentes con la regla `es_encargado = FALSE → rol = 'cajero'` y `es_encargado = TRUE → rol
   = 'encargado'`, sin volver `admin` a ningún operador automáticamente, y lleva su procedimiento
-  de reversión documentado. Ver Principio VI y la frontera de "autorización" más abajo.)
+  de reversión documentado. Ver Principio VI y la frontera de "autorización" más abajo.
+  La enmienda **v2.7.2** hace un segundo cambio de esquema, ADITIVO PURO, sobre `venta`: gana
+  `id_medio_pago` (FK → `medio_pago` de 007, NULL-able, sin default) para guardar la CATEGORÍA
+  del pago que el cliente elige en el POS —efectivo, tarjeta, transferencia…—, nunca un dato de
+  instrumento (el PAN/CVV siguen fuera de todo módulo). `NULL` en toda venta anterior; la
+  factura de 009 usa el nombre del medio cuando la venta lo declara y cae a su heurística
+  previa cuando es `NULL`. Migración `0014`, con reversión documentada.)
 - **002-clientes-fidelizacion**: `cliente`, `visita`, `intervalo_compra`, `senal_fuga`.
 - **003-precios-margenes**: `margen_calculado`, `rol_producto`, `sugerencia_precio`,
   `sugerencia_colocacion`. (`costo_producto` retirado y `sugerencia_precio` añadida por la
@@ -1139,7 +1189,10 @@ Fronteras entre funcionalidades adyacentes, donde la propiedad es fácil de conf
   sólo se pierde la factura de ese cobro, que puede regenerarse. El **IVA** y la **razón social /
   RUC** son configuración del despliegue, no literales de código (mismo patrón que
   `VITE_LOGO_COMERCIO`). Una `factura_simulada` NO contiene datos de pago (PAN, CVV, banda): a lo
-  sumo el medio como etiqueta ("efectivo", "tarjeta"). **Simulada** = sin SRI, sin firma, sin XML
+  sumo el medio como etiqueta. Desde la enmienda **v2.7.2** ese medio es el que el cliente eligió
+  en el POS (`venta.id_medio_pago` → nombre del `medio_pago` de 007); si la venta no lo declara
+  (`NULL`), la factura cae a la heurística previa ("con referencia de terminal → tarjeta, sin ella
+  → efectivo"). **Simulada** = sin SRI, sin firma, sin XML
   regulatorio; el sistema no afirma en ninguna parte que la factura tenga validez tributaria.
 - Los **reportes e inteligencia** de 008 son **capa de solo lectura** sobre 001–007: cruzan y
   agregan (`agregado_reporte`) y agrupan clientes por similitud (`segmento_cliente`,
@@ -1317,4 +1370,4 @@ antes de fusionar. Una violación detectada tras la fusión se registra como def
 corrige o se convierte en enmienda; permanecer indefinidamente en incumplimiento tácito
 está PROHIBIDO.
 
-**Versión**: 2.7.1 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-08
+**Versión**: 2.7.2 | **Ratificada**: 2026-09-04 | **Última enmienda**: 2026-09-08

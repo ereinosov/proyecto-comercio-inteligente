@@ -33,6 +33,7 @@ from rasero.persistencia.modelos import (
     AnulacionVenta,
     Cliente,
     FacturaSimulada,
+    MedioPago,
     Producto,
     RenglonVenta,
     Turno,
@@ -136,9 +137,16 @@ def _insertar_con_reintento(sesion: Session, construir, est: str, pto: str, tipo
     raise RuntimeError("no se pudo asignar un secuencial de factura tras varios intentos")
 
 
-def _medio_pago(venta: Venta) -> str:
-    # Heurística (research §5): sin referencia de terminal → efectivo; con referencia → tarjeta.
-    # NUNCA un dato de instrumento de pago, sólo la categoría (FR-020).
+def _medio_pago(sesion: Session, venta: Venta) -> str:
+    # Enmienda v2.7.2: si el POS registró el medio que eligió el cliente (`venta.id_medio_pago`),
+    # se usa el NOMBRE de ese medio del catálogo de 007. Si la venta no lo declara (`NULL` —
+    # ventas antiguas, o un cobro sin selección), se cae a la heurística previa (research §5):
+    # sin referencia de terminal → efectivo; con referencia → tarjeta. NUNCA un dato de
+    # instrumento de pago, sólo la categoría (FR-020).
+    if venta.id_medio_pago is not None:
+        medio = sesion.get(MedioPago, venta.id_medio_pago)
+        if medio is not None:
+            return medio.nombre
     return "tarjeta" if venta.referencia_terminal_pago else "efectivo"
 
 
@@ -196,7 +204,7 @@ def generar_factura(sesion: Session, *, id_venta: int) -> tuple[FacturaSimulada,
     est, pto = ESTABLECIMIENTO_SRI, PUNTO_EMISION_SRI
     emisor, comprador, renglones = _emisor(), _comprador(sesion, id_venta), _renglones(sesion, id_venta)
     fecha = _fecha_emision(sesion, venta)
-    medio = _medio_pago(venta)
+    medio = _medio_pago(sesion, venta)
 
     factura = _insertar_con_reintento(
         sesion,

@@ -280,7 +280,7 @@ export function App() {
 
   return (
     <div className={estilos.aplicacion}>
-      <nav className={estilos.navegacion}>
+      <nav className={estilos.navegacion} data-noprint>
         {/* La Regla de la Marca Persistente (v1.7.0): la herramienta (wordmark Rasero) al
             extremo izquierdo; el "dónde estoy / quién soy" (ícono del comercio + sucursal +
             caja + operador + rol) agrupado al extremo derecho. Extremos opuestos, no compiten. */}

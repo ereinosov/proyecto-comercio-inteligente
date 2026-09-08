@@ -31,12 +31,13 @@ from rasero.servicios.ventas import RenglonEntrada, anular_venta, registrar_vent
 from tests.apoyo import crear_escenario_basico
 
 
-def _cobrar(sesion, esc, renglones):
+def _cobrar(sesion, esc, renglones, *, id_medio_pago=None):
     venta, _c, _a, _l = registrar_venta(
         sesion,
         clave_idempotencia=f"fac-{uuid.uuid4()}",
         id_turno=esc["turno"].id_turno,
         referencia_terminal_pago=None,
+        id_medio_pago=id_medio_pago,
         instante_origen=datetime.now(timezone.utc),
         renglones=renglones,
     )
@@ -71,6 +72,38 @@ def test_factura_al_cobrar_iva_incluido_y_consumidor_final(sesion):
     # Solo lectura sobre 001.
     assert sesion.execute(select(func.count()).select_from(Venta)).scalar_one() == ventas_antes
     assert sesion.execute(select(func.count()).select_from(RenglonVenta)).scalar_one() == renglones_antes
+
+
+def test_medio_pago_de_la_venta_llega_a_la_factura(sesion):
+    """Enmienda v2.7.2: si el POS registró el medio que eligió el cliente, la factura lo muestra
+    por su nombre; sin medio declarado, cae a la heurística previa ("efectivo").
+    """
+    from rasero.persistencia.modelos import MedioPago
+
+    esc = crear_escenario_basico(sesion, existencia_inicial=0)
+    registrar_entrada(sesion, id_sucursal=esc["sucursal"].id_sucursal,
+                      id_producto=esc["producto"].id_producto, cantidad=100,
+                      costo_unitario=Decimal("1.0000"))
+    nombre_medio = f"medio-{uuid.uuid4().hex[:8]}"
+    medio = MedioPago(nombre=nombre_medio, requiere_terminal=False, admite_tokenizacion=False)
+    sesion.add(medio)
+    sesion.flush()
+
+    venta = _cobrar(sesion, esc, [RenglonEntrada(id_producto=esc["producto"].id_producto,
+                                                 cantidad_unidades=4, cantidad_gramos=None)],
+                    id_medio_pago=medio.id_medio_pago)
+    sesion.commit()
+    assert venta.id_medio_pago == medio.id_medio_pago
+
+    factura, _ = generar_factura(sesion, id_venta=venta.id_venta)
+    assert factura_a_respuesta(factura)["medio_pago"] == nombre_medio
+
+    # Sin medio declarado → heurística previa.
+    venta2 = _cobrar(sesion, esc, [RenglonEntrada(id_producto=esc["producto"].id_producto,
+                                                  cantidad_unidades=1, cantidad_gramos=None)])
+    sesion.commit()
+    factura2, _ = generar_factura(sesion, id_venta=venta2.id_venta)
+    assert factura_a_respuesta(factura2)["medio_pago"] == "efectivo"
 
 
 def test_comprador_identificado_con_cedula(sesion):

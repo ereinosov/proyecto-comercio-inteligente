@@ -37,6 +37,7 @@ from rasero.errores import (
 from rasero.persistencia.modelos import (
     AnulacionVenta,
     Lote,
+    MedioPago,
     MovimientoInventario,
     Operador,
     Producto,
@@ -157,6 +158,7 @@ def registrar_venta(
     referencia_terminal_pago: str | None,
     instante_origen: datetime | None,
     renglones: list[RenglonEntrada],
+    id_medio_pago: int | None = None,
 ) -> tuple[Venta, bool, list[dict], dict[int, list[dict]]]:
     """Devuelve (venta, creada_ahora, advertencias, lotes_consumidos_por_renglon)."""
 
@@ -195,10 +197,22 @@ def registrar_venta(
 
     instante = instante_origen or datetime.now(timezone.utc)
 
+    # El medio de pago es opcional y de sólo lectura sobre el catálogo de 007. Si llega un id
+    # que no existe o está inactivo, se rechaza el cobro con un mensaje de acción correctiva
+    # (consulta determinista a la propia base, no un servicio externo — no la protege el
+    # Principio II, igual que la validación de existencia).
+    if id_medio_pago is not None:
+        medio = sesion.get(MedioPago, id_medio_pago)
+        if medio is None or not medio.activo:
+            raise RenglonInvalido(
+                "El medio de pago seleccionado no está disponible. Elige otro y vuelve a cobrar."
+            )
+
     venta = Venta(
         clave_idempotencia=clave_idempotencia,
         id_turno=id_turno,
         referencia_terminal_pago=referencia_terminal_pago,
+        id_medio_pago=id_medio_pago,
         instante=instante,
         total=Decimal("0.00"),
     )

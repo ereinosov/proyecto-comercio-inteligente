@@ -249,6 +249,13 @@ class Venta(Base):
     clave_idempotencia: Mapped[str] = mapped_column(String, unique=True, nullable=False)
     id_turno: Mapped[int] = mapped_column(ForeignKey("turno.id_turno"), nullable=False)
     referencia_terminal_pago: Mapped[str | None] = mapped_column(String, nullable=True)
+    # Medio de pago que eligió el cliente en el POS (enmienda v2.7.2). Aditivo puro: `NULL` en
+    # toda venta anterior a la enmienda y en cualquier cobro que no lo declare. Es la CATEGORÍA
+    # del pago (efectivo, tarjeta, transferencia…), nunca un dato de instrumento — el PAN/CVV
+    # siguen fuera de todo módulo. FK de sólo lectura al catálogo `medio_pago` de 007.
+    id_medio_pago: Mapped[int | None] = mapped_column(
+        ForeignKey("medio_pago.id_medio_pago"), nullable=True
+    )
     instante: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
     moneda: Mapped[str] = mapped_column(String(3), nullable=False, default="USD")

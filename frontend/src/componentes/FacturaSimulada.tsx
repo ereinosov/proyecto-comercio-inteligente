@@ -6,7 +6,7 @@
  * DESIGN.md v1.9.0 — "Presentación de documento formal".
  */
 
-import { formatearMoneda } from "../utilidades/formato";
+import { etiquetaMedioPago, formatearMoneda } from "../utilidades/formato";
 import type { Factura } from "../servicios/facturas";
 import estilos from "./FacturaSimulada.module.css";
 
@@ -76,7 +76,7 @@ export function FacturaSimulada({ factura }: { factura: Factura }) {
         {factura.medio_pago && (
           <div>
             <dt>Medio de pago</dt>
-            <dd>{factura.medio_pago}</dd>
+            <dd>{etiquetaMedioPago(factura.medio_pago)}</dd>
           </div>
         )}
       </dl>

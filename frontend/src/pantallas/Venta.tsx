@@ -35,6 +35,7 @@ import {
 import { registrarVisita } from "../servicios/clientes";
 import { registrarRedencion } from "../servicios/promociones";
 import { registrarConsultaNoAtendida } from "../servicios/senales";
+import { listarMedios, type MedioPago } from "../servicios/pagos";
 import {
   type Factura,
   emitirNotaCredito,
@@ -50,7 +51,7 @@ import {
 } from "../componentes/AplicarPromocionVenta";
 import { ValorClienteResumen } from "../componentes/ValorClienteResumen";
 import { EstadoVacio } from "../componentes/EstadoVacio";
-import { formatearMoneda } from "../utilidades/formato";
+import { etiquetaMedioPago, formatearMoneda } from "../utilidades/formato";
 import estilos from "./Venta.module.css";
 
 interface RenglonTicket {
@@ -105,6 +106,11 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   const [unidades, setUnidades] = useState("");
   const [kg, setKg] = useState("");
   const [claveIdempotencia, setClaveIdempotencia] = useState(generarClaveIdempotencia());
+  // Enmienda v2.7.2: medio de pago que elige el cliente. Se carga del catálogo de 007
+  // (`GET /pagos/medios`) y por defecto queda en "efectivo". Nunca bloquea el cobro: si el
+  // catálogo no responde, se cobra sin medio declarado y la factura cae a su heurística.
+  const [medios, setMedios] = useState<MedioPago[]>([]);
+  const [idMedioPago, setIdMedioPago] = useState<number | null>(null);
   const [cobrando, setCobrando] = useState(false);
   const [confirmado, setConfirmado] = useState(false);
   const [ventaConfirmada, setVentaConfirmada] = useState<VentaConfirmada | null>(null);
@@ -143,6 +149,17 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
     listarCategorias().then(setCategorias).catch(() => setCategorias([]));
     recargarExistencias();
   }, [turno.id_sucursal, recargarExistencias]);
+
+  useEffect(() => {
+    listarMedios()
+      .then((lista) => {
+        const activos = lista.filter((m) => m.activo);
+        setMedios(activos);
+        const efectivo = activos.find((m) => m.nombre.toLowerCase() === "efectivo");
+        setIdMedioPago(efectivo?.id_medio_pago ?? activos[0]?.id_medio_pago ?? null);
+      })
+      .catch(() => setMedios([]));
+  }, []);
 
   const productoNuevo = productos.find((p) => p.id_producto === idProductoNuevo);
 
@@ -289,9 +306,15 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
     setCobrando(true);
     setError(null);
     try {
-      const cuerpo: { clave_idempotencia: string; id_turno: number; renglones: RenglonVentaNuevo[] } = {
+      const cuerpo: {
+        clave_idempotencia: string;
+        id_turno: number;
+        id_medio_pago?: number | null;
+        renglones: RenglonVentaNuevo[];
+      } = {
         clave_idempotencia: claveIdempotencia,
         id_turno: turno.id_turno,
+        id_medio_pago: idMedioPago,
         renglones: renglones.map((r) => ({
           id_producto: r.producto.id_producto,
           cantidad_unidades: r.cantidadUnidades,
@@ -399,7 +422,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   if (ventaConfirmada) {
     return (
       <div className={estilos.pantallaConfirmada}>
-        <div className={estilos.resumenConfirmado}>
+        <div className={estilos.resumenConfirmado} data-noprint>
           <p className={estilos.etiquetaConfirmado}>
             {ventaConfirmada.anulada ? "Venta anulada" : "Venta registrada"}
           </p>
@@ -441,8 +464,12 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
         <div className={estilos.bloqueFactura}>
           {factura ? (
             <>
-              <FacturaSimulada factura={factura} />
-              {notaCredito && <FacturaSimulada factura={notaCredito} />}
+              {/* Vista previa en pantalla; al imprimir/guardar PDF manda la copia del
+                  documento a pantalla completa de `DocumentoImprimible`, no ésta. */}
+              <div data-noprint>
+                <FacturaSimulada factura={factura} />
+                {notaCredito && <FacturaSimulada factura={notaCredito} />}
+              </div>
               <DocumentoImprimible factura={factura} notaCredito={notaCredito} />
             </>
           ) : generandoFactura ? (
@@ -682,6 +709,23 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
           <span className={estilos.totalEtiqueta}>Total</span>
           <span className={estilos.total}>{formatearMoneda(total)}</span>
         </span>
+        {medios.length > 0 && (
+          <label className={estilos.medioPago}>
+            <span className={estilos.medioPagoEtiqueta}>Medio de pago</span>
+            <select
+              className={estilos.selectMedio}
+              value={idMedioPago ?? ""}
+              onChange={(e) => setIdMedioPago(e.target.value ? Number(e.target.value) : null)}
+              disabled={cobrando || confirmado}
+            >
+              {medios.map((m) => (
+                <option key={m.id_medio_pago} value={m.id_medio_pago}>
+                  {etiquetaMedioPago(m.nombre)}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <Boton
           variante="cobro"
           tamano="lg"

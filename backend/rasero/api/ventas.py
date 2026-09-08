@@ -11,7 +11,14 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session
 
 from rasero.errores import RecursoNoEncontrado
-from rasero.persistencia.modelos import AnulacionVenta, Operador, RenglonVenta, Turno, Venta
+from rasero.persistencia.modelos import (
+    AnulacionVenta,
+    MedioPago,
+    Operador,
+    RenglonVenta,
+    Turno,
+    Venta,
+)
 from rasero.persistencia.sesion import obtener_sesion
 from rasero.seguridad import operador_de_sesion
 from rasero.servicios import ventas as servicio_ventas
@@ -29,6 +36,9 @@ class VentaNueva(BaseModel):
     clave_idempotencia: str = Field(min_length=8)
     id_turno: int
     referencia_terminal_pago: str | None = None
+    # Medio de pago elegido por el cliente en el POS (enmienda v2.7.2). Opcional: una venta sin
+    # medio declarado queda con `NULL` y la factura de 009 cae a su heurística previa.
+    id_medio_pago: int | None = None
     instante_origen: datetime | None = None
     renglones: list[RenglonVentaNuevo] = Field(min_length=1)
 
@@ -63,6 +73,11 @@ def _venta_a_respuesta(
         select(RenglonVenta).where(RenglonVenta.id_venta == venta.id_venta).order_by(RenglonVenta.id_renglon_venta)
     ).scalars().all()
 
+    medio_pago_nombre = None
+    if venta.id_medio_pago is not None:
+        medio = sesion.get(MedioPago, venta.id_medio_pago)
+        medio_pago_nombre = medio.nombre if medio is not None else None
+
     return {
         "id_venta": venta.id_venta,
         "clave_idempotencia": venta.clave_idempotencia,
@@ -70,6 +85,8 @@ def _venta_a_respuesta(
         "id_operador": turno.id_operador,
         "id_sucursal": turno.id_sucursal,
         "referencia_terminal_pago": venta.referencia_terminal_pago,
+        "id_medio_pago": venta.id_medio_pago,
+        "medio_pago": medio_pago_nombre,
         "instante": venta.instante,
         "total": _importe(venta.total),
         "moneda": venta.moneda,
@@ -109,6 +126,7 @@ def registrar_venta(cuerpo: VentaNueva, response: Response, sesion: Session = De
         clave_idempotencia=cuerpo.clave_idempotencia,
         id_turno=cuerpo.id_turno,
         referencia_terminal_pago=cuerpo.referencia_terminal_pago,
+        id_medio_pago=cuerpo.id_medio_pago,
         instante_origen=cuerpo.instante_origen,
         renglones=entradas,
     )
