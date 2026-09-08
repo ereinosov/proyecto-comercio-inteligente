@@ -63,6 +63,36 @@ def test_tablero_tiene_una_tarjeta_por_modulo_y_periodos_propios(sesion):
     assert sesion.execute(select(func.count()).select_from(Venta)).scalar_one() == ventas_antes
 
 
+def test_valor_de_inventario_convierte_granel_de_gramos_a_kg(sesion):
+    """Regresión #3 de la auditoría: `Existencia.cantidad` de un granel está en gramos y
+    `Lote.costo_unitario` es por kg. El "Valor de inventario" del tablero debe dividir entre
+    1000 (SQL `CASE`), no sumar gramos × costo/kg en crudo — el bug inflaba la cifra ×1000.
+    """
+
+    def valor_inv() -> Decimal:
+        r = tablero(sesion, actualizar=True)
+        card = _tarjeta(r, "inventario")
+        return Decimal(
+            next(c["valor"] for c in card["cifras"] if c["etiqueta"] == "Valor de inventario")
+        )
+
+    antes = valor_inv()
+    esc = crear_escenario_basico(sesion, existencia_inicial=0, es_granel=True)
+    registrar_entrada(
+        sesion,
+        id_sucursal=esc["sucursal"].id_sucursal,
+        id_producto=esc["producto"].id_producto,
+        cantidad=50_000,  # 50 kg
+        costo_unitario=Decimal("2.0000"),  # -> 100.00, no 100 000.00
+    )
+    sesion.commit()
+
+    delta = valor_inv() - antes
+    assert Decimal("95") <= delta <= Decimal("105"), (
+        f"delta={delta}; el bug de unidades daría ~100 000"
+    )
+
+
 def test_tarjeta_sin_base_declara_razon_no_cero(sesion):
     # No sembramos nada nuevo relevante; sólo comprobamos la forma de las tarjetas "sin datos".
     r = tablero(sesion, actualizar=True)

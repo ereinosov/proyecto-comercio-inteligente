@@ -25,6 +25,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from rasero.config import caja as cfg
+from rasero.dominio.costo_inventario import valor_existencia
 from rasero.dominio.merma import periodo_entre_conteos, valorar_merma
 from rasero.dominio.seleccion_lote import ordenar_fefo
 from rasero.errores import ErrorCaja
@@ -398,7 +399,7 @@ def alertas_caducidad(
     )
 
     filas = sesion.execute(
-        select(Lote, Producto.nombre)
+        select(Lote, Producto.nombre, Producto.es_granel)
         .join(Producto, Producto.id_producto == Lote.id_producto)
         .where(
             Lote.id_sucursal == id_sucursal,
@@ -409,12 +410,14 @@ def alertas_caducidad(
     ).all()
 
     alertas: list[dict] = []
-    for lote, nombre in filas:
+    for lote, nombre, es_granel in filas:
         restante = existencia_por_lote.get(lote.id_lote, Decimal("0")) or Decimal("0")
         if restante <= 0:
             continue
+        # `restante` de un granel está en gramos y `costo_unitario` por kg: la conversión vive
+        # en `dominio/costo_inventario` (multiplicar en crudo inflaba el valor ×1000).
         valor_en_riesgo = (
-            str((Decimal(restante) * Decimal(lote.costo_unitario)).quantize(Decimal("0.01")))
+            str(valor_existencia(restante, lote.costo_unitario, es_granel=es_granel).quantize(Decimal("0.01")))
             if lote.costo_unitario is not None
             else None
         )

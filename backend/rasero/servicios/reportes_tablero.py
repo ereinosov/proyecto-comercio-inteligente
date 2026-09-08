@@ -9,7 +9,7 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-from sqlalchemy import func, select
+from sqlalchemy import case, func, select
 from sqlalchemy.orm import Session
 
 from rasero.config.reportes import CUOTA_NO_ATENDIDA_ATENCION, MARGEN_SALUDABLE
@@ -23,6 +23,7 @@ from rasero.persistencia.modelos import (
     Lote,
     MargenCalculado,
     Merma,
+    Producto,
     Sucursal,
     Turno,
     Venta,
@@ -119,9 +120,18 @@ def _construir(sesion: Session) -> dict:
                                  razon="003 aún no calculó ningún margen"))
 
     # ── Inventario (001) — a hoy ────────────────────────────────────────────────────────────
+    # `costo_unitario` de un granel es por kilogramo y `Existencia.cantidad` está en gramos:
+    # sin el `/ 1000` el valor de inventario salía inflado ×1000 (misma conversión que
+    # `dominio/costo_inventario`, aquí en SQL porque es un agregado).
+    valor_lote = case(
+        (Producto.es_granel, Existencia.cantidad * Lote.costo_unitario / 1000),
+        else_=Existencia.cantidad * Lote.costo_unitario,
+    )
     valor_inv = sesion.execute(
-        select(func.coalesce(func.sum(Existencia.cantidad * Lote.costo_unitario), 0))
+        select(func.coalesce(func.sum(valor_lote), 0))
+        .select_from(Existencia)
         .join(Lote, Lote.id_lote == Existencia.id_lote)
+        .join(Producto, Producto.id_producto == Existencia.id_producto)
         .where(Existencia.cantidad > 0)
     ).scalar_one()
     n_inmovilizado = len(capital_inmovilizado(sesion))

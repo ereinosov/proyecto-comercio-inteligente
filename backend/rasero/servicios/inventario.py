@@ -24,6 +24,7 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from rasero.configuracion import UMBRAL_GLOBAL_DIAS_INMOVILIZADO
+from rasero.dominio.costo_inventario import valor_existencia
 from rasero.errores import RecursoNoEncontrado, RenglonInvalido
 from rasero.persistencia.modelos import (
     Categoria,
@@ -223,7 +224,12 @@ def capital_inmovilizado(sesion: Session, *, id_sucursal: int | None = None) -> 
     }
 
     consulta = (
-        select(Lote, Categoria.dias_umbral_inmovilizado, Sucursal.zona_horaria)
+        select(
+            Lote,
+            Categoria.dias_umbral_inmovilizado,
+            Sucursal.zona_horaria,
+            Producto.es_granel,
+        )
         .join(Producto, Producto.id_producto == Lote.id_producto)
         .join(Sucursal, Sucursal.id_sucursal == Lote.id_sucursal)
         .join(Categoria, Categoria.id_categoria == Producto.id_categoria, isouter=True)
@@ -233,7 +239,7 @@ def capital_inmovilizado(sesion: Session, *, id_sucursal: int | None = None) -> 
 
     hoy_por_zona: dict[str, date] = {}
     resultado: list[dict] = []
-    for lote, umbral_categoria, zona_horaria in sesion.execute(consulta).all():
+    for lote, umbral_categoria, zona_horaria, es_granel in sesion.execute(consulta).all():
         restante = saldo_por_lote.get(lote.id_lote, Decimal(0))
         if restante <= 0:
             continue
@@ -253,9 +259,13 @@ def capital_inmovilizado(sesion: Session, *, id_sucursal: int | None = None) -> 
 
         # research.md §11: `costo_unitario = 0.00` es el centinela de "sin costo registrado"
         # (el campo es NOT NULL). Esos lotes aparecen como no calculables, nunca con valor cero.
+        # `costo_unitario` de un granel es por kg y `restante` está en gramos: la conversión vive
+        # en `dominio/costo_inventario` (multiplicar en crudo inflaba el valor ×1000).
         calculable = Decimal(lote.costo_unitario) != 0
         valor = (
-            (restante * Decimal(lote.costo_unitario)).quantize(Decimal("0.01"))
+            valor_existencia(restante, lote.costo_unitario, es_granel=es_granel).quantize(
+                Decimal("0.01")
+            )
             if calculable
             else None
         )

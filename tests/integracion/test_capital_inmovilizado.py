@@ -104,6 +104,39 @@ def test_umbral_corto_senala_largo_no_y_categoria_sin_umbral_hereda_el_global(se
     assert por_lote[lote_frescos.id_lote]["valor_calculable"] is True
 
 
+def test_valor_inmovilizado_de_un_granel_convierte_gramos_a_kilogramos(sesion):
+    """Regresión #3 de la auditoría: la `cantidad_restante` de un lote a granel está en gramos y
+    su `costo_unitario` es por kilogramo. 2000 g a 4.00 / kg = 8.00, nunca 8000.00.
+    """
+    suc = _sucursal(sesion)
+    categoria = Categoria(
+        nombre=f"Granel {datetime.now().timestamp()}", dias_umbral_inmovilizado=5
+    )
+    sesion.add(categoria)
+    sesion.flush()
+    prod = Producto(
+        nombre=f"Queso a peso {datetime.now().timestamp()}",
+        id_categoria=categoria.id_categoria,
+        es_granel=True,
+        precio_vigente=Decimal("6.0000"),
+        lleva_caducidad=False,
+    )
+    sesion.add(prod)
+    sesion.flush()
+    lote = _lote_parado(
+        sesion, id_sucursal=suc.id_sucursal, id_producto=prod.id_producto,
+        dias_atras=30, costo="4.0000", cantidad=2000,
+    )
+    sesion.commit()
+
+    fila = next(
+        f for f in cliente.get(f"/capital-inmovilizado?id_sucursal={suc.id_sucursal}").json()
+        if f["id_lote"] == lote.id_lote
+    )
+    assert fila["valor_calculable"] is True
+    assert fila["valor_inmovilizado"] == "8.00"
+
+
 def test_lote_sin_costo_es_no_calculable_nunca_cero(sesion):
     suc = _sucursal(sesion)
     prod = _producto(sesion, dias_umbral=5)

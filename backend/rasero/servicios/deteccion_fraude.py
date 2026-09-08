@@ -33,6 +33,7 @@ from rasero.dominio.indicadores_operador import (
     se_desvia,
     tasa_anulaciones,
 )
+from rasero.dominio.costo_inventario import valor_existencia
 from rasero.dominio.seleccion_lote import ordenar_fefo
 from rasero.errores import ErrorCaja
 from rasero.persistencia.modelos import (
@@ -407,8 +408,13 @@ def cruce_inventario_ventas(
             ).scalars()
         )
         costo = Decimal(ordenar_fefo(lotes)[0].costo_unitario) if lotes else None
+        # `faltante_no_explicado` de un granel está en gramos y `costo_unitario` es por kg:
+        # la conversión vive en `dominio/costo_inventario` (multiplicar en crudo inflaba ×1000).
+        prod = sesion.get(Producto, id_producto)
         valor_estimado = (
-            (faltante_no_explicado * costo).quantize(Decimal("0.01"))
+            valor_existencia(
+                faltante_no_explicado, costo, es_granel=bool(prod and prod.es_granel)
+            ).quantize(Decimal("0.01"))
             if costo is not None
             else None
         )
