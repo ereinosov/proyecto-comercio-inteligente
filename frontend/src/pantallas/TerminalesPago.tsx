@@ -60,6 +60,12 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
   const [errorForm, setErrorForm] = useState<string | null>(null);
   const [confirmado, setConfirmado] = useState<string | null>(null);
 
+  // Actualización de firmware: formulario propio del sistema (registro de Operación), nunca un
+  // `window.prompt()` nativo — no respeta la tipografía, la paleta ni la validación de la app.
+  const [actualizando, setActualizando] = useState<TerminalPago | null>(null);
+  const [nuevaVersion, setNuevaVersion] = useState("");
+  const [guardandoFirmware, setGuardandoFirmware] = useState(false);
+
   function recargar() {
     setCargando(true);
     setError(null);
@@ -94,21 +100,31 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
     }
   }
 
-  async function actualizarFirmware(t: TerminalPago) {
-    const version = window.prompt(
-      `Nueva versión de firmware para ${t.identificador} (actual ${t.version_firmware}):`
-    );
-    if (!version) return;
+  function abrirActualizacion(t: TerminalPago) {
+    setActualizando(t);
+    setNuevaVersion("");
+    setErrorForm(null);
+  }
+
+  async function guardarActualizacionFirmware(evento: FormEvent) {
+    evento.preventDefault();
+    if (!actualizando || !nuevaVersion.trim()) return;
+    setGuardandoFirmware(true);
+    setErrorForm(null);
     try {
-      await registrarActualizacionFirmware(t.id_terminal_pago, {
-        version: version.trim(),
+      await registrarActualizacionFirmware(actualizando.id_terminal_pago, {
+        version: nuevaVersion.trim(),
         fecha: new Date().toISOString().slice(0, 10),
       });
       setConfirmado("Firmware actualizado.");
       setTimeout(() => setConfirmado(null), 1600);
+      setActualizando(null);
+      setNuevaVersion("");
       recargar();
     } catch (e) {
-      setError(e instanceof ErrorApi ? e.message : "No se pudo actualizar el firmware.");
+      setErrorForm(e instanceof ErrorApi ? e.message : "No se pudo actualizar el firmware.");
+    } finally {
+      setGuardandoFirmware(false);
     }
   }
 
@@ -155,6 +171,29 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
         </Boton>
         {confirmado && <span className={estilos.confirmado}>{confirmado}</span>}
       </form>
+      {actualizando && (
+        <form className={estilos.formulario} onSubmit={guardarActualizacionFirmware}>
+          <label className={estilos.campo}>
+            Nueva versión de firmware para {actualizando.identificador} (actual{" "}
+            {actualizando.version_firmware})
+            <input
+              className={estilos.entrada}
+              value={nuevaVersion}
+              onChange={(e) => setNuevaVersion(e.target.value)}
+              placeholder="3.3.0"
+              autoFocus
+              required
+            />
+          </label>
+          <Boton variante="primaria" type="submit" disabled={guardandoFirmware || !nuevaVersion.trim()}>
+            {guardandoFirmware ? "Guardando…" : "Guardar versión"}
+          </Boton>
+          <Boton variante="neutra" type="button" onClick={() => setActualizando(null)}>
+            Cancelar
+          </Boton>
+        </form>
+      )}
+
       {errorForm && <p className={estilos.errorForm}>{errorForm}</p>}
       {error && <p className={estilos.error}>{error}</p>}
 
@@ -195,7 +234,7 @@ export function TerminalesPago({ idSucursal }: { idSucursal: number }) {
                     <Boton
                       variante="fantasma"
                       tamano="sm"
-                      onClick={() => actualizarFirmware(t)}
+                      onClick={() => abrirActualizacion(t)}
                     >
                       Actualizar firmware
                     </Boton>

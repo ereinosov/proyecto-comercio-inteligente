@@ -371,6 +371,7 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
     try {
       await anularVenta(ventaConfirmada.id_venta);
       setVentaConfirmada({ ...ventaConfirmada, anulada: true });
+      recargarExistencias(); // US14: la anulación repone el stock, igual que cobrar lo descuenta.
       // 009: si la venta tenía factura, se emite la nota de crédito que la revierte. No bloquea
       // la anulación (Principio II): si falla, la venta ya quedó anulada en 001.
       emitirNotaCredito(ventaConfirmada.id_venta)
