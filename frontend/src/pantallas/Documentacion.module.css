@@ -240,6 +240,24 @@
   font-weight: var(--peso-fuerte);
 }
 
+/* Modelo de datos: una tabla por entidad, con su nombre y propósito encima. */
+.bloqueTabla {
+  margin: 0 0 var(--espacio-6);
+}
+
+.nombreTabla {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  line-height: var(--lh-normal);
+  color: var(--color-tinta-suave);
+  margin: 0 0 var(--espacio-2);
+}
+
+.nombreTabla .codigo {
+  font-size: var(--texto-sm);
+  color: var(--color-tinta);
+}
+
 /* Diagrama de arquitectura: pila de capas en cajas, sin sombra. */
 .diagrama {
   display: flex;
