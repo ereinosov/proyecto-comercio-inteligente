@@ -39,14 +39,20 @@ from rasero.persistencia.modelos import (
     Sucursal,
     Turno,
 )
-from rasero.persistencia.movimientos import registrar_movimiento
+from rasero.persistencia.movimientos import obtener_existencia_total, registrar_movimiento
 from rasero.persistencia.sesion import SesionLocal
-from rasero.semilla_catalogo import NOMBRE_PRODUCTO_QUIEBRE, SUCURSALES_DEMO
+from rasero.semilla_catalogo import NOMBRE_PRODUCTO_QUIEBRE, SUCURSALES_DEMO, reponer_inventario
 from rasero.semilla_catalogo import sembrar as sembrar_catalogo
 from rasero.servicios.ventas import RenglonEntrada, registrar_venta
 
 _SEMILLA = 20260905
 _DIAS_HISTORIAL = 56
+
+# Cada cuántos días de la simulación el "minorista" reabastece la góndola (ver
+# `semilla_catalogo.reponer_inventario`). Sin esto, las 8 semanas de venta agotan el catálogo
+# —y en particular los dos productos de `rasero/semilla.py`, que entran con existencia mínima—
+# ahora que `registrar_venta` rechaza el saldo negativo (bloqueo duro de existencia, 001).
+_DIAS_ENTRE_REPOSICIONES = 7
 
 # Ventana del pico de demanda que agota «Aceite girasol 1 L» en Quevedo Centro.
 _QUIEBRE_DESDE = 30  # días atrás
@@ -97,7 +103,17 @@ def _sembrar_demanda_general(
     rng: random.Random,
 ) -> int:
     ventas = 0
+    reposiciones = 0
     for dia_atras in range(_DIAS_HISTORIAL, 0, -1):
+        # Reabastecimiento periódico ANTES de la venta del día (hora 23 atrás = temprano en el
+        # día): un minorista repone su góndola cada semana.
+        if (_DIAS_HISTORIAL - dia_atras) % _DIAS_ENTRE_REPOSICIONES == 0:
+            reposiciones += reponer_inventario(
+                sesion,
+                id_sucursal=sucursal.id_sucursal,
+                productos=productos,
+                instante=datetime.now(timezone.utc) - timedelta(days=dia_atras, hours=23),
+            )
         instante = datetime.now(timezone.utc) - timedelta(days=dia_atras, hours=rng.randint(9, 20))
         elegidos = [p for p in productos if rng.random() < 0.62]
         if not elegidos:
@@ -127,7 +143,7 @@ def _sembrar_demanda_general(
             renglones=renglones,
         )
         ventas += 1
-    return ventas
+    return ventas, reposiciones
 
 
 def _sembrar_quiebre(
@@ -138,33 +154,13 @@ def _sembrar_quiebre(
     producto: Producto,
     rng: random.Random,
 ) -> dict:
-    """Pico de demanda que agota el producto, y su reposición. Ventas de un solo renglón para
-    controlar el perfil día a día."""
-    ventas = 0
-    for dia_atras in range(_DIAS_HISTORIAL, 0, -1):
-        if _QUIEBRE_HASTA <= dia_atras <= _QUIEBRE_DESDE:
-            cant = rng.randint(14, 20)  # pico: agota los ~70 de existencia inicial
-        elif dia_atras < _QUIEBRE_REPOSICION:
-            cant = rng.randint(1, 3)
-        else:
-            cant = rng.randint(1, 2)
-        instante = datetime.now(timezone.utc) - timedelta(days=dia_atras, hours=12)
-        clave = f"semilla-mov::quiebre::{sucursal.nombre}::dia-{dia_atras:03d}"
-        registrar_venta(
-            sesion,
-            clave_idempotencia=clave,
-            id_turno=turno.id_turno,
-            referencia_terminal_pago=None,
-            instante_origen=instante,
-            renglones=[
-                RenglonEntrada(
-                    id_producto=producto.id_producto, cantidad_unidades=cant, cantidad_gramos=None
-                )
-            ],
-        )
-        ventas += 1
-
-    # Reposición el día -26, una sola vez.
+    """Pico de demanda que agota el producto, y su reposición el día -26 — el intervalo de
+    quiebre que 004 (pronóstico) necesita descensurar. El perfil de demanda no cambia: sigue
+    "queriendo" 14-20 u/día en el pico. Lo que cambia es que la venta se limita a lo que hay en
+    góndola (`min(demanda, existencia)`): cuando el stock llega a 0, los días de pico restantes
+    quedan SIN venta —un quiebre de stock real, demanda censurada— hasta la reposición. Antes
+    del bloqueo duro de existencia (001) esto se registraba como saldo negativo; ahora se
+    modela como lo que es. Idempotente: si la reposición ya existe, no regenera nada."""
     lote = (
         sesion.execute(
             select(Lote)
@@ -176,7 +172,7 @@ def _sembrar_quiebre(
         .scalars()
         .first()
     )
-    entradas = sesion.execute(
+    entradas_previas = sesion.execute(
         select(func.count())
         .select_from(MovimientoInventario)
         .where(
@@ -184,19 +180,73 @@ def _sembrar_quiebre(
             MovimientoInventario.tipo == "entrada_compra",
         )
     ).scalar_one()
+    if entradas_previas > 1:  # catálogo deja 1; >1 = una corrida anterior ya sembró el quiebre
+        return {"ventas": 0, "repuesto": False, "dia_agotado": None, "ya_estaba": True}
+
+    ventas = 0
     repuesto = False
-    if entradas <= 1:
-        registrar_movimiento(
-            sesion,
-            id_sucursal=sucursal.id_sucursal,
-            id_producto=producto.id_producto,
-            id_lote=lote.id_lote,
-            tipo="entrada_compra",
-            cantidad=Decimal(_QUIEBRE_REPOSICION_CANT),
-            instante=datetime.now(timezone.utc) - timedelta(days=_QUIEBRE_REPOSICION, hours=7),
+    dia_agotado = None
+    dia_recuperado = None
+    for dia_atras in range(_DIAS_HISTORIAL, 0, -1):
+        # Reposición al llegar al día -26, ANTES de la venta de ese día (para que los días
+        # posteriores vuelvan a tener stock que vender).
+        if dia_atras == _QUIEBRE_REPOSICION:
+            registrar_movimiento(
+                sesion,
+                id_sucursal=sucursal.id_sucursal,
+                id_producto=producto.id_producto,
+                id_lote=lote.id_lote,
+                tipo="entrada_compra",
+                cantidad=Decimal(_QUIEBRE_REPOSICION_CANT),
+                instante=datetime.now(timezone.utc)
+                - timedelta(days=_QUIEBRE_REPOSICION, hours=7),
+            )
+            repuesto = True
+
+        if _QUIEBRE_HASTA <= dia_atras <= _QUIEBRE_DESDE:
+            cant = rng.randint(14, 20)  # pico: la demanda "quiere" agotar los ~70 iniciales
+        elif dia_atras < _QUIEBRE_REPOSICION:
+            cant = rng.randint(1, 3)
+        else:
+            cant = rng.randint(1, 2)
+
+        disponible = int(
+            obtener_existencia_total(
+                sesion, id_sucursal=sucursal.id_sucursal, id_producto=producto.id_producto
+            )
         )
-        repuesto = True
-    return {"ventas": ventas, "repuesto": repuesto}
+        vendible = min(cant, disponible)
+        if vendible <= 0:
+            if dia_agotado is None:
+                dia_agotado = dia_atras
+            continue
+        if dia_agotado is not None and dia_recuperado is None:
+            dia_recuperado = dia_atras
+
+        instante = datetime.now(timezone.utc) - timedelta(days=dia_atras, hours=12)
+        clave = f"semilla-mov::quiebre::{sucursal.nombre}::dia-{dia_atras:03d}"
+        registrar_venta(
+            sesion,
+            clave_idempotencia=clave,
+            id_turno=turno.id_turno,
+            referencia_terminal_pago=None,
+            instante_origen=instante,
+            renglones=[
+                RenglonEntrada(
+                    id_producto=producto.id_producto,
+                    cantidad_unidades=vendible,
+                    cantidad_gramos=None,
+                )
+            ],
+        )
+        ventas += 1
+
+    return {
+        "ventas": ventas,
+        "repuesto": repuesto,
+        "dia_agotado": dia_agotado,
+        "dia_recuperado": dia_recuperado,
+    }
 
 
 def sembrar() -> dict:
@@ -213,19 +263,32 @@ def sembrar() -> dict:
         ).scalar_one()
 
         total_ventas = 0
+        total_reposiciones = 0
         resumen_quiebre = {}
         for nombre, sucursal in sucursales.items():
             turno = _turno_por_sucursal(sesion, sucursal.id_sucursal)
+            # Sólo los productos que esa sucursal maneja (tienen lote ahí). Los dos productos de
+            # `rasero/semilla.py` sólo tienen lote en Quevedo Centro; no se venden en Buena Fe.
+            con_lote = set(
+                sesion.execute(
+                    select(Lote.id_producto).where(Lote.id_sucursal == sucursal.id_sucursal)
+                ).scalars()
+            )
             productos = list(
                 sesion.execute(
                     select(Producto)
-                    .where(Producto.id_producto != quiebre_prod.id_producto)
+                    .where(
+                        Producto.id_producto != quiebre_prod.id_producto,
+                        Producto.id_producto.in_(con_lote),
+                    )
                     .order_by(Producto.id_producto)
                 ).scalars()
             )
-            total_ventas += _sembrar_demanda_general(
+            ventas_suc, reposiciones_suc = _sembrar_demanda_general(
                 sesion, sucursal=sucursal, turno=turno, productos=productos, rng=rng
             )
+            total_ventas += ventas_suc
+            total_reposiciones += reposiciones_suc
             sesion.commit()
             if nombre == "Quevedo Centro":
                 resumen_quiebre = _sembrar_quiebre(
@@ -236,14 +299,29 @@ def sembrar() -> dict:
 
         print(
             f"Movimientos sembrados: {total_ventas} ventas de historial "
-            f"({_DIAS_HISTORIAL} días, 2 sucursales)."
+            f"({_DIAS_HISTORIAL} días, 2 sucursales); {total_reposiciones} reabastecimientos "
+            f"periódicos de góndola."
         )
-        print(
-            f"  Quiebre de «{NOMBRE_PRODUCTO_QUIEBRE}» en Quevedo Centro: "
-            f"pico días -{_QUIEBRE_DESDE}..-{_QUIEBRE_HASTA}, reposición día -{_QUIEBRE_REPOSICION} "
-            f"({'registrada ahora' if resumen_quiebre.get('repuesto') else 'ya existía'})."
-        )
-        return {"ventas": total_ventas, **resumen_quiebre}
+        if resumen_quiebre.get("ya_estaba"):
+            print(
+                f"  Quiebre de «{NOMBRE_PRODUCTO_QUIEBRE}» en Quevedo Centro: ya sembrado en una "
+                "corrida anterior."
+            )
+        else:
+            agotado = resumen_quiebre.get("dia_agotado")
+            recuperado = resumen_quiebre.get("dia_recuperado")
+            if agotado is not None:
+                ultimo_vacio = (recuperado + 1) if recuperado is not None else 1
+                ventana = f"góndola vacía los días -{agotado}..-{ultimo_vacio}"
+            else:
+                ventana = "el pico no llegó a agotar el stock"
+            print(
+                f"  Quiebre de «{NOMBRE_PRODUCTO_QUIEBRE}» en Quevedo Centro: pico días "
+                f"-{_QUIEBRE_DESDE}..-{_QUIEBRE_HASTA}; {ventana}; reposición día "
+                f"-{_QUIEBRE_REPOSICION} "
+                f"({'registrada ahora' if resumen_quiebre.get('repuesto') else 'no registrada'})."
+            )
+        return {"ventas": total_ventas, "reposiciones": total_reposiciones, **resumen_quiebre}
     finally:
         sesion.close()
 

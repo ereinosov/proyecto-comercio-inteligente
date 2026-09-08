@@ -31,9 +31,9 @@ from datetime import date, datetime, timedelta, timezone
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from rasero.persistencia.modelos import Cliente, Operador, Producto, Sucursal, Turno
+from rasero.persistencia.modelos import Cliente, Lote, Operador, Producto, Sucursal, Turno
 from rasero.persistencia.sesion import SesionLocal
-from rasero.semilla_catalogo import SUCURSALES_DEMO
+from rasero.semilla_catalogo import SUCURSALES_DEMO, reponer_inventario
 from rasero.semilla_catalogo import sembrar as sembrar_catalogo
 from rasero.servicios.clientes import (
     evaluar_fugas_pendientes,
@@ -148,10 +148,18 @@ def _turno_demo(sesion: Session) -> Turno:
     return turno
 
 
-def _productos_baratos(sesion: Session) -> list[Producto]:
+def _productos_baratos(sesion: Session, id_sucursal: int) -> list[Producto]:
+    """Los 12 primeros productos no-granel que la sucursal maneja (tienen lote ahí)."""
+    con_lote = set(
+        sesion.execute(
+            select(Lote.id_producto).where(Lote.id_sucursal == id_sucursal)
+        ).scalars()
+    )
     return list(
         sesion.execute(
-            select(Producto).where(Producto.es_granel.is_(False)).order_by(Producto.id_producto)
+            select(Producto)
+            .where(Producto.es_granel.is_(False), Producto.id_producto.in_(con_lote))
+            .order_by(Producto.id_producto)
         ).scalars()
     )[:12]
 
@@ -200,8 +208,22 @@ def sembrar() -> dict:
 
         rng = random.Random(_SEMILLA)
         turno = _turno_demo(sesion)
-        productos = _productos_baratos(sesion)
+        productos = _productos_baratos(sesion, turno.id_sucursal)
         ahora = datetime.now(timezone.utc)
+
+        # Las ~200 ventas de demo de abajo consumen el catálogo compartido sin reponer; con el
+        # bloqueo duro de existencia (001) eso agota los productos de existencia mínima (los de
+        # `rasero/semilla.py`). Un reabastecimiento único antes del histórico, fechado antes de
+        # la primera visita simulada, los deja con margen. Idempotente por (lote, día).
+        reponer_inventario(
+            sesion,
+            id_sucursal=turno.id_sucursal,
+            productos=productos,
+            instante=ahora - timedelta(days=200),
+            umbral_no_granel=400,
+            objetivo_no_granel=600,
+        )
+        sesion.commit()
 
         nombres_existentes = {
             n for (n,) in sesion.execute(select(Cliente.nombre)).all() if n is not None

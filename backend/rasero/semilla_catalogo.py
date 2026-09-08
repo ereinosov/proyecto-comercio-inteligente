@@ -23,18 +23,23 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from rasero.persistencia.modelos import (
     Base,
     Categoria,
     Lote,
+    MovimientoInventario,
     Producto,
     Sucursal,
     ZonaExhibicion,
 )
-from rasero.persistencia.movimientos import obtener_existencia, registrar_movimiento
+from rasero.persistencia.movimientos import (
+    obtener_existencia,
+    obtener_existencia_total,
+    registrar_movimiento,
+)
 from rasero.persistencia.sesion import SesionLocal, engine
 
 # Las dos sucursales de "Despensa Los Ríos" (nombre de comercio ficticio: valor de fila, nunca
@@ -236,6 +241,80 @@ def _asegurar_existencia(
             )
             entradas += 1
     return lotes_creados, entradas
+
+
+def lote_principal(sesion: Session, id_producto: int, id_sucursal: int) -> int | None:
+    """El primer lote de un (producto, sucursal), o `None` si el producto no se maneja ahí."""
+    return (
+        sesion.execute(
+            select(Lote.id_lote)
+            .where(Lote.id_producto == id_producto, Lote.id_sucursal == id_sucursal)
+            .order_by(Lote.id_lote)
+        )
+        .scalars()
+        .first()
+    )
+
+
+def _hay_entrada_ese_dia(sesion: Session, id_lote: int, instante: datetime) -> bool:
+    """¿Ya hay una `entrada_compra` en ese lote dentro de ±12 h del instante? Hace idempotente
+    la reposición: re-ejecutar una siembra no vuelve a inyectar el mismo reabastecimiento."""
+    desde, hasta = instante - timedelta(hours=12), instante + timedelta(hours=12)
+    return (
+        sesion.execute(
+            select(func.count())
+            .select_from(MovimientoInventario)
+            .where(
+                MovimientoInventario.id_lote == id_lote,
+                MovimientoInventario.tipo == "entrada_compra",
+                MovimientoInventario.instante >= desde,
+                MovimientoInventario.instante <= hasta,
+            )
+        ).scalar_one()
+        > 0
+    )
+
+
+def reponer_inventario(
+    sesion: Session,
+    *,
+    id_sucursal: int,
+    productos: list[Producto],
+    instante: datetime,
+    objetivo_no_granel: int = 500,
+    objetivo_granel: int = 90_000,
+    umbral_no_granel: int = 300,
+    umbral_granel: int = 50_000,
+) -> int:
+    """Reabastecimiento realista: un minorista repone su góndola cada cierto tiempo. Sube a un
+    nivel objetivo cada producto cuya existencia total en la sucursal cayó por debajo del umbral,
+    vía `entrada_compra` sobre su lote principal — nunca toca `existencia` directo (misma
+    frontera que el resto del módulo). Idempotente por (lote, día). Devuelve cuántos productos
+    repuso. El producto de quiebre de 004 NO debe pasar por aquí: su agotamiento es intencional.
+    """
+    repuestos = 0
+    for p in productos:
+        objetivo = objetivo_granel if p.es_granel else objetivo_no_granel
+        umbral = umbral_granel if p.es_granel else umbral_no_granel
+        actual = obtener_existencia_total(
+            sesion, id_sucursal=id_sucursal, id_producto=p.id_producto
+        )
+        if actual >= umbral:
+            continue
+        id_lote = lote_principal(sesion, p.id_producto, id_sucursal)
+        if id_lote is None or _hay_entrada_ese_dia(sesion, id_lote, instante):
+            continue
+        registrar_movimiento(
+            sesion,
+            id_sucursal=id_sucursal,
+            id_producto=p.id_producto,
+            id_lote=id_lote,
+            tipo="entrada_compra",
+            cantidad=Decimal(objetivo) - actual,
+            instante=instante,
+        )
+        repuestos += 1
+    return repuestos
 
 
 def sembrar() -> dict:
