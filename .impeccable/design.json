@@ -22,17 +22,17 @@
       "superficie-base": {
         "role": "neutral",
         "displayName": "Superficie Base",
-        "canonical": "#E9EDE9",
-        "note": "v1.5.0: verde agrisado un punto más profundo que el #F1F4F1 previo; el salto a Superficie Alta pasa de ~4% a ~7% de luminosidad para separar la tabla/tarjeta blanca del fondo sin usar sombra.",
+        "canonical": "#DDE4DE",
+        "note": "v1.11.0: gris verdoso con cuerpo (era #E9EDE9 en v1.5.0, #F1F4F1 antes). El salto a Superficie Alta sube a ~12% de luminosidad: una tabla, tarjeta o panel blanco se recorta con claridad sin sombra. Refuerzo pedido por el propietario tras dos rondas de contraste insuficiente.",
         "tonalRamp": [
           "#20241f",
           "#333a32",
           "#4a544a",
           "#6b776a",
           "#95a094",
-          "#c0c9bf",
-          "#dbe1da",
-          "#e9ede9"
+          "#bcc6bd",
+          "#cdd6ce",
+          "#dde4de"
         ]
       },
       "superficie-alta": {
@@ -83,21 +83,21 @@
       "borde-fuerte": {
         "role": "neutral",
         "displayName": "Borde Fuerte",
-        "canonical": "#BCC6BD",
-        "note": "v1.5.0: segundo nivel de la jerarquía de borde. `borde` (#D5DCD6) es el hairline de 1px entre filas/columnas y campos de formulario; `borde-fuerte` separa regiones y secciones cuando el hairline se pierde. v1.10.0: se expone además como el token `--color-contorno` y se aplica al contorno exterior completo de toda tabla, bloque de Análisis, panel de detalle y tarjeta de modal — un solo punto de ajuste del peso del marco de las superficies. Ambos sin sombra (La Regla del Filo)."
+        "canonical": "#A6B4A8",
+        "note": "Segundo nivel de la jerarquía de borde. `borde` (#C4CFC5) es el hairline de 1px entre filas/columnas y campos de formulario; `borde-fuerte` separa regiones y secciones y, expuesto como `--color-contorno` (v1.10.0), forma el marco exterior completo de toda tabla, bloque de Análisis, panel de detalle y tarjeta de modal — un solo punto de ajuste del peso del marco. v1.11.0: ambos tonos oscurecidos (era #D5DCD6 / #BCC6BD) para que se vean sin buscarlos. Sin sombra (La Regla del Filo)."
       },
       "borde": {
         "role": "neutral",
         "displayName": "Borde",
-        "canonical": "#D5DCD6",
+        "canonical": "#C4CFC5",
         "tonalRamp": [
           "#2a2e2b",
           "#414743",
           "#5c635e",
           "#7b837d",
           "#9ea59f",
-          "#bfc7c1",
-          "#d5dcd6",
+          "#a6b4a8",
+          "#c4cfc5",
           "#eef1ef"
         ]
       },
@@ -220,7 +220,7 @@
       "refersTo": "tabla-operacion",
       "description": "Es la pantalla, no un componente dentro de ella. Alta densidad, sin tarjetas, cifras alineadas por dígito.",
       "html": "<table class=\"ds-tabla-operacion\"><thead><tr><th>Producto</th><th class=\"num\">Cantidad</th><th class=\"num\">Precio</th><th class=\"num\">Importe</th></tr></thead><tbody><tr><td>Atún en lata</td><td class=\"num\">2 u</td><td class=\"num\">1.5000</td><td class=\"num\">3.00</td></tr><tr><td>Queso fresco</td><td class=\"num\">0,700 kg</td><td class=\"num\">4.7500</td><td class=\"num\">3.33</td></tr></tbody></table>",
-      "css": ".ds-tabla-operacion { width: 100%; border-collapse: collapse; background: var(--color-superficie-alta, #FFFFFF); color: var(--color-tinta, #1B2621); font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 14px; border: 1px solid var(--color-borde, #D5DCD6); border-radius: var(--radio-operacion, 2px); } .ds-tabla-operacion th { text-align: left; font-weight: 500; font-size: 12px; color: var(--color-tinta-suave, #5A6862); padding: 8px 12px; border-bottom: 1px solid var(--color-borde, #D5DCD6); } .ds-tabla-operacion td { padding: 8px 12px; border-bottom: 1px solid var(--color-borde, #D5DCD6); } .ds-tabla-operacion .num { text-align: right; }"
+      "css": ".ds-tabla-operacion { width: 100%; border-collapse: collapse; background: var(--color-superficie-alta, #FFFFFF); color: var(--color-tinta, #1B2621); font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 14px; border: 1px solid var(--color-borde, #C4CFC5); border-radius: var(--radio-operacion, 2px); } .ds-tabla-operacion th { text-align: left; font-weight: 500; font-size: 12px; color: var(--color-tinta-suave, #5A6862); padding: 8px 12px; border-bottom: 1px solid var(--color-borde, #C4CFC5); } .ds-tabla-operacion td { padding: 8px 12px; border-bottom: 1px solid var(--color-borde, #C4CFC5); } .ds-tabla-operacion .num { text-align: right; }"
     },
     {
       "name": "Indicador de antigüedad",
@@ -252,7 +252,7 @@
       "refersTo": "bloque-analisis",
       "description": "Primer componente real del registro de Análisis: una decisión por bloque, nunca una fila de tabla densa. El seleccionado marca su borde en Tinta.",
       "html": "<button class=\"ds-bloque-analisis ds-bloque-analisis--seleccionado\"><span>Cliente Alta Frecuencia</span><span class=\"ds-bloque-analisis-valor\">58</span></button>",
-      "css": ".ds-bloque-analisis { width: 100%; display: flex; justify-content: space-between; align-items: baseline; text-align: left; font-family: var(--tipografia-analisis, \"Source Serif 4\", Georgia, serif); font-size: 15px; color: var(--color-tinta, #1B2621); background: var(--color-superficie-alta, #FFFFFF); border: 1px solid var(--color-borde, #D5DCD6); border-radius: var(--radio-analisis, 6px); padding: 14px 16px; cursor: pointer; } .ds-bloque-analisis--seleccionado { border-color: var(--color-tinta, #1B2621); } .ds-bloque-analisis-valor { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--color-tinta-suave, #5A6862); }"
+      "css": ".ds-bloque-analisis { width: 100%; display: flex; justify-content: space-between; align-items: baseline; text-align: left; font-family: var(--tipografia-analisis, \"Source Serif 4\", Georgia, serif); font-size: 15px; color: var(--color-tinta, #1B2621); background: var(--color-superficie-alta, #FFFFFF); border: 1px solid var(--color-borde, #C4CFC5); border-radius: var(--radio-analisis, 6px); padding: 14px 16px; cursor: pointer; } .ds-bloque-analisis--seleccionado { border-color: var(--color-tinta, #1B2621); } .ds-bloque-analisis-valor { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 13px; color: var(--color-tinta-suave, #5A6862); }"
     },
     {
       "name": "Sugerencia de precio y colocación",
@@ -260,7 +260,7 @@
       "refersTo": null,
       "description": "Tarjeta de Análisis que muestra margen usado, rol usado y (para precio) la observación de competencia con sus tres portadores de antigüedad. Aplicar no usa el Verde Rasero; se confirma con texto y un único momento de animación.",
       "html": "<section class=\"ds-tarjeta-sugerencia\"><h3>Precio sugerido</h3><p class=\"ds-tarjeta-sugerencia-cifra\">$2.0000</p><dl class=\"ds-tarjeta-sugerencia-insumos\"><div><dt>Margen usado</dt><dd>60%</dd></div><div><dt>Rol usado</dt><dd>Gancho de tráfico</dd></div></dl><button class=\"ds-tarjeta-sugerencia-boton\">Aplicar precio</button></section>",
-      "css": ".ds-tarjeta-sugerencia { font-family: var(--tipografia-analisis, \"Source Serif 4\", Georgia, serif); color: var(--color-tinta, #1B2621); border-top: 1px solid var(--color-borde, #D5DCD6); padding-top: 14px; } .ds-tarjeta-sugerencia h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; } .ds-tarjeta-sugerencia-cifra { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 600; margin: 0 0 10px; } .ds-tarjeta-sugerencia-insumos { font-size: 13px; margin: 0 0 14px; } .ds-tarjeta-sugerencia-insumos dt { color: var(--color-tinta-suave, #5A6862); font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); } .ds-tarjeta-sugerencia-boton { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 13px; border: 1px solid var(--color-tinta, #1B2621); border-radius: var(--radio-analisis, 6px); padding: 8px 16px; background: var(--color-superficie-alta, #FFFFFF); color: var(--color-tinta, #1B2621); cursor: pointer; }"
+      "css": ".ds-tarjeta-sugerencia { font-family: var(--tipografia-analisis, \"Source Serif 4\", Georgia, serif); color: var(--color-tinta, #1B2621); border-top: 1px solid var(--color-borde, #C4CFC5); padding-top: 14px; } .ds-tarjeta-sugerencia h3 { font-size: 15px; font-weight: 600; margin: 0 0 10px; } .ds-tarjeta-sugerencia-cifra { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-variant-numeric: tabular-nums; font-size: 22px; font-weight: 600; margin: 0 0 10px; } .ds-tarjeta-sugerencia-insumos { font-size: 13px; margin: 0 0 14px; } .ds-tarjeta-sugerencia-insumos dt { color: var(--color-tinta-suave, #5A6862); font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); } .ds-tarjeta-sugerencia-boton { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 13px; border: 1px solid var(--color-tinta, #1B2621); border-radius: var(--radio-analisis, 6px); padding: 8px 16px; background: var(--color-superficie-alta, #FFFFFF); color: var(--color-tinta, #1B2621); cursor: pointer; }"
     },
     {
       "name": "Lectura de experimento (dato vs. inferencia)",
@@ -268,7 +268,7 @@
       "refersTo": null,
       "description": "Bloque de Análisis del experimento de reactivación: el % de retorno observado de cada grupo en tinta normal (dato); la incrementalidad, z, p y veredicto en color estimado #1F5673 con indicador de forma (▲ significativa / ▬ no significativa / ◇ muestra insuficiente) y el texto explícito de la prueba. Nunca solo color, nunca un número sin su prueba.",
       "html": "<div class=\"ds-experimento\"><div class=\"ds-experimento-tasas\"><div><span class=\"ds-experimento-etq\">Retorno observado · tratamiento</span><span class=\"ds-experimento-dato\">29.0 %</span></div><div><span class=\"ds-experimento-etq\">Retorno observado · control</span><span class=\"ds-experimento-dato\">14.7 %</span></div></div><p class=\"ds-experimento-inferencia\"><span aria-hidden=\"true\">▲</span><span>incrementalidad +14.3 pp · z = 3.12 · p = 0.001 · significativa (p &lt; 0.050)</span></p></div>",
-      "css": ".ds-experimento { font-family: var(--tipografia-analisis, \"Source Serif 4\", Georgia, serif); color: var(--color-tinta, #1B2621); } .ds-experimento-tasas { display: flex; gap: 28px; padding: 14px 0; border-top: 1px solid var(--color-borde, #D5DCD6); } .ds-experimento-tasas > div { display: flex; flex-direction: column; gap: 2px; } .ds-experimento-etq { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 11px; color: var(--color-tinta-suave, #5A6862); } .ds-experimento-dato { font-size: 22px; color: var(--color-tinta, #1B2621); font-variant-numeric: tabular-nums; } .ds-experimento-inferencia { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 4px; color: var(--color-estimado, #1F5673); font-variant-numeric: tabular-nums; font-size: 14px; }"
+      "css": ".ds-experimento { font-family: var(--tipografia-analisis, \"Source Serif 4\", Georgia, serif); color: var(--color-tinta, #1B2621); } .ds-experimento-tasas { display: flex; gap: 28px; padding: 14px 0; border-top: 1px solid var(--color-borde, #C4CFC5); } .ds-experimento-tasas > div { display: flex; flex-direction: column; gap: 2px; } .ds-experimento-etq { font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 11px; color: var(--color-tinta-suave, #5A6862); } .ds-experimento-dato { font-size: 22px; color: var(--color-tinta, #1B2621); font-variant-numeric: tabular-nums; } .ds-experimento-inferencia { display: flex; align-items: baseline; gap: 8px; margin: 12px 0 4px; color: var(--color-estimado, #1F5673); font-variant-numeric: tabular-nums; font-size: 14px; }"
     },
     {
       "name": "Aplicar promoción en la caja",
@@ -276,7 +276,7 @@
       "refersTo": null,
       "description": "Superficie de Operación (radio 2px, IBM Plex Sans) en el encabezado de Venta.tsx junto a Identificar cliente. Lista los cupones y ofertas vigentes del cliente identificado; el cajero marca uno y la redención se registra DESPUÉS de la venta, nunca la bloquea. Sin Verde Rasero, reversible en un toque a un chip de texto.",
       "html": "<div class=\"ds-aplicar-promo\"><button class=\"ds-aplicar-promo-fila\">Cupón 41 · 10 % · vence 2026-09-26</button><button class=\"ds-aplicar-promo-fila\">Oferta 12 · producto 7 · 3.6800</button><button class=\"ds-aplicar-promo-cancelar\">Cancelar</button></div>",
-      "css": ".ds-aplicar-promo { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--color-superficie-alta, #FFFFFF); border: 1px solid var(--color-borde, #D5DCD6); border-radius: var(--radio-operacion, 2px); min-width: 240px; } .ds-aplicar-promo-fila { display: block; width: 100%; text-align: left; font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--color-tinta, #1B2621); background: transparent; border: 1px solid var(--color-borde, #D5DCD6); border-radius: var(--radio-operacion, 2px); padding: 6px 8px; cursor: pointer; } .ds-aplicar-promo-fila:hover { background: var(--color-superficie-base, #F1F4F1); } .ds-aplicar-promo-cancelar { align-self: flex-start; font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 12px; color: var(--color-tinta-suave, #5A6862); background: transparent; border: none; padding: 0; cursor: pointer; text-decoration: underline; }"
+      "css": ".ds-aplicar-promo { display: flex; flex-direction: column; gap: 6px; padding: 10px; background: var(--color-superficie-alta, #FFFFFF); border: 1px solid var(--color-borde, #C4CFC5); border-radius: var(--radio-operacion, 2px); min-width: 240px; } .ds-aplicar-promo-fila { display: block; width: 100%; text-align: left; font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 13px; font-variant-numeric: tabular-nums; color: var(--color-tinta, #1B2621); background: transparent; border: 1px solid var(--color-borde, #C4CFC5); border-radius: var(--radio-operacion, 2px); padding: 6px 8px; cursor: pointer; } .ds-aplicar-promo-fila:hover { background: var(--color-superficie-base, #DDE4DE); } .ds-aplicar-promo-cancelar { align-self: flex-start; font-family: var(--tipografia-operacion, \"IBM Plex Sans\", system-ui, sans-serif); font-size: 12px; color: var(--color-tinta-suave, #5A6862); background: transparent; border: none; padding: 0; cursor: pointer; text-decoration: underline; }"
     }
   ],
   "narrative": {
@@ -329,7 +329,7 @@
     "dos": [
       "Do elegir el registro por contexto de uso: Operación (2px, alta densidad, tabla) para caja e inventario; Análisis (6px, aire) para pantallas donde se decide.",
       "Do componer toda cifra de dinero y peso con cifras tabulares reales.",
-      "Do transmitir profundidad con el salto de tono #F1F4F1 → #FFFFFF y el borde #D5DCD6.",
+      "Do transmitir profundidad con el salto de tono #DDE4DE → #FFFFFF y los bordes #C4CFC5 (hairline) / #A6B4A8 (contorno).",
       "Do acompañar todo dato incierto o envejecido con sus tres portadores.",
       "Do reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla — y cero veces en una pantalla que no tiene esa acción.",
       "Do revelar el detalle de un bloque de Análisis con una única transición por selección, nunca con hover ni fade-in repetido en cada bloque de la lista.",

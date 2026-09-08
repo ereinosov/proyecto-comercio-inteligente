@@ -2,14 +2,14 @@
 name: Rasero
 description: Punto de venta e inventario para comercio físico multi-sucursal
 colors:
-  superficie-base: "#E9EDE9"
+  superficie-base: "#DDE4DE"
   superficie-alta: "#FFFFFF"
   tinta: "#1B2621"
   tinta-suave: "#5A6862"
   marca: "#0F5132"
   acento-secundario: "#7A6A56"
-  borde: "#D5DCD6"
-  borde-fuerte: "#BCC6BD"
+  borde: "#C4CFC5"
+  borde-fuerte: "#A6B4A8"
   atencion: "#9A5B08"
   critico: "#8E2A2A"
   estimado: "#1F5673"
@@ -375,16 +375,21 @@ reservado a la acción secundaria neutra.
 
 ### Neutral
 
-- **Superficie Base** (#F1F4F1): el fondo de toda pantalla, un verde agrisado muy claro que evita
-  el blanco puro de la hoja en blanco.
+- **Superficie Base** (#DDE4DE): el fondo de toda pantalla, un gris verdoso de anaquel pintado.
+  No es "casi blanco": tiene cuerpo suficiente para que una tabla, una tarjeta o un panel blanco
+  se recorten como un objeto sobre él, sin necesidad de sombra (v1.11.0; era #E9EDE9, y #F1F4F1
+  antes de v1.5.0).
 - **Superficie Alta** (#FFFFFF): planos que se levantan sobre la base — el cuerpo de una tabla, la
   fila activa. La única forma de "elevar" algo en este sistema.
 - **Tinta** (#1B2621): todo el texto de lectura. Casi negro, con el mismo matiz verde de la base,
   para que la página no se lea como tinta de imprenta sobre papel ajeno.
 - **Tinta Suave** (#5A6862): encabezados de columna, unidades, texto de apoyo. Nunca para una cifra
   que el operador deba leer con precisión.
-- **Borde** (#D5DCD6): la línea de 1px que separa filas, columnas y regiones. Junto con el tono, es
-  el único recurso de profundidad del sistema.
+- **Borde** (#C4CFC5): el hairline de 1px que separa filas y columnas *dentro* de una superficie.
+  **Borde Fuerte / Contorno** (#A6B4A8, `--color-contorno`): el marco exterior de una tabla,
+  bloque, panel o modal y el corte entre regiones. Junto con el salto de tono, es el único
+  recurso de profundidad del sistema — ambos se oscurecieron en v1.11.0 para que se vean sin
+  buscarlos.
 
 ### Named Rules
 
@@ -547,7 +552,7 @@ de la misma variante miden lo mismo en toda pantalla.
 ## Elevation & Depth
 
 **Este sistema no usa sombras.** Ninguna. La profundidad se transmite con dos recursos: el salto
-de tono entre Superficie Base (#E9EDE9) y Superficie Alta (#FFFFFF), y el borde. Un plano blanco
+de tono entre Superficie Base (#DDE4DE) y Superficie Alta (#FFFFFF), y el borde. Un plano blanco
 sobre el fondo agrisado ya está "arriba"; no necesita simular que flota.
 
 **Salto de tono (v1.5.0).** Superficie Base pasó de #F1F4F1 a **#E9EDE9**: el mismo verde
@@ -679,7 +684,8 @@ fraude, Gestión de operadores, Pagos), `subnav`/`subtab`/`subtabActiva` (Compet
 
 - **Carácter:** es la pantalla, no un componente dentro de ella.
 - **Fondo:** Superficie Alta (#FFFFFF) sobre la base agrisada.
-- **Bordes:** separadores de 1px en #D5DCD6; sin sombra.
+- **Bordes:** separadores internos de 1px en `--color-borde` (#C4CFC5); contorno exterior en
+  `--color-contorno` (#A6B4A8); sin sombra.
 - **Tipografía:** IBM Plex Sans con cifras tabulares; encabezados de columna en Tinta Suave.
 - **Alineación:** cifras a la derecha, etiquetas a la izquierda.
 
@@ -1007,9 +1013,10 @@ del operador en la barra responde "¿de quién es este turno?" sin abrir otra pa
   texto de la escala `--texto-*` (v1.5.0). Nunca un literal nuevo.
 - **Do** usar IBM Plex Sans en todo control, tabla y etiqueta; Source Serif 4 sólo en títulos
   ≥ 20px y prosa de Análisis (La Regla de la Voz de Análisis).
-- **Do** transmitir profundidad con el salto de tono #E9EDE9 → #FFFFFF, el hairline #D5DCD6
-  entre filas y columnas, y el contorno estructural `--color-contorno` (#BCC6BD) en el
-  perímetro de toda tabla, bloque, panel o modal (v1.10.0) — nunca una sombra.
+- **Do** transmitir profundidad con el salto de tono #DDE4DE → #FFFFFF, el hairline #C4CFC5
+  entre filas y columnas, y el contorno estructural `--color-contorno` (#A6B4A8) en el
+  perímetro de toda tabla, bloque, panel o modal (v1.10.0, tonos reforzados en v1.11.0) —
+  nunca una sombra.
 - **Do** acompañar todo dato incierto o envejecido con sus tres portadores.
 - **Do** reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla —
   y cero veces en una pantalla que no tiene esa acción.
@@ -1163,4 +1170,13 @@ una aclaración sin cambio de significado.
   (`borde-fuerte` ya existía desde v1.5.0). Sincronización con la constitución **pendiente**
   (junto con v1.4.0–v1.9.0).
 
-**Versión**: 1.10.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+- **1.11.0** (2026-09-08) — MENOR (refuerzo de tono, ninguna regla nueva ni invertida): tras dos
+  rondas en las que el propietario siguió viendo "páginas muy blancas sin distinción de cuadros",
+  se oscurecen tres tokens de neutro. **Superficie Base** #E9EDE9 → **#DDE4DE** (el salto a la
+  Superficie Alta blanca sube a ~12% de luminosidad). **Borde** (hairline) #D5DCD6 → **#C4CFC5**.
+  **Borde Fuerte / `--color-contorno`** #BCC6BD → **#A6B4A8**. No se añade ninguna sombra (La
+  Regla del Filo intacta) ni se toca ningún otro color (marca, tinta, semánticos, acento
+  secundario). Sincronización con la constitución **pendiente** (junto con v1.4.0–v1.10.0; la
+  tabla de paleta de la constitución ya arrastraba #F1F4F1 desde antes de v1.5.0).
+
+**Versión**: 1.11.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-08

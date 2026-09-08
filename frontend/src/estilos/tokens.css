@@ -10,10 +10,12 @@
 :root {
   /* ─── Paleta ─────────────────────────────────────────────────────────────────────────────
      Anclada en objetos del comercio físico. Sin fondos oscuros ni degradados. */
-  --color-superficie-base: #E9EDE9;   /* v1.5.0: verde agrisado un punto más profundo que el
-                                         #F1F4F1 previo — el salto a Superficie Alta pasa de
-                                         ~4% a ~7% de luminosidad y la tabla/tarjeta blanca se
-                                         separa de verdad del fondo sin usar sombra. */
+  --color-superficie-base: #DDE4DE;   /* v1.11.0: gris verdoso más marcado (era #E9EDE9, y
+                                         #F1F4F1 antes de v1.5.0). El salto a Superficie Alta
+                                         sube a ~12% de luminosidad: una tabla, tarjeta o panel
+                                         blanco se recorta con claridad del fondo sin sombra.
+                                         Pedido explícito del propietario tras dos rondas de
+                                         contraste insuficiente. */
   --color-superficie-alta: #FFFFFF;   /* planos que se levantan sobre la base. */
   --color-tinta: #1B2621;
   --color-tinta-fuerte: #10201A;   /* hover/press de un botón primario relleno de Tinta */
@@ -29,8 +31,10 @@
   /* Jerarquía de borde (v1.5.0). Dos niveles, ambos sin sombra (La Regla del Filo, No la
      Sombra): `borde` es el hairline de 1px que separa filas y columnas; `borde-fuerte` es la
      línea estructural que separa regiones/secciones cuando el hairline se pierde. */
-  --color-borde: #D5DCD6;
-  --color-borde-fuerte: #BCC6BD;
+  --color-borde: #C4CFC5;         /* v1.11.0: hairline más oscuro (era #D5DCD6) — la línea
+                                     entre filas y columnas se ve sin buscarla. */
+  --color-borde-fuerte: #A6B4A8;  /* v1.11.0: estructural / contorno más presente (era
+                                     #BCC6BD) — el marco de un panel se lee como un cuadro. */
 
   /* Contorno exterior de "la hoja" de cada superficie —el marco completo de un panel, una
      tabla o un bloque de Análisis—. Es el nivel ESTRUCTURAL de la jerarquía de borde (La Regla
