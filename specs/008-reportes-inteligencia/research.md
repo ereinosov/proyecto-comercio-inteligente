@@ -38,10 +38,15 @@ como la del experimento de 005). k-means++ y el orden de recorrido de los puntos
 deterministas ordenando los clientes por `id_cliente` antes de empezar. Dos ejecuciones sobre
 los mismos datos dan la misma partición.
 
-**Elección de k**: se prueban k=3 y k=4 y se elige el de mayor "silueta" media (o simplemente el
-más interpretable en la calibración); k no es un parámetro de interfaz en esta versión (FR-018,
-Assumption). Si hay menos de k clientes clasificables, se reduce k a esa cantidad o se declara
-"sin base para segmentar" (FR-024).
+**Elección de k (resuelto — hallazgo BAJO #1 del analysis)**: `K_SEGMENTOS = 4`, fijado en
+`backend/rasero/config/reportes.py`. Se evaluaron 3 y 4 sobre la forma esperada de la base —un
+minimarket de dos tiendas—: con **4** la clientela se separa en los grupos que un encargado
+reconoce y sobre los que puede actuar (frecuentes de buen margen, frecuentes de bajo margen,
+esporádicos, y dormidos / en fuga); con **3** "esporádicos" y "dormidos" se colapsan en un solo
+grupo poco accionable, y con **5+** se fragmenta sin ganar interpretabilidad. `k` NO es un
+parámetro de interfaz en esta versión (FR-018, Assumption). Si hay menos de `k` clientes
+clasificables, `dominio/kmeans.agrupar` reduce `k` a esa cantidad automáticamente (FR-024); el
+servicio devuelve `409` sólo si no hay clientes clasificables en absoluto.
 
 **Alternativas descartadas**: (a) reglas de umbrales fijos por eje ("alto valor = gasta > X") —
 obliga a elegir y re-justificar X, que enveja; el clustering deja que los datos digan dónde

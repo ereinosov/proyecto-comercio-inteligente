@@ -17,35 +17,35 @@ patrones, k > n). Sin pruebas de interfaz, maquetación ni componentes visuales.
 
 ## Fase 0 — Setup y Foundational (secuencial, en conjunto)
 
-- [ ] T001 Migración `backend/alembic/versions/0012_reportes_inteligencia.py`: crea
+- [X] T001 Migración `backend/migraciones/versions/0012_reportes_inteligencia.py`: crea
   `agregado_reporte`, `segmento_cliente`, `asignacion_segmento` según data-model.md (CHECKs,
   UNIQUEs, FKs, `ON DELETE CASCADE` de `asignacion_segmento` desde `cliente`). `downgrade`
   elimina las tres tablas. Verificar `upgrade`/`downgrade` reversible.
-- [ ] T002 `backend/rasero/persistencia/modelos.py`: modelos ORM `AgregadoReporte`,
+- [X] T002 `backend/rasero/persistencia/modelos.py`: modelos ORM `AgregadoReporte`,
   `SegmentoCliente`, `AsignacionSegmento`.
-- [ ] T003 `backend/rasero/config/reportes.py`: `K_SEGMENTOS` (3 o 4, tras calibración),
+- [X] T003 `backend/rasero/config/reportes.py`: `K_SEGMENTOS` (3 o 4, tras calibración),
   `MIN_VISITAS_CLASIFICABLE = 3`, `SEMILLA_SEGMENTOS` (fija), `PERIODOS_TENDENCIA_DEFECTO`
   (semana=12, mes=6), umbrales de `atencion` de cada KPI (margen bajo, cuota no atendida, etc.).
-- [ ] T004 `backend/rasero/api/reportes.py`: router `APIRouter(prefix="/reportes",
+- [X] T004 `backend/rasero/api/reportes.py`: router `APIRouter(prefix="/reportes",
   dependencies=[Depends(exige_rol("encargado"))])`, registrado en `api/aplicacion.py`. Sin
   endpoints todavía.
-- [ ] T005 [P] `backend/rasero/dominio/periodo_local.py`: función pura
+- [X] T005 [P] `backend/rasero/dominio/periodo_local.py`: función pura
   `periodos_locales(zona_horaria, granularidad, n) -> list[Periodo]` con
   `(inicio_utc, fin_utc, etiqueta, completo)`. Semana ISO local y mes calendario local.
-- [ ] T006 [P] Prueba de unidad `tests/unidad/test_periodo_local.py`: una venta a las 23:30
+- [X] T006 [P] Prueba de unidad `tests/unidad/test_periodo_local.py`: una venta a las 23:30
   local del domingo cae en esa semana; mes = mes calendario, no ventana de 30 días; período
   parcial en un borde → `completo=false`.
 
 ## Fase 1 — k-means (dominio puro) — bloque independiente
 
-- [ ] T007 [P] [US4] `backend/rasero/dominio/kmeans.py`: función pura `agrupar(puntos: list[tuple],
+- [X] T007 [P] [US4] `backend/rasero/dominio/kmeans.py`: función pura `agrupar(puntos: list[tuple],
   k: int, semilla: int, max_iter=50) -> list[int]` (índice de grupo por punto). Lloyd:
   init k-means++ con RNG de semilla fija + orden determinista de puntos; asignación por distancia
   euclídea; recálculo de centroides como media; parada por convergencia o `max_iter`. Sin
   `numpy`/`sklearn`.
-- [ ] T008 [P] [US4] `dominio/kmeans.py`: helper `estandarizar(puntos) -> (puntos_z, medias, desv)`
+- [X] T008 [P] [US4] `dominio/kmeans.py`: helper `estandarizar(puntos) -> (puntos_z, medias, desv)`
   y `describir_centroide(centroide_z) -> str` (alto/medio/bajo por eje → frase, FR-022).
-- [ ] T009 [US4] **Prueba obligatoria** `tests/unidad/test_kmeans.py`: (a) determinismo — dos
+- [X] T009 [US4] **Prueba obligatoria** `tests/unidad/test_kmeans.py`: (a) determinismo — dos
   llamadas con la misma semilla y datos dan la misma partición (FR-019, SC-003); (b) separación —
   tres nubes de puntos deliberadamente separadas caen ≥ 80 % cada una en un grupo (SC-004);
   (c) `k > n` puntos distintos → no se fuerza k (FR-024); (d) `describir_centroide` traduce el
@@ -53,7 +53,7 @@ patrones, k > n). Sin pruebas de interfaz, maquetación ni componentes visuales.
 
 ## Fase 2 — User Story 1: Comparativo entre sucursales (P1) 🎯 MVP
 
-- [ ] T010 [US1] `backend/rasero/servicios/reportes_comparativo.py`:
+- [X] T010 [US1] `backend/rasero/servicios/reportes_comparativo.py`:
   `comparativo(sesion, *, periodo_inicio, periodo_fin) -> dict`. Por sucursal activa o con
   actividad: ventas y tickets de `venta`/`renglon_venta` (001); ticket promedio; margen
   ponderado vía `servicios/margenes` (003); merma valorada vía
@@ -61,13 +61,13 @@ patrones, k > n). Sin pruebas de interfaz, maquetación ni componentes visuales.
   Diferencia relativa contra la mejor sucursal de cada fila; `atencion=true` sólo si es un peor
   resultado. `comparable=false` y sin `diferencia_relativa` con una sola sucursal (FR-008).
   `sin_datos` (no cero) donde no hay base (FR-009).
-- [ ] T011 [US1] `servicios/reportes_cache.py`: `leer(tipo, ambito, periodo, granularidad)`,
+- [X] T011 [US1] `servicios/reportes_cache.py`: `leer(tipo, ambito, periodo, granularidad)`,
   `guardar(...)`, `invalidar(...)` sobre `agregado_reporte` (UNIQUE). Usado por todos los GET.
-- [ ] T012 [US1] `api/reportes.py`: `GET /reportes/comparativo` (params + `actualizar`), conforme
+- [X] T012 [US1] `api/reportes.py`: `GET /reportes/comparativo` (params + `actualizar`), conforme
   a `contracts/openapi.yaml`.
-- [ ] T013 [US1] **Prueba obligatoria de contrato** `tests/contrato/test_contrato_reportes.py`
+- [X] T013 [US1] **Prueba obligatoria de contrato** `tests/contrato/test_contrato_reportes.py`
   (parte comparativo): forma del cuerpo conforme al contrato; 401 sin token; 403 con cajero.
-- [ ] T014 [US1] Prueba de integración `tests/integracion/test_reportes_comparativo.py`
+- [X] T014 [US1] Prueba de integración `tests/integracion/test_reportes_comparativo.py`
   (Escenarios 1 y 2 de quickstart): valores == agregado a mano; diferencia relativa contra la
   mejor; `atencion` sólo en el peor; una sola sucursal → `comparable=false`; segunda llamada
   desde caché (mismo `instante_calculo`), `actualizar=true` recalcula.
