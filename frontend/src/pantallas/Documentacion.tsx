@@ -242,6 +242,7 @@ const MODELO_DATOS: { modulo: string; intro: ReactNode; tablas: TablaBDDef[] }[]
           ["clave_idempotencia", "text", "U"],
           ["id_turno", "int", "FK→turno"],
           ["referencia_terminal_pago", "text", "· referencia opaca del datáfono"],
+          ["id_medio_pago", "int", "· FK→medio_pago (007); medio que eligió el cliente en el POS (v2.7.2)"],
           ["instante", "ts", ""],
           ["total", "num(12,2)", ""],
           ["moneda", "text(3)", "USD"],
@@ -1395,6 +1396,30 @@ export function Documentacion({ onVolver }: Props) {
               por línea, al texto entregado.
             </div>
 
+            <H3>Medio de pago en el punto de venta</H3>
+            <P>
+              El enunciado trata el pago electrónico como <F>cobertura</F> («si no acepta pago
+              electrónico… ha perdido a una generación» → Lectura Crítica n.º 4, módulo 007), no
+              como dato por transacción. Aun así, la factura simulada mostraba un «medio de pago»
+              que se <F>adivinaba</F> con una heurística de dos valores. La enmienda{" "}
+              <F>v2.7.2</F> cierra ese hueco: la pantalla de Venta ofrece un selector de medio de
+              pago (efectivo, tarjeta, transferencia…, alimentado por el catálogo de 007), y la
+              venta guarda la <F>categoría</F> elegida en <C>venta.id_medio_pago</C> — nunca un
+              dato del instrumento (el PAN y el CVV siguen fuera de todo el sistema). La factura
+              usa ese medio real; si una venta no lo declara, cae a la heurística anterior.
+            </P>
+
+            <H3>Exportación a PDF de facturas y reportes</H3>
+            <P>
+              Tanto la <F>factura simulada</F> (009) como el <F>reporte activo</F> de la pantalla
+              de Reportes (008) se exportan a PDF con <F>vista previa</F>: el botón «Ver como
+              documento» / «Exportar PDF» abre el documento a pantalla completa y el diálogo de
+              impresión del navegador —que ya trae su propia previsualización y la opción
+              «Guardar como PDF»—. No hay generación de PDF en el servidor: el PDF contiene{" "}
+              <F>sólo la información</F> (cabecera, tablas, cifras), sin el armazón de la
+              aplicación. Es la vía de coste cero que la investigación de 009 ya había fijado.
+            </P>
+
             <H3>Interpretaciones fijadas como «Lecturas Críticas»</H3>
             <P>
               Seis decisiones de interpretación se congelaron en la constitución del proyecto
@@ -1547,7 +1572,7 @@ export function Documentacion({ onVolver }: Props) {
               </li>
               <li>
                 <F>Migraciones versionadas</F> con Alembic: <C>0001_esquema_inicial</C> …{" "}
-                <C>0013_factura_simulada</C>, cada una con procedimiento de reversión.
+                <C>0014_venta_medio_pago</C>, cada una con procedimiento de reversión.
               </li>
               <li>
                 <F>Precisión exacta:</F> dinero y peso en gramos se guardan con tipos decimales de
@@ -1591,8 +1616,8 @@ export function Documentacion({ onVolver }: Props) {
           <section id="modelo-datos" className={estilos.seccion}>
             <h2 className={estilos.h2}>10 · Modelo de datos (tablas)</h2>
             <P>
-              El esquema tiene <F>50 tablas</F> en PostgreSQL, creadas por 13 migraciones de
-              Alembic versionadas (<C>0001_esquema_inicial</C> … <C>0013_factura_simulada</C>),
+              El esquema tiene <F>50 tablas</F> en PostgreSQL, creadas por 14 migraciones de
+              Alembic versionadas (<C>0001_esquema_inicial</C> … <C>0014_venta_medio_pago</C>),
               cada una con su procedimiento de reversión. Cada tabla <F>pertenece a exactamente
               un módulo</F> (tabla de Propiedad de Datos de la constitución): los demás módulos la
               consultan, nunca la redefinen ni alteran su esquema.

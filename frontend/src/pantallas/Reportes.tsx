@@ -38,11 +38,39 @@ const VISTAS: { valor: Vista; texto: string }[] = [
 
 export function Reportes() {
   const [vista, setVista] = useState<Vista>("comparativo");
+  // "Exportar PDF" (paridad con la factura de 009): sin PDF de servidor —el diálogo de
+  // impresión del navegador ya trae "Guardar como PDF" y su propia vista previa—. Al pulsar,
+  // se marca la pantalla como hoja de impresión (base.css oculta el nav, los filtros y los
+  // botones vía `data-noprint`) y se lanza `window.print()`; `afterprint` limpia el estado.
+  const [imprimiendo, setImprimiendo] = useState(false);
+  useEffect(() => {
+    if (!imprimiendo) return;
+    const restaurar = () => setImprimiendo(false);
+    window.addEventListener("afterprint", restaurar);
+    const t = window.setTimeout(() => window.print(), 60);
+    return () => {
+      window.clearTimeout(t);
+      window.removeEventListener("afterprint", restaurar);
+    };
+  }, [imprimiendo]);
+
+  const nombreVista = VISTAS.find((v) => v.valor === vista)?.texto ?? "";
+
   return (
-    <div className={estilos.pantalla}>
-      <img className={estilos.marca} src={marcaMono} alt="" aria-hidden="true" />
-      <EncabezadoPantalla titulo="Reportes e Inteligencia" registro="analisis" />
-      <div className={estilos.selectorVista}>
+    <div className={`${estilos.pantalla} ${imprimiendo ? estilos.imprimiendo : ""}`}>
+      <img className={estilos.marca} src={marcaMono} alt="" aria-hidden="true" data-noprint />
+      <EncabezadoPantalla
+        titulo="Reportes e Inteligencia"
+        registro="analisis"
+        acciones={
+          <span data-noprint>
+            <Boton variante="secundaria" tamano="sm" onClick={() => setImprimiendo(true)}>
+              Exportar PDF
+            </Boton>
+          </span>
+        }
+      />
+      <div className={estilos.selectorVista} data-noprint>
         <Segmentado
           opciones={VISTAS}
           activa={vista}
@@ -52,6 +80,12 @@ export function Reportes() {
         />
       </div>
       <div className={estilos.cuerpo}>
+        <p className={estilos.tituloImpresion} data-solo-impresion>
+          Rasero · Reportes e Inteligencia — {nombreVista}
+          <br />
+          Generado {new Date().toLocaleString("es-EC")} · comprobante de demostración, sin valor
+          contractual.
+        </p>
         {vista === "comparativo" && <VistaComparativo />}
         {vista === "tendencias" && <VistaTendencias />}
         {vista === "tablero" && <VistaTablero />}

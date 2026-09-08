@@ -31,6 +31,7 @@
 .totalCritico {
   font-variant-numeric: tabular-nums;
   font-size: var(--texto-xs);
+  white-space: nowrap;
 }
 .totalCritico {
   color: var(--color-critico);
@@ -59,6 +60,7 @@
 .filaCritica {
   display: flex;
   gap: var(--espacio-2);
+  align-items: baseline;
   font-size: var(--texto-xs);
   color: var(--color-tinta-suave);
 }
@@ -67,11 +69,19 @@
   font-weight: var(--peso-fuerte);
 }
 
+/* `flex-shrink: 0` es lo que impide que un stock de 5–6 dígitos (granel en gramos) o uno
+   negativo se comprima por debajo de su ancho real y su texto se solape con `.detalle`. */
 .cantidad {
+  flex-shrink: 0;
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
   min-width: 3ch;
   text-align: right;
+  white-space: nowrap;
+}
+
+.detalle {
+  min-width: 0;
 }
 
 .nota {

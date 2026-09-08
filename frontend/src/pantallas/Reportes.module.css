@@ -175,3 +175,32 @@
   font-size: var(--texto-base);
   line-height: var(--lh-normal);
 }
+
+/* "Exportar PDF": la pantalla se aplana para que el diálogo de impresión del navegador (con su
+   propia vista previa y su "Guardar como PDF") reciba todo el reporte activo, no sólo el trozo
+   visible. El nav global, la marca de agua, el selector de vista y los botones de acción salen
+   por `data-noprint` (base.css); aquí sólo se sueltan los contenedores con scroll y se muestra
+   el encabezado del documento. */
+.tituloImpresion {
+  margin: 0 0 var(--espacio-4);
+  font-family: var(--tipografia-analisis);
+  font-size: var(--texto-sm);
+  line-height: var(--lh-normal);
+  color: var(--color-tinta-suave);
+}
+
+@media print {
+  .pantalla {
+    height: auto;
+    overflow: visible;
+    background: #fff;
+  }
+  .cuerpo {
+    overflow: visible;
+    padding: 0;
+  }
+  .barraAcciones button,
+  .barraAcciones fieldset {
+    display: none !important;
+  }
+}

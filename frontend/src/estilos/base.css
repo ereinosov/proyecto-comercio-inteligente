@@ -49,3 +49,32 @@ input[type="number"]::-webkit-inner-spin-button {
   -webkit-appearance: none;
   margin: 0;
 }
+
+/* Impresión / "Guardar como PDF". Dos superficies lo usan: el documento de factura simulada
+   (009, vía `DocumentoImprimible`) y el reporte activo de la pantalla de Reportes (008). La
+   política es común y mínima —"nada de PDF de servidor" (research §8)—: el navegador ya trae
+   "Guardar como PDF" en su diálogo de impresión.
+
+   - `[data-noprint]` desaparece del papel: el nav del armazón, los botones de acción, los
+     filtros. Es sólo la información la que se imprime.
+   - `[data-solo-impresion]` es lo contrario: un encabezado del documento que en pantalla no
+     hace falta (el usuario ya sabe qué está mirando) pero en el PDF identifica la hoja. */
+@media print {
+  body {
+    background: #fff;
+  }
+
+  [data-noprint] {
+    display: none !important;
+  }
+}
+
+[data-solo-impresion] {
+  display: none;
+}
+
+@media print {
+  [data-solo-impresion] {
+    display: block;
+  }
+}
