@@ -32,6 +32,14 @@
   --color-borde: #D5DCD6;
   --color-borde-fuerte: #BCC6BD;
 
+  /* Contorno exterior de "la hoja" de cada superficie —el marco completo de un panel, una
+     tabla o un bloque de Análisis—. Es el nivel ESTRUCTURAL de la jerarquía de borde (La Regla
+     del Filo, No la Sombra) aplicado al perímetro de la superficie para que una pantalla no se
+     lea como un papel en blanco sobre otro. Los separadores INTERNOS —filas, columnas, campos
+     de formulario, controles— siguen en `--color-borde` (hairline). Un solo lugar para ajustar
+     el peso del contorno de todo el sistema. */
+  --color-contorno: var(--color-borde-fuerte);
+
   /* Semánticos — reservados exclusivamente a su significado, nunca decorativos. */
   --color-atencion: #9A5B08;   /* dato envejecido, stock bajo */
   --color-critico: #8E2A2A;    /* caducado, anomalía */
@@ -101,7 +109,7 @@
 
 .registro-operacion table {
   border-radius: var(--radio-operacion);
-  border-color: var(--color-borde);
+  border-color: var(--color-contorno);
 }
 
 /* Registro de Análisis (márgenes, pronóstico, clientes, promociones): aire visual, radio 6px. */
@@ -113,5 +121,5 @@
 
 .registro-analisis .bloque {
   border-radius: var(--radio-analisis);
-  border-color: var(--color-borde);
+  border-color: var(--color-contorno);
 }

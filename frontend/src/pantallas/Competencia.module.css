@@ -43,7 +43,7 @@
   gap: 16px;
   align-items: flex-end;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 20px 24px;
 }
@@ -65,7 +65,7 @@
   font-size: 16px;
   color: var(--color-tinta);
   background: var(--color-superficie-base);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 8px 10px;
 }
@@ -111,7 +111,7 @@
 
 .bloqueObs {
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 16px 20px;
   display: flex;

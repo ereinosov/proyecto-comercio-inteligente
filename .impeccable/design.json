@@ -84,7 +84,7 @@
         "role": "neutral",
         "displayName": "Borde Fuerte",
         "canonical": "#BCC6BD",
-        "note": "v1.5.0: segundo nivel de la jerarquía de borde. `borde` (#D5DCD6) es el hairline de 1px entre filas/columnas; `borde-fuerte` separa regiones y secciones cuando el hairline se pierde. Ambos sin sombra (La Regla del Filo)."
+        "note": "v1.5.0: segundo nivel de la jerarquía de borde. `borde` (#D5DCD6) es el hairline de 1px entre filas/columnas y campos de formulario; `borde-fuerte` separa regiones y secciones cuando el hairline se pierde. v1.10.0: se expone además como el token `--color-contorno` y se aplica al contorno exterior completo de toda tabla, bloque de Análisis, panel de detalle y tarjeta de modal — un solo punto de ajuste del peso del marco de las superficies. Ambos sin sombra (La Regla del Filo)."
       },
       "borde": {
         "role": "neutral",

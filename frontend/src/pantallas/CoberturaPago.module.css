@@ -42,7 +42,7 @@
 
 .bloque {
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 18px 20px;
   max-width: 760px;
@@ -76,7 +76,7 @@
   font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 7px 9px;
 }

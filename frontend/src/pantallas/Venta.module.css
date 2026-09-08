@@ -100,7 +100,7 @@
   table-layout: fixed;
   border-collapse: collapse;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-operacion);
   font-size: var(--texto-base);
 }
@@ -418,7 +418,7 @@
   flex-direction: column;
   align-items: center;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-operacion);
   padding: var(--espacio-8);
   min-width: 320px;

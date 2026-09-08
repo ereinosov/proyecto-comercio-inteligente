@@ -48,9 +48,12 @@ interface Props {
   onTurnoAbierto: (turno: Turno) => void;
   // User Story 11: mensaje cuando se vuelve aquí porque la sesión de turno expiró o se cerró.
   avisoSesion?: string | null;
+  // Superficie de demostración: abre la documentación del sistema. No es parte del flujo de un
+  // operador; por eso vive aquí y no en el nav.
+  onVerDocumentacion?: () => void;
 }
 
-export function AperturaTurno({ onTurnoAbierto, avisoSesion }: Props) {
+export function AperturaTurno({ onTurnoAbierto, avisoSesion, onVerDocumentacion }: Props) {
   const [operadores, setOperadores] = useState<Operador[]>([]);
   const [sucursales, setSucursales] = useState<Sucursal[]>([]);
   const [idOperador, setIdOperador] = useState<number | "">("");
@@ -202,6 +205,11 @@ export function AperturaTurno({ onTurnoAbierto, avisoSesion }: Props) {
         </button>
       </form>
       {NOMBRE_COMERCIO && <p className={estilos.pieComercio}>{NOMBRE_COMERCIO}</p>}
+      {onVerDocumentacion && (
+        <button type="button" className={estilos.enlaceDoc} onClick={onVerDocumentacion}>
+          Documentación del sistema
+        </button>
+      )}
     </div>
   );
 }

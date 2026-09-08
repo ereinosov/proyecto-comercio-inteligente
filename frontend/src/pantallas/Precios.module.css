@@ -73,7 +73,7 @@
   font-size: 16px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 14px 16px;
   cursor: pointer;
@@ -99,7 +99,7 @@
   min-width: 0;
   overflow-y: auto;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 28px 32px;
 }

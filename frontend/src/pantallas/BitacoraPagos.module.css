@@ -48,7 +48,7 @@
   font-size: 14px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-operacion);
   padding: 6px 8px;
 }
@@ -70,7 +70,7 @@
   width: 100%;
   border-collapse: collapse;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-operacion);
   font-size: 14px;
 }

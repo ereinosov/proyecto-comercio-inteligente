@@ -16,6 +16,7 @@ import { TerminalesPago } from "./pantallas/TerminalesPago";
 import { Pagos } from "./pantallas/Pagos";
 import { Administracion } from "./pantallas/Administracion";
 import { Reportes } from "./pantallas/Reportes";
+import { Documentacion } from "./pantallas/Documentacion";
 import { cerrarTurno, listarOperadores, type Turno } from "./servicios/turnos";
 import { listarSucursales } from "./servicios/sucursales";
 import {
@@ -177,6 +178,9 @@ export function App() {
   const [nombreOperador, setNombreOperador] = useState<string>("");
   const [rol, setRol] = useState<Rol | null>(null);
   const [nombreSucursal, setNombreSucursal] = useState<string>("");
+  // Superficie de DEMOSTRACIÓN (no operativa): documentación del sistema, accesible sólo desde
+  // la pantalla de apertura de turno. No entra en el nav ni en la autorización por rol.
+  const [verDocumentacion, setVerDocumentacion] = useState(false);
   // User Story 11 (Principio VI, "Identidad de sesión"): el token JWT de la sesión de turno
   // vive junto al turno, en memoria. `setTurno` lo sincroniza con el cliente HTTP.
   const [avisoSesion, setAvisoSesion] = useState<string | null>(null);
@@ -238,7 +242,16 @@ export function App() {
   }, [turno]);
 
   if (!turno) {
-    return <AperturaTurno onTurnoAbierto={setTurno} avisoSesion={avisoSesion} />;
+    if (verDocumentacion) {
+      return <Documentacion onVolver={() => setVerDocumentacion(false)} />;
+    }
+    return (
+      <AperturaTurno
+        onTurnoAbierto={setTurno}
+        avisoSesion={avisoSesion}
+        onVerDocumentacion={() => setVerDocumentacion(true)}
+      />
+    );
   }
 
   async function manejarCierre() {

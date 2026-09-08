@@ -555,11 +555,18 @@ agrisado, un punto más profundo. El salto de luminosidad a Superficie Alta sube
 antes era tan sutil que en muchos monitores la tabla no se distinguía del fondo y la pantalla
 se leía como un solo plano.
 
-**Jerarquía de borde (v1.5.0).** Dos niveles, ambos sin sombra: **hairline** (`borde` #D5DCD6,
-1px) separa filas, columnas y el contorno de una tabla o tarjeta; **estructural**
-(`borde-fuerte` #BCC6BD) separa regiones y secciones —el borde inferior del nav, la franja del
-pie, el corte entre un formulario fijo y su tabla— donde el hairline se perdía contra el
-contenido.
+**Jerarquía de borde (v1.5.0, ampliada v1.10.0).** Dos niveles, ambos sin sombra: **hairline**
+(`borde` #D5DCD6, 1px) separa filas, columnas y campos de formulario *dentro* de una superficie;
+**estructural** (`borde-fuerte` #BCC6BD, expuesto como `--color-contorno`) separa regiones y
+secciones —el borde inferior del nav, el corte entre un formulario fijo y su tabla— y, **desde
+v1.10.0, el contorno exterior completo de toda superficie de contenido**: el marco de una tabla
+de Operación, de un bloque de Análisis, de un panel de detalle, de la tarjeta del modal
+administrable, de la tarjeta de apertura de turno (y su corte marca/formulario) y de los paneles
+flotantes (identificar cliente, aplicar promoción). El hairline quedaba para el contorno de la tabla en v1.5.0, pero contra la
+Superficie Base #E9EDE9 —a sólo ~7% de salto— seguía leyéndose como "una hoja en blanco sobre
+otra": el perímetro de la superficie es una separación entre regiones, no entre filas, y le
+toca el nivel estructural. Los separadores internos NO cambian. Un solo lugar para ajustar el
+peso del contorno de todo el sistema: el token `--color-contorno` en `tokens.css`.
 
 ### Named Rules
 
@@ -1000,7 +1007,9 @@ del operador en la barra responde "¿de quién es este turno?" sin abrir otra pa
   texto de la escala `--texto-*` (v1.5.0). Nunca un literal nuevo.
 - **Do** usar IBM Plex Sans en todo control, tabla y etiqueta; Source Serif 4 sólo en títulos
   ≥ 20px y prosa de Análisis (La Regla de la Voz de Análisis).
-- **Do** transmitir profundidad con el salto de tono #F1F4F1 → #FFFFFF y el borde #D5DCD6.
+- **Do** transmitir profundidad con el salto de tono #E9EDE9 → #FFFFFF, el hairline #D5DCD6
+  entre filas y columnas, y el contorno estructural `--color-contorno` (#BCC6BD) en el
+  perímetro de toda tabla, bloque, panel o modal (v1.10.0) — nunca una sombra.
 - **Do** acompañar todo dato incierto o envejecido con sus tres portadores.
 - **Do** reservar el Verde Rasero para la acción que compromete dinero, una vez por pantalla —
   y cero veces en una pantalla que no tiene esa acción.
@@ -1142,4 +1151,16 @@ una aclaración sin cambio de significado.
   redefine ninguna regla previa. Sincronización con la constitución **pendiente** (junto con
   v1.4.0–v1.8.0).
 
-**Versión**: 1.9.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+- **1.10.0** (2026-09-07) — MENOR (ampliación de una regla existente): la **jerarquía de borde**
+  de v1.5.0 se amplía. El **contorno exterior** de toda superficie de contenido —tabla de
+  Operación, bloque de Análisis, panel de detalle, tarjeta de `ModalAdministrable`— pasa del
+  hairline `borde` (#D5DCD6) al nivel **estructural** `borde-fuerte` (#BCC6BD), expuesto como el
+  token nuevo **`--color-contorno`** en `tokens.css` para tener un único punto de ajuste. Los
+  separadores internos (filas, columnas, campos de formulario, controles) **no cambian**: siguen
+  en hairline. Motivo: contra la Superficie Base #E9EDE9 el contorno de 1px en `borde` se leía
+  como "una hoja en blanco sobre otra"; el perímetro de una superficie separa regiones, no filas.
+  No se añade ninguna sombra (La Regla del Filo intacta) ni se toca la paleta de la constitución
+  (`borde-fuerte` ya existía desde v1.5.0). Sincronización con la constitución **pendiente**
+  (junto con v1.4.0–v1.9.0).
+
+**Versión**: 1.10.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07

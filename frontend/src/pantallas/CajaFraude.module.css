@@ -58,14 +58,14 @@
   min-width: 0;
   overflow-y: auto;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 24px 28px;
 }
 
 .bloque {
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 18px 22px;
   max-width: 78ch;
@@ -140,7 +140,7 @@
   font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 7px 9px;
 }
@@ -179,7 +179,7 @@
 }
 
 .bloqueOperador {
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 12px 14px;
   display: flex;
@@ -252,7 +252,7 @@
   font-size: 15px;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 12px 14px;
   cursor: pointer;
@@ -338,7 +338,7 @@
   font-family: var(--tipografia-operacion);
   font-size: 13px;
   background: var(--color-superficie-base);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-analisis);
   padding: 10px;
   overflow-x: auto;

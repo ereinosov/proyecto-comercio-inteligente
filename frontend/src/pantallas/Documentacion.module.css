@@ -1,0 +1,314 @@
+/* Documentación del sistema (superficie de demostración, NO parte del flujo de un operador).
+   Se abre desde un enlace en la pantalla de apertura de turno; no aparece en el nav de la app.
+
+   Registro de Análisis: Source Serif 4 en prosa y títulos ≥ 20px (La Regla de la Voz de
+   Análisis), IBM Plex Sans en tablas, etiquetas y cifras. Radio 6px. Cero sombras: la
+   separación es tono + contorno estructural (`--color-contorno`, v1.10.0). Sin Verde Rasero
+   (La Regla del Registro Sin Dinero: esta pantalla no compromete dinero). Marca de agua mono
+   del comercio, mismo patrón que Reportes y los estados vacíos. */
+
+.pantalla {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  background: var(--color-superficie-base);
+  font-family: var(--tipografia-analisis);
+  color: var(--color-tinta);
+}
+
+.marca {
+  position: absolute;
+  right: var(--espacio-8);
+  bottom: var(--espacio-6);
+  width: 200px;
+  opacity: 0.05;
+  pointer-events: none;
+}
+
+/* Barra superior propia: wordmark de Rasero a la izquierda, acción "Volver" a la derecha.
+   Esta pantalla vive fuera del armazón con nav, así que trae su propia cabecera. */
+.barra {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--espacio-4);
+  padding: var(--espacio-3) var(--espacio-8);
+  background: var(--color-superficie-alta);
+  border-bottom: 1px solid var(--color-contorno);
+}
+
+.marcaSistema {
+  height: 22px;
+  width: auto;
+  display: block;
+}
+
+.tituloBarra {
+  font-family: var(--tipografia-analisis);
+  font-size: var(--texto-md);
+  font-weight: var(--peso-fuerte);
+  margin: 0;
+}
+
+.marco {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+}
+
+/* Índice lateral: anclas a cada sección. IBM Plex Sans (es navegación, no prosa). */
+.indice {
+  flex-shrink: 0;
+  width: 248px;
+  overflow-y: auto;
+  padding: var(--espacio-6) var(--espacio-4);
+  border-right: 1px solid var(--color-contorno);
+  background: var(--color-superficie-alta);
+}
+
+.indiceTitulo {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-xs);
+  font-weight: var(--peso-fuerte);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-tinta-suave);
+  margin: 0 0 var(--espacio-3) var(--espacio-2);
+}
+
+.indiceLista {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.indiceEnlace {
+  display: block;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
+  text-decoration: none;
+  padding: var(--espacio-2);
+  border-left: 2px solid transparent;
+  border-radius: 0 var(--radio-operacion) var(--radio-operacion) 0;
+}
+
+.indiceEnlace:hover {
+  color: var(--color-tinta);
+  background: var(--color-superficie-base);
+}
+
+.indiceActivo {
+  color: var(--color-tinta);
+  border-left-color: var(--color-marca);
+  font-weight: var(--peso-medio);
+}
+
+.contenido {
+  flex: 1;
+  min-width: 0;
+  overflow-y: auto;
+  padding: var(--espacio-8) var(--espacio-12);
+}
+
+.seccion {
+  max-width: 900px;
+  margin: 0 auto var(--espacio-12);
+  scroll-margin-top: var(--espacio-6);
+}
+
+.seccion:last-child {
+  margin-bottom: var(--espacio-12);
+}
+
+.h2 {
+  font-family: var(--tipografia-analisis);
+  font-size: var(--texto-xl);
+  font-weight: var(--peso-fuerte);
+  line-height: var(--lh-ajustado);
+  margin: 0 0 var(--espacio-4);
+  padding-bottom: var(--espacio-2);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.h3 {
+  font-family: var(--tipografia-analisis);
+  font-size: var(--texto-lg);
+  font-weight: var(--peso-fuerte);
+  line-height: var(--lh-ajustado);
+  margin: var(--espacio-8) 0 var(--espacio-3);
+}
+
+.p {
+  font-family: var(--tipografia-analisis);
+  font-size: var(--texto-base);
+  line-height: var(--lh-normal);
+  max-width: 74ch;
+  margin: 0 0 var(--espacio-3);
+}
+
+.lista {
+  font-family: var(--tipografia-analisis);
+  font-size: var(--texto-base);
+  line-height: var(--lh-normal);
+  max-width: 74ch;
+  margin: 0 0 var(--espacio-4);
+  padding-left: var(--espacio-6);
+}
+
+.lista li {
+  margin-bottom: var(--espacio-2);
+}
+
+.fuerte {
+  font-weight: var(--peso-fuerte);
+}
+
+/* Cita textual del enunciado original — voz distinta, sangrada. */
+.cita {
+  font-family: var(--tipografia-analisis);
+  font-style: italic;
+  font-size: var(--texto-base);
+  line-height: var(--lh-normal);
+  color: var(--color-tinta-suave);
+  max-width: 74ch;
+  margin: 0 0 var(--espacio-4);
+  padding-left: var(--espacio-4);
+  border-left: 3px solid var(--color-borde);
+}
+
+/* Recuadro de nota / aclaración de alcance. El aviso de "simulado / no es esto" usa el
+   color atención (mismo criterio que el aviso de FacturaSimulada). */
+.nota {
+  font-family: var(--tipografia-analisis);
+  font-size: var(--texto-sm);
+  line-height: var(--lh-normal);
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-contorno);
+  border-left: 3px solid var(--color-atencion);
+  border-radius: var(--radio-analisis);
+  padding: var(--espacio-3) var(--espacio-4);
+  margin: 0 0 var(--espacio-4);
+  max-width: 74ch;
+}
+
+.nota .fuerte {
+  color: var(--color-atencion);
+}
+
+/* Tablas: IBM Plex Sans, contorno estructural, separadores internos hairline. */
+.tablaEnvoltura {
+  overflow-x: auto;
+  margin: 0 0 var(--espacio-4);
+  border: 1px solid var(--color-contorno);
+  border-radius: var(--radio-analisis);
+}
+
+.tabla {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-superficie-alta);
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla th,
+.tabla td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--espacio-2) var(--espacio-3);
+  border-bottom: 1px solid var(--color-borde);
+}
+
+.tabla tr:last-child td {
+  border-bottom: none;
+}
+
+.tabla th {
+  font-weight: var(--peso-fuerte);
+  color: var(--color-tinta-suave);
+  white-space: nowrap;
+}
+
+.tabla td .fuerte {
+  font-weight: var(--peso-fuerte);
+}
+
+/* Diagrama de arquitectura: pila de capas en cajas, sin sombra. */
+.diagrama {
+  display: flex;
+  flex-direction: column;
+  gap: var(--espacio-2);
+  margin: 0 0 var(--espacio-4);
+  max-width: 640px;
+}
+
+.capa {
+  background: var(--color-superficie-alta);
+  border: 1px solid var(--color-contorno);
+  border-radius: var(--radio-analisis);
+  padding: var(--espacio-3) var(--espacio-4);
+}
+
+.capaTitulo {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  font-weight: var(--peso-fuerte);
+  margin: 0 0 var(--espacio-1);
+}
+
+.capaDetalle {
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-xs);
+  color: var(--color-tinta-suave);
+  line-height: var(--lh-normal);
+  margin: 0;
+}
+
+.flecha {
+  align-self: center;
+  color: var(--color-tinta-suave);
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  line-height: 1;
+}
+
+/* Píldora: etiqueta breve (rol, nivel, estado). IBM Plex Sans, contorno hairline, radio 2px. */
+.pildora {
+  display: inline-block;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-xs);
+  color: var(--color-tinta-suave);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 1px var(--espacio-2);
+  white-space: nowrap;
+}
+
+.termino {
+  font-weight: var(--peso-fuerte);
+}
+
+.codigo {
+  font-family: var(--tipografia-operacion);
+  font-size: 0.92em;
+  background: var(--color-superficie-base);
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-operacion);
+  padding: 0 4px;
+}
+
+@media (max-width: 860px) {
+  .indice {
+    display: none;
+  }
+  .contenido {
+    padding: var(--espacio-6);
+  }
+}

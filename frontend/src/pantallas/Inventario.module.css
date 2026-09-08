@@ -51,7 +51,7 @@
   font-variant-numeric: tabular-nums;
   color: var(--color-tinta);
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-operacion);
   padding: 7px 9px;
 }
@@ -75,7 +75,7 @@
   width: 100%;
   border-collapse: collapse;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-operacion);
   font-size: 15px;
 }

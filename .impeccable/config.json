@@ -19,7 +19,7 @@
           "frontend/src/pantallas/Clientes.module.css"
         ],
         "createdAt": "2026-09-07T02:49:53.453Z",
-        "reason": "user confirmed: task prompt especifica 'mismo patron que el tint de amber/rojo ya usado en Precios (margen bajo/perdida)'; patron establecido en Precios.module.css (.bordeBajo/.bordeNegativo, border-left 4px semantico) para tint de apoyo por fila en registros de Analisis"
+        "reason": "pre-existing shipped design: DESIGN.md 'Bloque de Análisis: listado y detalle de clientes' + inline comment sanction the 4px semantic left border (atención/crítico) as a redundant carrier of estado_fuga per La Regla de los Tres Portadores; lines not touched by this change"
       },
       {
         "rule": "broken-image",
@@ -29,6 +29,15 @@
         ],
         "createdAt": "2026-09-07T06:11:11.876Z",
         "reason": "test fixtures: ImagenProducto.test.tsx deliberately passes fake/broken example.com URLs to exercise the onError fallback path — the component's whole purpose"
+      },
+      {
+        "rule": "side-tab",
+        "value": "*",
+        "files": [
+          "frontend/src/pantallas/Documentacion.module.css"
+        ],
+        "createdAt": "2026-09-08T05:07:51.119Z",
+        "reason": "demo-only doc surface: .nota reuses the sanctioned FacturaSimulada 'aviso de simulación' pattern (atención left border for scope-limitation notes); .cita is a standard blockquote bar in neutral --color-borde for the verbatim professor quote"
       }
     ]
   }

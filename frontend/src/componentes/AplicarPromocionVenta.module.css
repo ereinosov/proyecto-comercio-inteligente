@@ -52,7 +52,7 @@
   gap: 6px;
   padding: 10px;
   background: var(--color-superficie-alta);
-  border: 1px solid var(--color-borde);
+  border: 1px solid var(--color-contorno);
   border-radius: var(--radio-operacion);
   min-width: 240px;
 }
