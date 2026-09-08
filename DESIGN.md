@@ -831,6 +831,33 @@ fraude, Gestión de operadores, Pagos), `subnav`/`subtab`/`subtabActiva` (Compet
 - **Sin íconos nuevos:** las señales se comunican con formas dibujadas en CSS (punto lleno / medio
   / hueco), no con íconos — la Regla del Ícono no llega a aplicar.
 
+### Documento formal simulado (Operación, 009)
+
+`FacturaSimulada` es el primer **bloque de documento** del sistema: no es una Tabla de Operación
+ni un bloque de Análisis, es la representación de un papel formal (una factura, una nota de
+crédito). Registro de **Operación** (IBM Plex Sans, cifras tabulares, radio 2px, sin sombra): la
+factura es parte del flujo de caja que opera un cajero, no una lectura gerencial.
+
+- **El aviso de simulación va destacado, arriba, en la misma superficie del documento** — recuadro
+  con borde y texto en color **atención #9A5B08**, nunca una nota al pie gris. Es un requisito
+  funcional (009 FR-019): un documento con la forma de una factura no debe poder confundirse con
+  una factura válida ante el SRI ni por un segundo. El texto nombra las tres cosas que le faltan:
+  autorización del SRI, firma electrónica, secuencial de un rango autorizado.
+- **Estructura fija:** encabezado a dos columnas (emisor —razón social, RUC, dirección— a la
+  izquierda; tipo de documento, secuencial `EEE-PPP-NNNNNNNNN`, fecha a la derecha); línea del
+  comprador ("Consumidor Final" sin identificador, o nombre · identificador); tabla de renglones
+  densa (descripción, cantidad, precio unitario, importe, las tres cifras alineadas a la derecha);
+  totales en lista de definición alineada a la derecha (subtotal, IVA con la tarifa y la palabra
+  "incluido", total, medio de pago).
+- **Una nota de crédito es el mismo bloque** con el rótulo "Nota de crédito (simulada)" y cifras
+  en negativo; cuando anula una factura, la factura muestra el sello **ANULADA** en crítico.
+- **`DocumentoImprimible`** envuelve uno o dos de estos bloques en una hoja a pantalla completa
+  con `window.print()` — que en cualquier navegador ofrece además "Guardar como PDF", sin PDF de
+  servidor. La barra de acciones lleva `data-noprint` y desaparece en la impresión.
+- **Sin Verde Rasero.** El documento se genera *después* del cobro y no dispara ningún cobro
+  (Principio II); no hay ninguna acción que comprometa dinero en esta superficie (La Regla del
+  Registro Sin Dinero). El botón "Generar factura" del reintento es `secundaria`.
+
 ### Named Rules
 
 **La Regla de los Tres Portadores.** Ningún dato con antigüedad o incertidumbre se comunica solo
@@ -1105,5 +1132,14 @@ una aclaración sin cambio de significado.
   (grillas cortas). No se elimina ni invierte ninguna regla; La Regla de la Sola Voz y la del
   Registro Sin Dinero se respetan (ningún `Boton primaria` fuera de Venta usa verde).
   Sincronización con la constitución **pendiente** (junto con v1.4.0–v1.7.0).
+- **1.9.0** (2026-09-07) — MENOR (aditiva): componente nuevo **"Documento formal simulado
+  (Operación, 009)"** para `009-facturacion-electronica`. Introduce el primer *bloque de
+  documento* del sistema (`FacturaSimulada` / `DocumentoImprimible`): estructura fija de factura
+  ecuatoriana en registro de Operación, con el **aviso de simulación destacado arriba en color
+  atención** (no nota al pie) como tratamiento visual obligatorio de 009 FR-019. `window.print()`
+  para "Ver como documento" y "Guardar como PDF", sin PDF de servidor. Sin Verde Rasero (la
+  superficie no compromete dinero; La Regla del Registro Sin Dinero se respeta). No elimina ni
+  redefine ninguna regla previa. Sincronización con la constitución **pendiente** (junto con
+  v1.4.0–v1.8.0).
 
-**Versión**: 1.8.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07
+**Versión**: 1.9.0 | **Derivada**: 2026-09-04 | **Última enmienda**: 2026-09-07

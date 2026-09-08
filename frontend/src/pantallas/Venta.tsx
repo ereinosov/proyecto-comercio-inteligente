@@ -35,6 +35,13 @@ import {
 import { registrarVisita } from "../servicios/clientes";
 import { registrarRedencion } from "../servicios/promociones";
 import { registrarConsultaNoAtendida } from "../servicios/senales";
+import {
+  type Factura,
+  emitirNotaCredito,
+  generarFactura,
+} from "../servicios/facturas";
+import { FacturaSimulada } from "../componentes/FacturaSimulada";
+import { DocumentoImprimible } from "../componentes/DocumentoImprimible";
 import { gramosDesdeKg, RenglonGranel } from "../componentes/RenglonGranel";
 import { IdentificarCliente, type ClienteSeleccionado } from "../componentes/IdentificarCliente";
 import {
@@ -108,6 +115,21 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
   const [consultando, setConsultando] = useState(false);
   const [enviandoConsulta, setEnviandoConsulta] = useState(false);
   const [consultaAnotada, setConsultaAnotada] = useState<string | null>(null);
+  // 009: factura SIMULADA. Se genera DESPUÉS del cobro, nunca lo bloquea (Principio II). Si la
+  // generación falla, la venta ya está hecha: se ofrece "Generar factura" para reintentar.
+  const [factura, setFactura] = useState<Factura | null>(null);
+  const [notaCredito, setNotaCredito] = useState<Factura | null>(null);
+  const [facturaFallo, setFacturaFallo] = useState(false);
+  const [generandoFactura, setGenerandoFactura] = useState(false);
+
+  function pedirFactura(idVenta: number) {
+    setGenerandoFactura(true);
+    setFacturaFallo(false);
+    generarFactura(idVenta)
+      .then((f) => setFactura(f))
+      .catch(() => setFacturaFallo(true))
+      .finally(() => setGenerandoFactura(false));
+  }
 
   const recargarExistencias = useCallback(() => {
     listarExistencias(turno.id_sucursal)
@@ -296,6 +318,9 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
       // La confirmación se muestra EN el botón antes de cambiar de pantalla — si
       // ventaConfirmada se fija ya, la pantalla cambia en el mismo render y la animación
       // nunca llega a verse (defecto detectado al verificar visualmente).
+      // 009: la factura simulada se pide aquí, DESPUÉS de que la venta ya está confirmada, con el
+      // mismo patrón sin bloquear que la visita y la redención de arriba.
+      pedirFactura(venta.id_venta);
       setCobrando(false);
       setConfirmado(true);
       recargarExistencias(); // US14: el stock cambió con esta venta.
@@ -335,6 +360,9 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
     setClaveIdempotencia(generarClaveIdempotencia());
     setClienteIdentificado(null);
     setPromocionAplicada(null);
+    setFactura(null);
+    setNotaCredito(null);
+    setFacturaFallo(false);
   }
 
   async function anular() {
@@ -343,6 +371,11 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
     try {
       await anularVenta(ventaConfirmada.id_venta);
       setVentaConfirmada({ ...ventaConfirmada, anulada: true });
+      // 009: si la venta tenía factura, se emite la nota de crédito que la revierte. No bloquea
+      // la anulación (Principio II): si falla, la venta ya quedó anulada en 001.
+      emitirNotaCredito(ventaConfirmada.id_venta)
+        .then((nc) => nc && setNotaCredito(nc))
+        .catch(() => undefined);
     } catch (e) {
       setError(e instanceof ErrorApi ? e.message : "No se pudo anular la venta.");
     } finally {
@@ -376,6 +409,29 @@ export function Venta({ turno, onCerrarTurno, rol }: Props) {
               </Boton>
             )}
           </div>
+        </div>
+
+        <div className={estilos.bloqueFactura}>
+          {factura ? (
+            <>
+              <FacturaSimulada factura={factura} />
+              {notaCredito && <FacturaSimulada factura={notaCredito} />}
+              <DocumentoImprimible factura={factura} notaCredito={notaCredito} />
+            </>
+          ) : generandoFactura ? (
+            <p className={estilos.notaFactura}>Generando la factura simulada…</p>
+          ) : facturaFallo ? (
+            <div className={estilos.notaFactura}>
+              <p>No se pudo generar la factura simulada. La venta sí quedó registrada.</p>
+              <Boton
+                variante="secundaria"
+                tamano="sm"
+                onClick={() => pedirFactura(ventaConfirmada.id_venta)}
+              >
+                Generar factura
+              </Boton>
+            </div>
+          ) : null}
         </div>
       </div>
     );

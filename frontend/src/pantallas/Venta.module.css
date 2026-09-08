@@ -378,12 +378,39 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow-y: auto;
   background: var(--color-superficie-base);
   font-family: var(--tipografia-operacion);
   align-items: center;
   justify-content: center;
   gap: var(--espacio-6);
+  padding: var(--espacio-6) var(--espacio-4);
   color: var(--color-tinta);
+}
+
+/* Con la factura simulada abajo, el contenido puede pasar del alto de la ventana: cuando
+   pasa, se ancla arriba y hace scroll en vez de recortarse. */
+.pantallaConfirmada:has(.bloqueFactura > *) {
+  justify-content: flex-start;
+}
+
+.bloqueFactura {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-4);
+  width: 100%;
+  max-width: 68ch;
+}
+
+.notaFactura {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--espacio-3);
+  color: var(--color-tinta-suave);
+  font-size: var(--texto-sm);
+  text-align: center;
 }
 
 .resumenConfirmado {
