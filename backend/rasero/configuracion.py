@@ -22,3 +22,13 @@ UMBRAL_GLOBAL_DIAS_INMOVILIZADO = int(os.environ.get("UMBRAL_GLOBAL_DIAS_INMOVIL
 JWT_SECRET_KEY = os.environ.get("JWT_SECRET_KEY", "desarrollo-local-no-usar-en-produccion")
 JWT_ALGORITMO = "HS256"
 JWT_HORAS_EXPIRACION = int(os.environ.get("JWT_HORAS_EXPIRACION", "12"))
+
+# Facturación electrónica SIMULADA (009-facturacion-electronica). Ningún literal de la razón
+# social/RUC reales en código: todo por entorno, con un valor de demostración por defecto (mismo
+# patrón que VITE_LOGO_COMERCIO). La factura NO tiene validez tributaria — sin SRI, sin firma.
+RUC_COMERCIO = os.environ.get("RUC_COMERCIO", "9999999999001")
+RAZON_SOCIAL_COMERCIO = os.environ.get("RAZON_SOCIAL_COMERCIO", "Comercio de Demostración")
+DIRECCION_COMERCIO = os.environ.get("DIRECCION_COMERCIO", "")
+TARIFA_IVA = os.environ.get("TARIFA_IVA", "0.15")
+ESTABLECIMIENTO_SRI = os.environ.get("ESTABLECIMIENTO_SRI", "001")
+PUNTO_EMISION_SRI = os.environ.get("PUNTO_EMISION_SRI", "001")

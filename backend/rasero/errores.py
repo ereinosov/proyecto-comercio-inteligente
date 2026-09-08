@@ -87,6 +87,29 @@ class ValorInvalido(ErrorDominio):
     status_code = 422
 
 
+class FacturaNoAplicable(ErrorDominio):
+    """009: no se genera factura para una venta de total 0 (FR-010)."""
+
+    codigo = "factura_no_aplicable"
+    status_code = 422
+
+    def __init__(self, mensaje: str = "Una venta de total 0 no genera factura."):
+        super().__init__(mensaje)
+
+
+class VentaNoAnulada(ErrorDominio):
+    """009: se pidió la nota de crédito de una venta que no está anulada en 001 (FR-015)."""
+
+    codigo = "venta_no_anulada"
+    status_code = 409
+
+    def __init__(self):
+        super().__init__(
+            "Sólo se emite una nota de crédito cuando la venta está anulada. Anula la venta "
+            "primero."
+        )
+
+
 class SinBaseParaSegmentar(ErrorDominio):
     """008 User Story 4: no hay ningún cliente con historial suficiente (≥ N visitas) para
     correr el clustering. No se fuerza una partición sobre nada.

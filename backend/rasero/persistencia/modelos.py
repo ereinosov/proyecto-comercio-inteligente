@@ -1493,3 +1493,53 @@ class AsignacionSegmento(Base):
             name="fk_asignacion_segmento_grupo",
         ),
     )
+
+
+# --------------------------------------------------------------------------
+# 009-facturacion-electronica — SIMULADA (constitución v2.7.0). Entidad propia de 009, derivada
+# de una `venta` confirmada de 001. 009 CONSULTA venta/renglon_venta/cliente sin poseerlos.
+# --------------------------------------------------------------------------
+
+
+class FacturaSimulada(Base):
+    """Documento con la FORMA de una factura electrónica ecuatoriana, SIMULADO (sin SRI, sin
+    firma, sin XML regulatorio). Todo el contenido es un SNAPSHOT: una factura emitida no cambia
+    aunque cambie la venta, el cliente o la configuración (FR-013). Idempotente por `id_venta`
+    para `tipo='factura'`.
+    """
+
+    __tablename__ = "factura_simulada"
+
+    id_factura_simulada: Mapped[int] = mapped_column(BigInteger, primary_key=True)
+    id_venta: Mapped[int] = mapped_column(ForeignKey("venta.id_venta"), nullable=False)
+    tipo: Mapped[str] = mapped_column(String, nullable=False)
+    id_factura_referida: Mapped[int | None] = mapped_column(
+        ForeignKey("factura_simulada.id_factura_simulada"), nullable=True
+    )
+    establecimiento: Mapped[str] = mapped_column(String, nullable=False)
+    punto_emision: Mapped[str] = mapped_column(String, nullable=False)
+    numero: Mapped[int] = mapped_column(Integer, nullable=False)
+    secuencial: Mapped[str] = mapped_column(String, nullable=False)
+    fecha_emision: Mapped[date] = mapped_column(Date, nullable=False)
+    emisor: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    comprador: Mapped[dict] = mapped_column(JSONB, nullable=False)
+    renglones: Mapped[list] = mapped_column(JSONB, nullable=False)
+    subtotal: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    tarifa_iva: Mapped[Decimal] = mapped_column(Numeric(5, 4), nullable=False)
+    monto_iva: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    total: Mapped[Decimal] = mapped_column(Numeric(12, 2), nullable=False)
+    medio_pago: Mapped[str | None] = mapped_column(String, nullable=True)
+    estado: Mapped[str] = mapped_column(String, nullable=False, default="emitida")
+    instante_generacion: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), nullable=False
+    )
+
+    __table_args__ = (
+        CheckConstraint("tipo IN ('factura','nota_credito')", name="ck_factura_simulada_tipo"),
+        CheckConstraint("estado IN ('emitida','anulada')", name="ck_factura_simulada_estado"),
+        CheckConstraint("numero >= 1", name="ck_factura_simulada_numero"),
+        UniqueConstraint(
+            "establecimiento", "punto_emision", "tipo", "numero",
+            name="uq_factura_simulada_secuencial",
+        ),
+    )
