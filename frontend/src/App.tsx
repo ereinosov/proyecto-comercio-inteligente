@@ -15,6 +15,7 @@ import { CajaFraude } from "./pantallas/CajaFraude";
 import { TerminalesPago } from "./pantallas/TerminalesPago";
 import { Pagos } from "./pantallas/Pagos";
 import { Administracion } from "./pantallas/Administracion";
+import { Reportes } from "./pantallas/Reportes";
 import { cerrarTurno, listarOperadores, type Turno } from "./servicios/turnos";
 import { listarSucursales } from "./servicios/sucursales";
 import {
@@ -48,6 +49,7 @@ type Pantalla =
   | "cajafraude"
   | "terminales"
   | "pagos"
+  | "reportes"
   | "administracion";
 
 // La Regla del Grupo de Navegación (DESIGN.md v1.2.0): "Venta" suelta y siempre visible; el
@@ -78,6 +80,7 @@ const GRUPOS: { etiqueta: string; opciones: OpcionNav[] }[] = [
       { valor: "precios", texto: "Precios", rol: "encargado" },
       { valor: "competencia", texto: "Competencia", rol: "encargado" },
       { valor: "pronostico", texto: "Pronóstico", rol: "encargado" },
+      { valor: "reportes", texto: "Reportes", rol: "encargado" },
     ],
   },
   {
@@ -361,6 +364,7 @@ export function App() {
         {pantalla === "pagos" && (
           <Pagos idSucursal={turno.id_sucursal} idOperador={turno.id_operador} />
         )}
+        {pantalla === "reportes" && autoriz.esEncargadoOMas() && <Reportes />}
         {pantalla === "administracion" && autoriz.esEncargadoOMas() && (
           <Administracion rol={rol} />
         )}

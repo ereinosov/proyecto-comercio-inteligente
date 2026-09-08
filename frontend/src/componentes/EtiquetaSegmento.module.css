@@ -1,0 +1,20 @@
+.etiqueta {
+  margin: var(--espacio-2) 0;
+  font-family: var(--tipografia-operacion);
+  font-size: var(--texto-sm);
+  color: var(--color-tinta-suave);
+}
+
+.grupo {
+  font-weight: var(--peso-fuerte);
+  color: var(--color-tinta);
+  text-transform: capitalize;
+}
+
+.descripcion {
+  color: var(--color-tinta-suave);
+}
+
+.fecha {
+  font-size: var(--texto-xs);
+}

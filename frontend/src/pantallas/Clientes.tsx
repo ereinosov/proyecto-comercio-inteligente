@@ -28,6 +28,7 @@ import { Paginador, TAMANO_PAGINA } from "../componentes/Paginador";
 import { Boton } from "../componentes/Boton";
 import { EncabezadoPantalla } from "../componentes/EncabezadoPantalla";
 import { Segmentado } from "../componentes/Segmentado";
+import { EtiquetaSegmento } from "../componentes/EtiquetaSegmento";
 import estilos from "./Clientes.module.css";
 
 const ORDENES: { valor: "valor" | "monto_total"; texto: string }[] = [
@@ -290,6 +291,7 @@ export function Clientes() {
               </div>
 
               <InsigniaFuga detalle={detalle} />
+              <EtiquetaSegmento idCliente={detalle.id_cliente} />
 
               {/* Regla del Hueco que Enseña: sólo si el cliente tiene identificador; nunca
                   "N/A" ni un placeholder para un dato ausente. */}

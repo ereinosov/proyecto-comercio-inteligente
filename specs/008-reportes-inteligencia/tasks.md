@@ -120,40 +120,40 @@ patrones, k > n). Sin pruebas de interfaz, maquetación ni componentes visuales.
 
 ## Fase 6 — Frontend
 
-- [ ] T027 [P] `frontend/src/servicios/reportes.ts`: cliente de `/reportes/*` con los tipos del
+- [X] T027 [P] `frontend/src/servicios/reportes.ts`: cliente de `/reportes/*` con los tipos del
   contrato.
-- [ ] T028 `frontend/src/App.tsx`: opción "Reportes" en el grupo apropiado de `GRUPOS` con
+- [X] T028 `frontend/src/App.tsx`: opción "Reportes" en el grupo apropiado de `GRUPOS` con
   `rol: "encargado"` (el nav ya filtra por rol desde v2.5.0). Guarda de pantalla ya cubre el caso.
-- [ ] T029 `frontend/src/pantallas/Reportes.tsx`: contenedor con `EncabezadoPantalla`
+- [X] T029 `frontend/src/pantallas/Reportes.tsx`: contenedor con `EncabezadoPantalla`
   (registro Análisis) + `Segmentado` (Comparativo · Tendencias · Tablero · Segmentos). Marca de
   agua / elemento visual con `despensa-logo-mono-800w.png` (FR-029). Sin Verde Rasero.
-- [ ] T030 [P] `frontend/src/pantallas/ReporteComparativo.tsx`: tabla con una columna por
+- [X] T030 [P] `frontend/src/pantallas/ReporteComparativo.tsx`: tabla con una columna por
   sucursal; color de atención sólo donde `atencion=true`; nota de "sin otra sucursal" cuando
   `comparable=false`; botón "Actualizar".
-- [ ] T031 [P] `frontend/src/pantallas/ReporteTendencias.tsx`: selector de indicador +
+- [X] T031 [P] `frontend/src/pantallas/ReporteTendencias.tsx`: selector de indicador +
   granularidad + sucursal; gráfico de serie (reutiliza el patrón de gráfico de Pronóstico/
   Precios); períodos incompletos marcados; estado "no disponible" con razón.
-- [ ] T032 [P] `frontend/src/pantallas/ReporteTablero.tsx`: grilla de tarjetas por módulo, cada
+- [X] T032 [P] `frontend/src/pantallas/ReporteTablero.tsx`: grilla de tarjetas por módulo, cada
   una con su período de referencia; `atencion` → color; `sin_datos` → razón.
-- [ ] T033 [P] `frontend/src/pantallas/ReporteSegmentos.tsx`: lista de grupos con descripción,
+- [X] T033 [P] `frontend/src/pantallas/ReporteSegmentos.tsx`: lista de grupos con descripción,
   conteo y clientes de ejemplo; botón "Recalcular segmentos" con progreso; `EstadoVacio` (Hueco
   que Enseña) cuando `calculado=false`.
-- [ ] T034 [US4] `frontend/src/componentes/EtiquetaSegmento.tsx` + integrar en el detalle de
+- [X] T034 [US4] `frontend/src/componentes/EtiquetaSegmento.tsx` + integrar en el detalle de
   cliente de `Clientes.tsx` (002): llama a `GET /reportes/segmentos/cliente/{id}`; muestra la
   etiqueta + fecha del recálculo como dato de lectura. 002 no gana escritura.
 
 ## Fase 7 — Verificación y cierre
 
-- [ ] T035 Auditoría de solo lectura (SC-006): `grep` sobre `backend/rasero/servicios/reportes_*`,
+- [X] T035 Auditoría de solo lectura (SC-006): `grep` sobre `backend/rasero/servicios/reportes_*`,
   `segmentacion_clientes.py` — cero `INSERT`/`UPDATE`/`DELETE` sobre tablas de 001–007. Sólo
   `SELECT` de ellas; escrituras sólo sobre las tres tablas de 008.
-- [ ] T036 Auditoría de literales (FR-004): "Quevedo Centro"/"Buena Fe"/"Despensa Los Ríos" no
+- [X] T036 Auditoría de literales (FR-004): "Quevedo Centro"/"Buena Fe"/"Despensa Los Ríos" no
   aparecen en código, config ni identificador — sólo como valor de fila.
-- [ ] T037 Suite completa `pytest tests` en verde (contrato de reportes, integración de las 4
+- [X] T037 Suite completa `pytest tests` en verde (contrato de reportes, integración de las 4
   vistas, unidad de k-means y período local). Frontend `tsc -b` + `eslint .` + `vite build` en
   verde.
-- [ ] T038 Ejecutar los 11 escenarios de `quickstart.md` de extremo a extremo.
-- [ ] T039 Registrar la enmienda v2.6.0 en el historial de la constitución (ya hecha) y anotar
+- [X] T038 Ejecutar los 11 escenarios de `quickstart.md` de extremo a extremo.
+- [X] T039 Registrar la enmienda v2.6.0 en el historial de la constitución (ya hecha) y anotar
   008 en el conteo de entidades por módulo.
 
 ## Dependencias entre fases
