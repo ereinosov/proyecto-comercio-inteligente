@@ -11,7 +11,7 @@
  * 6px, contorno estructural, cero sombras, sin Verde Rasero (La Regla del Registro Sin Dinero).
  */
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Boton } from "../componentes/Boton";
 import marcaSistema from "../activos/marca/rasero-wordmark-512w.png";
 import marcaMono from "../activos/marca/despensa-logo-mono-800w.png";
@@ -901,6 +901,23 @@ export function Documentacion({ onVolver }: Props) {
   const contenidoRef = useRef<HTMLDivElement>(null);
   const ids = useMemo(() => SECCIONES.map((s) => s.id), []);
 
+  // El salto nativo de un `<a href="#id">` hace `scrollIntoView` sobre TODA la cadena de
+  // ancestros con scroll — incluida `html`/`body`, no sólo `.contenido` — y como `.barra` es un
+  // hijo de flujo normal de `.pantalla` (no `position: sticky`/`fixed`), si el documento llega a
+  // desplazarse aunque sea unos píxeles la barra superior se corre fuera de vista y `.pantalla`
+  // (con `overflow: hidden`) la recorta: el "bug" del encabezado que desaparece al usar el
+  // índice lateral. Se intercepta el clic y se hace el scroll a mano, sólo dentro de
+  // `.contenido`, sin dejar que el navegador toque el scroll del documento.
+  function irASeccion(evento: MouseEvent<HTMLAnchorElement>, id: string) {
+    evento.preventDefault();
+    const raiz = contenidoRef.current;
+    const destino = raiz?.querySelector<HTMLElement>(`#${id}`);
+    if (!raiz || !destino) return;
+    raiz.scrollTo({ top: destino.offsetTop, behavior: "smooth" });
+    setActiva(id);
+    history.replaceState(null, "", `#${id}`);
+  }
+
   useEffect(() => {
     const raiz = contenidoRef.current;
     if (!raiz) return;
@@ -943,6 +960,7 @@ export function Documentacion({ onVolver }: Props) {
                 <a
                   className={`${estilos.indiceEnlace} ${activa === s.id ? estilos.indiceActivo : ""}`}
                   href={`#${s.id}`}
+                  onClick={(e) => irASeccion(e, s.id)}
                 >
                   {s.titulo}
                 </a>

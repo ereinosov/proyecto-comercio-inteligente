@@ -1,5 +1,9 @@
 <p align="center">
-  <img src="docs/rasero-banner.svg" alt="Rasero — comercio minorista inteligente" width="720">
+  <img src="frontend/src/activos/marca/rasero-icon-512.png" alt="Rasero" width="96">
+  <br>
+  <img src="frontend/src/activos/marca/rasero-wordmark-512w.png" alt="Rasero" width="260">
+  <br>
+  <sub>Comercio minorista inteligente</sub>
 </p>
 
 <p align="center">
