@@ -115,7 +115,7 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
   }
 
   return (
-    <>
+    <div className={estilos.contenedor}>
       {!abierto ? (
         <button type="button" className={estilos.abrir} onClick={() => setAbierto(true)}>
           + Identificar cliente
@@ -193,6 +193,6 @@ export function IdentificarCliente({ seleccionado, onSeleccionar }: Props) {
           />
         </ModalAdministrable>
       )}
-    </>
+    </div>
   );
 }

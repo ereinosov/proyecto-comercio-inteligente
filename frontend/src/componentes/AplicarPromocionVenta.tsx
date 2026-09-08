@@ -92,38 +92,41 @@ export function AplicarPromocionVenta({ idCliente, seleccion, onSeleccionar }: P
     );
   }
 
-  if (!abierto) {
-    return (
-      <button type="button" className={estilos.abrir} onClick={() => setAbierto(true)}>
-        + Aplicar promoción
-      </button>
-    );
-  }
-
   const sinPromociones = !cargando && cupones.length === 0 && ofertas.length === 0;
 
+  // `.contenedor` ancla el panel flotante (La Regla del panel flotante, mismo patrón que
+  // `IdentificarCliente`): sin él, `.panel` en flujo normal agranda el encabezado entero al
+  // abrirse y empuja el cuerpo de la pantalla hacia abajo.
   return (
-    <div className={estilos.panel}>
-      {cargando && <p className={estilos.vacio}>Cargando…</p>}
-      {sinPromociones && <p className={estilos.vacio}>Este cliente no tiene promociones vigentes.</p>}
-      {cupones.map((c) => (
-        <button key={`c${c.id_cupon}`} type="button" className={estilos.fila} onClick={() => elegirCupon(c)}>
-          Cupón {c.id_cupon} · {c.porcentaje_descuento} % · vence {c.valido_hasta}
+    <span className={estilos.contenedor}>
+      {!abierto ? (
+        <button type="button" className={estilos.abrir} onClick={() => setAbierto(true)}>
+          + Aplicar promoción
         </button>
-      ))}
-      {ofertas.map((o) => (
-        <button
-          key={`o${o.id_oferta_recompra}`}
-          type="button"
-          className={estilos.fila}
-          onClick={() => elegirOferta(o)}
-        >
-          Oferta {o.id_oferta_recompra} · producto {o.id_producto} · {o.precio_garantizado}
-        </button>
-      ))}
-      <button type="button" className={estilos.cancelar} onClick={() => setAbierto(false)}>
-        Cancelar
-      </button>
-    </div>
+      ) : (
+        <div className={estilos.panel}>
+          {cargando && <p className={estilos.vacio}>Cargando…</p>}
+          {sinPromociones && <p className={estilos.vacio}>Este cliente no tiene promociones vigentes.</p>}
+          {cupones.map((c) => (
+            <button key={`c${c.id_cupon}`} type="button" className={estilos.fila} onClick={() => elegirCupon(c)}>
+              Cupón {c.id_cupon} · {c.porcentaje_descuento} % · vence {c.valido_hasta}
+            </button>
+          ))}
+          {ofertas.map((o) => (
+            <button
+              key={`o${o.id_oferta_recompra}`}
+              type="button"
+              className={estilos.fila}
+              onClick={() => elegirOferta(o)}
+            >
+              Oferta {o.id_oferta_recompra} · producto {o.id_producto} · {o.precio_garantizado}
+            </button>
+          ))}
+          <button type="button" className={estilos.cancelar} onClick={() => setAbierto(false)}>
+            Cancelar
+          </button>
+        </div>
+      )}
+    </span>
   );
 }

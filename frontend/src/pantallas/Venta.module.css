@@ -334,7 +334,12 @@
   bottom: 0;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  /* flex-end, no center: `.medioPago` apila una etiqueta chica sobre el <select>, así que su
+     bloque es más alto que el total o el botón — centrar todo dejaba el <select> visualmente
+     más abajo que ellos. Alineando los pies (donde viven los controles reales: la cifra, el
+     select, el botón) todo queda a la misma línea; las etiquetas quedan arriba, que es donde
+     se espera un rótulo secundario. */
+  align-items: flex-end;
   gap: var(--espacio-4);
   padding: var(--espacio-4) var(--espacio-6);
   background: var(--color-superficie-alta);
